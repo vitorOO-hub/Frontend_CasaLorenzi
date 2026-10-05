@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+/*
+ * Casa Lorenzi — alfaiataria clássica.
+ * Creme como base, marinho como cor da marca e dourado só em detalhes.
+ * Toda cor da interface sai destes tokens (bg-marinho, text-dourado, border-linha…).
+ */
+@theme {
+  --font-display: "Cormorant Garamond", Georgia, serif;
+  --font-sans: "Karla", ui-sans-serif, system-ui, sans-serif;
+
+  --color-creme: #faf7f2;
+  --color-papel: #ffffff;
+  --color-areia: #f2ece2;
+  --color-areia-forte: #e6dccd;
+  --color-linha: #e4ddd1;
+
+  --color-tinta: #1c2333;
+  --color-suave: #6b6f7a;
+
+  --color-marinho: #1f2f4f;
+  --color-marinho-escuro: #131c30;
+  --color-marinho-claro: #e8ecf3;
+  --color-dourado: #b8925a;
+  --color-dourado-claro: #f3ebdd;
+
+  --color-sucesso: #3f6b4f;
+  --color-alerta: #94661c;
+  --color-perigo: #9b2c2c;
+
+  --shadow-suave: 0 1px 2px rgb(28 35 51 / 0.05), 0 12px 32px rgb(28 35 51 / 0.08);
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    background-color: var(--color-creme);
+    color: var(--color-tinta);
+  }
+
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-linha);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+  }
+
+  ::selection {
+    background: var(--color-dourado-claro);
+  }
+}
+
+/* Rótulo em caixa alta espaçada — usado em títulos de campo e sobretítulos. */
+@utility rotulo {
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-suave);
+  font-weight: 600;
+}
+
+/* Filete dourado curto, assinatura visual da marca. */
+@utility filete {
+  display: block;
+  width: 2rem;
+  height: 1px;
+  background: var(--color-dourado);
+}
