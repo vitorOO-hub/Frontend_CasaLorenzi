@@ -281,12 +281,14 @@ export function Metrica({
   nota,
   to,
   destaque = false,
+  extra,
 }: {
   rotulo: string;
   valor: ReactNode;
   nota?: string;
   to?: string;
   destaque?: boolean;
+  extra?: ReactNode;
 }) {
   const conteudo = (
     <Card
@@ -299,6 +301,7 @@ export function Metrica({
       <p className="rotulo">{rotulo}</p>
       <p className="mt-3 font-display text-3xl font-medium leading-none text-marinho sm:text-4xl">{valor}</p>
       {nota ? <p className="mt-2 text-xs text-suave">{nota}</p> : null}
+      {extra ? <div className="mt-2">{extra}</div> : null}
     </Card>
   );
   return to ? (
