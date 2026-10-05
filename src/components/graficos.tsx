@@ -165,6 +165,13 @@ function Dica({
   );
 }
 
+
+function NotaParcial({ rotulos }: { rotulos: string[] }) {
+  return rotulos.some((r) => r.endsWith("*")) ? (
+    <p className="text-[11px] text-suave">* mês incompleto — o valor ainda vai crescer</p>
+  ) : null;
+}
+
 // ---------- Linhas (evolução no tempo) ----------
 
 export function GraficoLinhas({
@@ -220,8 +227,15 @@ export function GraficoLinhas({
             </g>
           ))}
           {rotulos.map((r, i) =>
-            i % cadaN === 0 || i === rotulos.length - 1 ? (
-              <text key={r + i} x={x(i)} y={altura - 6} textAnchor="middle" fontSize={10} fill={SUAVE}>
+            (i % cadaN === 0 && rotulos.length - 1 - i >= cadaN) || i === rotulos.length - 1 ? (
+              <text
+                key={r + i}
+                x={x(i)}
+                y={altura - 6}
+                textAnchor={i === 0 ? "start" : i === rotulos.length - 1 ? "end" : "middle"}
+                fontSize={10}
+                fill={SUAVE}
+              >
                 {r}
               </text>
             ) : null,
@@ -268,6 +282,7 @@ export function GraficoLinhas({
           />
         ) : null}
       </div>
+      <NotaParcial rotulos={rotulos} />
     </div>
   );
 }
@@ -413,19 +428,29 @@ export function GraficoColunas({
           />
         ) : null}
       </div>
+      <NotaParcial rotulos={rotulos} />
     </div>
   );
 }
 
 /** Indicador com variação vs período anterior (seta + texto, nunca só cor). */
-export function Variacao({ valor, inverter = false }: { valor: number | null; inverter?: boolean }) {
-  if (valor === null || !Number.isFinite(valor)) return <span className="text-xs text-suave">sem base de comparação</span>;
+export function Variacao({
+  valor,
+  inverter = false,
+  curto = false,
+}: {
+  valor: number | null;
+  inverter?: boolean;
+  curto?: boolean;
+}) {
+  if (valor === null || !Number.isFinite(valor))
+    return <span className="text-xs text-suave">{curto ? "—" : "sem base de comparação"}</span>;
   const sobe = valor >= 0;
   const bom = inverter ? !sobe : sobe;
   return (
-    <span className={cn("text-xs font-semibold", Math.abs(valor) < 0.005 ? "text-suave" : bom ? "text-sucesso" : "text-perigo")}>
+    <span className={cn("whitespace-nowrap text-xs font-semibold", Math.abs(valor) < 0.005 ? "text-suave" : bom ? "text-sucesso" : "text-perigo")}>
       {sobe ? "▲" : "▼"} {pct(Math.abs(valor))}
-      <span className="font-normal text-suave"> vs período anterior</span>
+      {curto ? null : <span className="font-normal text-suave"> vs período anterior</span>}
     </span>
   );
 }

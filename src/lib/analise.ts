@@ -2,7 +2,7 @@
  * Camada analítica dos dashboards.
  *
  * O protótipo tem poucos pedidos e chamados reais, então geramos um histórico
- * simulado de 12 meses (determinístico: sempre os mesmos números) e somamos a
+ * simulado de 2 anos (para o período "12 meses" ter com o que comparar) (determinístico: sempre os mesmos números) e somamos a
  * ele o que acontece na sessão (compras, chamados e movimentações novas).
  */
 import {
@@ -118,15 +118,16 @@ const pesoLoja: Record<string, number> = { l1: 1, l2: 0.8, l3: 0.6 };
 const fatorSemana = [0.8, 0.65, 0.8, 0.9, 1, 1.25, 1.55]; // dom..sáb
 const fatorMes = [0, 0.85, 0.8, 0.9, 0.95, 1.05, 1.1, 0.95, 0.9, 1, 1.05, 1.3, 1.65]; // índice 1..12
 const pesoProduto = produtosIniciais.map((p) => (1 / Math.sqrt(p.preco)) * (0.6 + rnd()));
+const somaPesos = pesoProduto.reduce((s, p) => s + p, 0);
 const categoriaDe = new Map(produtosIniciais.map((p) => [p.sku, p.categoria]));
 
 const vendasSimuladas: Venda[] = [];
 const atendimentosSimulados: Atendimento[] = [];
 const entradasSimuladas: Movimento[] = [];
 
-for (let d = 364; d >= 1; d--) {
+for (let d = 729; d >= 0; d--) {
   const data = addDias(HOJE, -d);
-  const tendencia = 1 + ((365 - d) / 365) * 0.25;
+  const tendencia = 1 + ((730 - d) / 730) * 0.35;
   const fator = fatorSemana[diaDaSemana(data)]! * fatorMes[mes(data)]! * tendencia;
 
   for (const loja of ["l1", "l2", "l3"]) {
@@ -147,15 +148,15 @@ for (let d = 364; d >= 1; d--) {
       });
     }
 
-    // Atendimentos (os mais recentes vêm dos chamados reais da sessão)
-    if (d >= 3) {
+    // Atendimentos já encerrados (os abertos são os chamados reais da fila)
+    {
       const chamados = poisson(0.45 * pesoLoja[loja]! * fatorSemana[diaDaSemana(data)]!);
       for (let i = 0; i < chamados; i++) {
         const motivo = sortear<Chamado["motivo"]>(["Dúvida", "Troca", "Entrega", "Defeito"], [4, 3, 2, 1]);
         const canal = sortear<Chamado["canal"]>(["WhatsApp", "Portal", "E-mail", "Loja"], [3.5, 2.5, 2, 2]);
         const base = { Loja: 1.5, WhatsApp: 4, Portal: 9, "E-mail": 16 }[canal];
         // O tempo de resposta melhora ao longo do ano.
-        const respostaHoras = Math.max(0.3, base * (0.4 + rnd() * 1.2) * (0.7 + (d / 365) * 0.6));
+        const respostaHoras = Math.max(0.3, base * (0.4 + rnd() * 1.2) * (0.7 + (d / 730) * 0.6));
         atendimentosSimulados.push({
           data,
           lojaId: loja,
@@ -171,12 +172,13 @@ for (let d = 364; d >= 1; d--) {
 }
 
 // Reposição de fornecedor toda segunda-feira, proporcional ao giro de cada peça.
-for (let d = 364; d >= 1; d--) {
+for (let d = 729; d >= 0; d--) {
   const data = addDias(HOJE, -d);
   if (diaDaSemana(data) !== 1) continue;
   for (const loja of ["l1", "l2", "l3"]) {
     produtosIniciais.forEach((p, i) => {
-      const esperado = pesoProduto[i]! * pesoLoja[loja]! * 1.9;
+      // Venda semanal esperada da peça: pedidos/dia × itens por pedido × fatia da peça.
+      const esperado = 7 * 3.1 * pesoLoja[loja]! * 1.45 * (pesoProduto[i]! / somaPesos);
       const quantidade = Math.round(esperado * (0.6 + rnd() * 0.8));
       if (quantidade > 0)
         entradasSimuladas.push({ data, lojaId: loja, sku: p.sku, categoria: p.categoria, tipo: "Entrada", quantidade });
@@ -322,16 +324,17 @@ const MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "o
 
 export type Balde = { inicio: string; fim: string; rotulo: string };
 
-/** Divide o período em dias (≤30), semanas (90) ou meses (12 meses). */
+/**
+ * Divide o período em blocos de mesmo tamanho — dias (7), 3 dias (30), 10 dias (90) —
+ * ou em meses (12 meses), marcando como "parcial" o mês que não está completo.
+ */
 export function baldes(periodo: Periodo): Balde[] {
   const { inicio, fim } = intervalos(periodo).atual;
   const lista: Balde[] = [];
-  if (periodo <= 30) {
-    for (let d = inicio; d <= fim; d = addDias(d, 1))
-      lista.push({ inicio: d, fim: d, rotulo: `${d.slice(8, 10)}/${d.slice(5, 7)}` });
-  } else if (periodo === 90) {
-    for (let d = inicio; d <= fim; d = addDias(d, 7)) {
-      const f = addDias(d, 6) > fim ? fim : addDias(d, 6);
+  if (periodo <= 90) {
+    const passo = periodo === 7 ? 1 : periodo === 30 ? 3 : 10;
+    for (let d = inicio; d <= fim; d = addDias(d, passo)) {
+      const f = addDias(d, passo - 1) > fim ? fim : addDias(d, passo - 1);
       lista.push({ inicio: d, fim: f, rotulo: `${d.slice(8, 10)}/${d.slice(5, 7)}` });
     }
   } else {
@@ -340,7 +343,12 @@ export function baldes(periodo: Periodo): Balde[] {
       const proximo = new Date(`${d.slice(0, 7)}-01T00:00:00Z`);
       proximo.setUTCMonth(proximo.getUTCMonth() + 1);
       const f = addDias(proximo.toISOString().slice(0, 10), -1);
-      lista.push({ inicio: d, fim: f > fim ? fim : f, rotulo: `${MESES[mes(d) - 1]}/${d.slice(2, 4)}` });
+      const parcial = d.slice(8, 10) !== "01" || f > fim;
+      lista.push({
+        inicio: d,
+        fim: f > fim ? fim : f,
+        rotulo: `${MESES[mes(d) - 1]}/${d.slice(2, 4)}${parcial ? "*" : ""}`,
+      });
       d = proximo.toISOString().slice(0, 10);
     }
   }

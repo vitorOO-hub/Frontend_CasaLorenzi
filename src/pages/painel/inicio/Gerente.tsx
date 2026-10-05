@@ -113,7 +113,7 @@ export function DashboardGerente() {
         <Metrica rotulo="Pedidos" valor={rv.pedidos} extra={<Variacao valor={variacao(rv.pedidos, rvAnt.pedidos)} />} />
         <Metrica rotulo="Ticket médio" valor={moeda(rv.ticket)} extra={<Variacao valor={variacao(rv.ticket, rvAnt.ticket)} />} />
         <Metrica
-          rotulo="1ª resposta ao cliente"
+          rotulo="Primeira resposta"
           valor={ra.respostaMedia === null ? "—" : horasFmt(ra.respostaMedia)}
           extra={<Variacao valor={ra.respostaMedia && raAnt.respostaMedia ? variacao(ra.respostaMedia, raAnt.respostaMedia) : null} inverter />}
         />

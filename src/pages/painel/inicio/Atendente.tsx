@@ -67,7 +67,7 @@ export function DashboardAtendente() {
         <Metrica rotulo="Sem resposta agora" valor={semResposta.length} nota={`${fila.length} em aberto · ${urgentes.length} urgentes`} to="/painel/atendimento" destaque={semResposta.length > 0} />
         <Metrica rotulo="Chamados recebidos" valor={ra.total} extra={<Variacao valor={variacao(ra.total, raAnt.total)} inverter />} />
         <Metrica
-          rotulo="1ª resposta média"
+          rotulo="Primeira resposta (média)"
           valor={ra.respostaMedia === null ? "—" : horasFmt(ra.respostaMedia)}
           extra={<Variacao valor={ra.respostaMedia && raAnt.respostaMedia ? variacao(ra.respostaMedia, raAnt.respostaMedia) : null} inverter />}
         />
@@ -124,11 +124,11 @@ export function DashboardAtendente() {
           <GraficoBarras categorias={MOTIVOS} series={[{ id: "m", nome: "Chamados", cor: COR_MARCA, valores: porMotivo }]} formatar={String} />
         </CartaoGrafico>
         <CartaoGrafico
-          titulo="Tempo de 1ª resposta por canal"
+          titulo="Tempo até a primeira resposta, por canal"
           subtitulo="Média no período — quanto menor, melhor"
-          tabela={{ cabecalho: ["Canal", "1ª resposta"], linhas: CANAIS.map((c, i) => [c, respostaCanal[i] ? horasFmt(respostaCanal[i]!) : "—"]) }}
+          tabela={{ cabecalho: ["Canal", "Primeira resposta"], linhas: CANAIS.map((c, i) => [c, respostaCanal[i] ? horasFmt(respostaCanal[i]!) : "—"]) }}
         >
-          <GraficoBarras categorias={CANAIS} series={[{ id: "r", nome: "1ª resposta", cor: COR_MARCA, valores: respostaCanal }]} formatar={(n) => (n ? horasFmt(n) : "—")} />
+          <GraficoBarras categorias={CANAIS} series={[{ id: "r", nome: "Primeira resposta", cor: COR_MARCA, valores: respostaCanal }]} formatar={(n) => (n ? horasFmt(n) : "—")} />
         </CartaoGrafico>
       </div>
     </div>

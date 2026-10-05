@@ -151,7 +151,7 @@ export function DashboardAdmin() {
         <Metrica rotulo="Unidades em estoque" valor={unidades.toLocaleString("pt-BR")} nota="posição de agora" to="/painel/estoque" />
         <Metrica rotulo="Peças esgotadas" valor={esgotadas} nota={`de ${produtosFiltrados.length} no catálogo`} to="/painel/estoque" destaque={esgotadas > 0} />
         <Metrica
-          rotulo="1ª resposta ao cliente"
+          rotulo="Primeira resposta"
           valor={ra.respostaMedia === null ? "—" : horasFmt(ra.respostaMedia)}
           extra={<Variacao valor={ra.respostaMedia && raAnt.respostaMedia ? variacao(ra.respostaMedia, raAnt.respostaMedia) : null} inverter />}
         />
@@ -180,7 +180,7 @@ export function DashboardAdmin() {
           <table className="w-full min-w-[760px] text-left text-sm">
             <thead>
               <tr className="text-[10px] uppercase tracking-[0.12em] text-suave">
-                {["Unidade", "Faturamento", "", "Pedidos", "Ticket médio", "Online", "Estoque", "Esgotadas", "Chamados abertos", "1ª resposta"].map((c, i) => (
+                {["Unidade", "Faturamento", "Variação", "Pedidos", "Ticket médio", "Online", "Estoque", "Esgotadas", "Chamados abertos", "Primeira resposta"].map((c, i) => (
                   <th key={i} className={cn("border-b border-linha py-2 pr-3 font-semibold", i > 0 && "text-right")}>
                     {c}
                   </th>
@@ -204,7 +204,7 @@ export function DashboardAdmin() {
                     </span>
                   </td>
                   <td className="py-3 pr-3 text-right">
-                    <Variacao valor={l.delta} />
+                    <Variacao valor={l.delta} curto />
                   </td>
                   <td className="py-3 pr-3 text-right tabular-nums">{l.pedidos}</td>
                   <td className={cn("py-3 pr-3 text-right tabular-nums", melhor("ticket")(l.ticket) && "font-bold")}>{moeda(l.ticket)}</td>
@@ -258,7 +258,7 @@ export function DashboardAdmin() {
               [
                 ["Chamados recebidos", ra.total.toLocaleString("pt-BR"), <Variacao key="v" valor={variacao(ra.total, raAnt.total)} inverter />],
                 ["Taxa de resolução", pct(ra.taxaResolucao), null],
-                ["1ª resposta média", ra.respostaMedia === null ? "—" : horasFmt(ra.respostaMedia), null],
+                ["Primeira resposta (média)", ra.respostaMedia === null ? "—" : horasFmt(ra.respostaMedia), null],
                 ["Em aberto agora", estado.chamados.filter((c) => c.status !== "Resolvido" && (!comparando || f.lojaIds.includes(c.lojaId))).length, null],
               ] as const
             ).map(([k, v, extra]) => (

@@ -937,3 +937,34 @@ export const tomTransferencia = {
 } as const;
 export const tomAjuste = { Pendente: "alerta", Aprovado: "ok", Recusado: "perigo" } as const;
 export const tomReposicao = { Aberta: "alerta", Aceita: "ok", Recusada: "perigo" } as const;
+
+// ===================== Datas sempre recentes =====================
+
+/**
+ * Os dados de demonstração foram escritos como se "hoje" fosse 04/09/2026.
+ * Deslocamos todas as datas para que o mais recente fique sempre perto de hoje —
+ * assim os filtros de período dos dashboards encontram os chamados e pedidos.
+ */
+const REFERENCIA = Date.UTC(2026, 8, 4);
+const hojeLocal = new Date();
+const deslocamento = Math.round(
+  (Date.UTC(hojeLocal.getFullYear(), hojeLocal.getMonth(), hojeLocal.getDate()) - REFERENCIA) / 864e5,
+);
+
+function ajustar(data: string) {
+  const [dia, hora] = data.split(" ");
+  const d = new Date(`${dia}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + deslocamento);
+  return hora ? `${d.toISOString().slice(0, 10)} ${hora}` : d.toISOString().slice(0, 10);
+}
+
+if (deslocamento !== 0) {
+  produtosIniciais.forEach((p) => p.movimentacoes.forEach((m) => (m.data = ajustar(m.data))));
+  for (const lista of [transferenciasIniciais, ajustesIniciais, reposicoesIniciais, pedidosIniciais, auditoriaInicial])
+    lista.forEach((x) => (x.data = ajustar(x.data)));
+  chamadosIniciais.forEach((c) => {
+    c.abertoEm = ajustar(c.abertoEm);
+    c.mensagens.forEach((m) => (m.data = ajustar(m.data)));
+  });
+  lotesImportacao.forEach((l) => (l.recebidoEm = ajustar(l.recebidoEm)));
+}

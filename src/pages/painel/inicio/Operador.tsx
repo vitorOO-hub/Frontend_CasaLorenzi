@@ -79,7 +79,7 @@ export function DashboardOperador() {
         <Metrica rotulo="Peças que entraram" valor={soma(atual, "Entrada")} nota="unidades no período" extra={<Variacao valor={variacao(soma(atual, "Entrada"), soma(anterior, "Entrada"))} />} />
         <Metrica rotulo="Peças que saíram" valor={soma(atual, "Saída")} nota="vendas e envios" extra={<Variacao valor={variacao(soma(atual, "Saída"), soma(anterior, "Saída"))} />} />
         <Metrica rotulo="Abaixo do mínimo" valor={abaixo.length} nota={`${esgotadas.length} esgotadas`} to="/painel/estoque" destaque={abaixo.length > 0} />
-        <Metrica rotulo="A caminho da loja" valor={aReceber.reduce((s, t) => s + t.quantidade, 0)} nota={`${aReceber.length} transferências para conferir`} to="/painel/estoque/transferencias" />
+        <Metrica rotulo="A caminho da loja" valor={aReceber.reduce((s, t) => s + t.quantidade, 0)} nota={`${aReceber.length} ${aReceber.length === 1 ? "transferência" : "transferências"} para conferir`} to="/painel/estoque/transferencias" />
       </div>
 
       <CartaoGrafico
@@ -110,14 +110,14 @@ export function DashboardOperador() {
               const critico = x.saldo <= x.minimo;
               return (
                 <li key={x.p.sku}>
-                  <Link to={`/painel/estoque/peca/${x.p.sku}`} className="grid grid-cols-[1fr_6rem_auto] items-center gap-3 py-3 text-sm hover:text-marinho">
+                  <Link to={`/painel/estoque/peca/${x.p.sku}`} className="grid grid-cols-[1fr_5rem_8.5rem] items-center gap-3 py-3 text-sm hover:text-marinho">
                     <span className="truncate">{x.p.nome}</span>
                     <span className="relative h-2 overflow-hidden rounded-full bg-areia" title={`${x.saldo} de mínimo ${x.minimo}`}>
                       <span className={cn("absolute inset-y-0 left-0 rounded-r-[4px]", critico ? "bg-alerta" : "bg-marinho")} style={{ width: `${proporcao * 100}%` }} />
                       <span className="absolute inset-y-0 left-1/2 w-px bg-tinta/40" />
                     </span>
-                    <span className="flex items-center gap-2">
-                      <span className="w-14 text-right text-xs tabular-nums text-suave">
+                    <span className="flex items-center justify-end gap-2">
+                      <span className="w-10 text-right text-xs tabular-nums text-suave">
                         {x.saldo}/{x.minimo}
                       </span>
                       <Badge tom={x.saldo === 0 ? "perigo" : critico ? "alerta" : "ok"}>
