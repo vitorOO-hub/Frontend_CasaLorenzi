@@ -94,7 +94,7 @@ export function PainelLayout() {
         <header className="sticky top-0 z-30 border-b border-linha bg-papel/95 backdrop-blur">
           <div className="flex items-center justify-between gap-4 px-5 py-3 md:px-8">
             <div className="min-w-0">
-              <p className="font-display text-xl leading-none md:hidden">Casa Lorenzi</p>
+              <p className="whitespace-nowrap font-display text-xl leading-none md:hidden">Casa Lorenzi</p>
               <p className="hidden truncate text-sm text-suave md:block">
                 {rotuloPapel[papel]} · <span className="text-tinta">{escopoTexto}</span>
               </p>
@@ -105,7 +105,7 @@ export function PainelLayout() {
                   aria-label="Filtrar por unidade"
                   value={filtro}
                   onChange={(e) => definirFiltroUnidade(e.target.value)}
-                  className="w-48"
+                  className="w-36 sm:w-48"
                   opcoes={[
                     { value: "", label: "Todas as unidades" },
                     ...lojas.map((l) => ({ value: l.id, label: l.nome })),

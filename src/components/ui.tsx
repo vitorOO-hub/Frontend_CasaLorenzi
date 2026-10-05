@@ -127,7 +127,7 @@ export function Campo({
 }
 
 export const inputClasses =
-  "w-full rounded-sm border border-linha bg-papel px-3 py-2 text-sm text-tinta outline-none transition-colors placeholder:text-suave/70 hover:border-marinho/40 focus:border-marinho focus:ring-2 focus:ring-marinho/10 read-only:bg-areia/50 read-only:text-suave";
+  "w-full rounded-sm border border-linha bg-papel px-3 py-2 text-sm text-tinta outline-none transition-colors placeholder:text-suave/70 hover:border-marinho/40 focus:border-marinho focus:ring-2 focus:ring-marinho/10 [&[readonly]]:bg-areia/50 [&[readonly]]:text-suave";
 
 export function Select({
   opcoes,
@@ -297,7 +297,7 @@ export function Metrica({
       )}
     >
       <p className="rotulo">{rotulo}</p>
-      <p className="mt-3 font-display text-4xl font-medium leading-none text-marinho">{valor}</p>
+      <p className="mt-3 font-display text-3xl font-medium leading-none text-marinho sm:text-4xl">{valor}</p>
       {nota ? <p className="mt-2 text-xs text-suave">{nota}</p> : null}
     </Card>
   );

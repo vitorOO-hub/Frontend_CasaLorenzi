@@ -21,7 +21,7 @@ export function Marca({ claro = false, className }: { claro?: boolean; className
     <span className={cn("block text-center leading-none", className)}>
       <span
         className={cn(
-          "block font-display text-[26px] font-normal uppercase tracking-[0.28em] md:text-[30px]",
+          "block whitespace-nowrap font-display text-[19px] font-normal uppercase tracking-[0.2em] sm:text-[26px] sm:tracking-[0.28em] md:text-[30px]",
           claro ? "text-white" : "text-marinho",
         )}
       >

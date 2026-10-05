@@ -90,8 +90,15 @@ export function Checkout() {
         onSubmit={(e) => {
           e.preventDefault();
           if (sessao?.tipo !== "cliente") return;
-          const novo = finalizarCompra(sessao.clienteId, entrega === "loja" ? lojaRetirada : lojas[0]!.id);
-          if (novo) setPedido(novo.id);
+          const novo = finalizarCompra(
+            sessao.clienteId,
+            entrega === "loja" ? lojaRetirada : lojas[0]!.id,
+            frete,
+          );
+          if (novo) {
+            setPedido(novo.id);
+            window.scrollTo(0, 0);
+          }
         }}
       >
         <div className="space-y-4">
@@ -99,7 +106,7 @@ export function Checkout() {
             <div className="mb-6 grid gap-3 sm:grid-cols-2">
               {(
                 [
-                  ["casa", "Receber em casa", frete === 0 && entrega === "casa" ? "Frete grátis" : `A partir de ${moeda(freteDe(subtotal))}`],
+                  ["casa", "Receber em casa", freteDe(subtotal) === 0 ? "Frete grátis" : `Frete ${moeda(freteDe(subtotal))}`],
                   ["loja", "Retirar na loja", "Grátis · pronto em 2 dias úteis"],
                 ] as const
               ).map(([id, titulo, nota]) => (

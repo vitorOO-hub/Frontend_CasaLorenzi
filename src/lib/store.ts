@@ -53,11 +53,30 @@ const estado: Estado = {
   carrinho: [],
 };
 
+// O estado sobrevive ao recarregar a página enquanto a aba estiver aberta.
+const CHAVE = "casa-lorenzi:estado";
+
+try {
+  const salvo = sessionStorage.getItem(CHAVE);
+  if (salvo) {
+    const dados = JSON.parse(salvo) as { estado: Estado; lojas: typeof lojas };
+    Object.assign(estado, dados.estado);
+    lojas.splice(0, lojas.length, ...dados.lojas);
+  }
+} catch {
+  // Storage indisponível ou corrompido: segue com os dados iniciais.
+}
+
 let versao = 0;
 const ouvintes = new Set<() => void>();
 
 function notificar() {
   versao += 1;
+  try {
+    sessionStorage.setItem(CHAVE, JSON.stringify({ estado, lojas }));
+  } catch {
+    // Sem storage: o estado vale só até recarregar a página.
+  }
   ouvintes.forEach((fn) => fn());
 }
 
@@ -464,14 +483,14 @@ export function alterarQuantidadeCarrinho(sku: string, quantidade: number) {
 
 let sequenciaPedido = 10500;
 
-export function finalizarCompra(clienteId: string, lojaId: string): Pedido | null {
+export function finalizarCompra(clienteId: string, lojaId: string, frete = 0): Pedido | null {
   if (estado.carrinho.length === 0) return null;
   sequenciaPedido += 1;
   const novo: Pedido = {
     id: `PD-${sequenciaPedido}`,
     clienteId,
     data: hoje(),
-    valor: estado.carrinho.reduce((s, i) => s + i.valor * i.quantidade, 0),
+    valor: estado.carrinho.reduce((s, i) => s + i.valor * i.quantidade, 0) + frete,
     lojaId,
     status: "Separação",
     itens: estado.carrinho.map(({ sku, nome, quantidade, valor }) => ({

@@ -155,7 +155,7 @@ function DetalheProduto({ sku }: { sku: string }) {
             {aviso ? <p className="mt-2 text-sm text-perigo">Escolha um tamanho para continuar.</p> : null}
             {tamanho && restantes > 0 && restantes <= 5 ? (
               <p className="mt-3 text-sm text-alerta">
-                Últimas {restantes} {restantes === 1 ? "unidade" : "unidades"} no tamanho {tamanho}
+                {restantes === 1 ? "Última unidade" : `Últimas ${restantes} unidades`} no tamanho {tamanho}
               </p>
             ) : null}
           </div>
