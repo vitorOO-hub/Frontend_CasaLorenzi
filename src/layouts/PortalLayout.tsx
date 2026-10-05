@@ -1,5 +1,5 @@
 import { Headset, Menu, Search, ShoppingBag, UserRound, X } from "lucide-react";
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { MenuUsuario } from "@/components/MenuUsuario";
 import { cn } from "@/components/ui";
@@ -39,16 +39,16 @@ export function PortalLayout() {
   const { carrinho } = useEstado();
   const navigate = useNavigate();
   const { pathname, search } = useLocation();
-  const [menuAberto, setMenuAberto] = useState(false);
-  const [buscaAberta, setBuscaAberta] = useState(false);
+  // Menus guardam a rota em que foram abertos: ao navegar, fecham sozinhos.
+  const rota = `${pathname}${search}`;
+  const [menuEm, setMenuEm] = useState<string | null>(null);
+  const [buscaEm, setBuscaEm] = useState<string | null>(null);
+  const menuAberto = menuEm === rota;
+  const buscaAberta = buscaEm === rota;
+  const setMenuAberto = (v: boolean) => setMenuEm(v ? rota : null);
   const [termo, setTermo] = useState("");
   const itensSacola = carrinho.reduce((s, i) => s + i.quantidade, 0);
   const cliente = sessao?.tipo === "cliente" ? sessao : null;
-
-  useEffect(() => {
-    setMenuAberto(false);
-    setBuscaAberta(false);
-  }, [pathname, search]);
 
   function buscar(e: FormEvent) {
     e.preventDefault();
@@ -56,7 +56,7 @@ export function PortalLayout() {
     setTermo("");
   }
 
-  const categoriaAtiva = (to: string) => `${pathname}${search}` === to;
+  const categoriaAtiva = (to: string) => rota === to;
 
   return (
     <div className="flex min-h-screen flex-col bg-creme">
@@ -78,7 +78,7 @@ export function PortalLayout() {
             </button>
             <button
               className="text-tinta hover:text-marinho"
-              onClick={() => setBuscaAberta((v) => !v)}
+              onClick={() => setBuscaEm(buscaAberta ? null : rota)}
               aria-label="Buscar"
             >
               <Search className="h-5 w-5" strokeWidth={1.5} />

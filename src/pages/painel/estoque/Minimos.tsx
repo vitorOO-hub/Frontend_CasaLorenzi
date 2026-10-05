@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { Badge, Botao, Card, Tabela, Titulo, td, th } from "@/components/ui";
+import { Badge, Botao, Card, Select, Tabela, Titulo, td, th } from "@/components/ui";
 import { lojas, nomeLoja } from "@/lib/dados";
 import { useLojaEscopo, useNomeUsuario } from "@/lib/sessao";
 import { definirMinimo, useEstado } from "@/lib/store";
-import { Select } from "@/components/ui";
 
 export function Minimos() {
   const { produtos } = useEstado();

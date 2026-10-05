@@ -12,7 +12,7 @@ import { Botao, Campo, Modal, Segmentado, Select, inputClasses } from "./ui";
 
 type PropsModal = { aberto: boolean; onFechar: () => void; skuFixo?: string };
 
-function usarProdutoSelecionado(skuFixo?: string) {
+function useProdutoSelecionado(skuFixo?: string) {
   const { produtos } = useEstado();
   const [sku, setSku] = useState(skuFixo ?? produtos[0]?.sku ?? "");
   const campo = skuFixo ? null : (
@@ -28,7 +28,7 @@ function usarProdutoSelecionado(skuFixo?: string) {
 }
 
 /** Loja onde a operação acontece: fixa para quem tem unidade, escolhível para o admin. */
-function usarLoja(titulo = "Loja") {
+function useLojaDaOperacao(titulo = "Loja") {
   const escopo = useLojaEscopo();
   const [lojaId, setLojaId] = useState(escopo ?? lojas[0]!.id);
   const campo = escopo ? (
@@ -65,8 +65,8 @@ const motivos = {
 
 export function ModalMovimento({ aberto, onFechar, skuFixo }: PropsModal) {
   const responsavel = useNomeUsuario();
-  const { sku, produto, campo: campoPeca } = usarProdutoSelecionado(skuFixo);
-  const { lojaId, campo: campoLoja } = usarLoja();
+  const { sku, produto, campo: campoPeca } = useProdutoSelecionado(skuFixo);
+  const { lojaId, campo: campoLoja } = useLojaDaOperacao();
   const [tipo, setTipo] = useState<"Entrada" | "Saída">("Entrada");
   const [quantidade, setQuantidade] = useState(1);
   const [motivo, setMotivo] = useState(motivos.Entrada[0]!);
@@ -128,8 +128,8 @@ export function ModalMovimento({ aberto, onFechar, skuFixo }: PropsModal) {
 export function ModalAjuste({ aberto, onFechar, skuFixo }: PropsModal) {
   const solicitante = useNomeUsuario();
   const papel = usePapel();
-  const { sku, produto, campo: campoPeca } = usarProdutoSelecionado(skuFixo);
-  const { lojaId, campo: campoLoja } = usarLoja();
+  const { sku, produto, campo: campoPeca } = useProdutoSelecionado(skuFixo);
+  const { lojaId, campo: campoLoja } = useLojaDaOperacao();
   const atual = produto?.saldos.find((s) => s.lojaId === lojaId)?.quantidade ?? 0;
   const [contado, setContado] = useState<number | null>(null);
   const [motivo, setMotivo] = useState("");
@@ -198,7 +198,7 @@ export function ModalAjuste({ aberto, onFechar, skuFixo }: PropsModal) {
 export function ModalTransferencia({ aberto, onFechar, skuFixo }: PropsModal) {
   const solicitante = useNomeUsuario();
   const escopo = useLojaEscopo();
-  const { sku, produto, campo: campoPeca } = usarProdutoSelecionado(skuFixo);
+  const { sku, produto, campo: campoPeca } = useProdutoSelecionado(skuFixo);
   // Com unidade própria, o pedido é sempre "trazer peças de outra loja para a minha".
   const destinoFixo = escopo;
   const [destino, setDestino] = useState(escopo ?? lojas[0]!.id);
@@ -263,8 +263,8 @@ export function ModalTransferencia({ aberto, onFechar, skuFixo }: PropsModal) {
 
 export function ModalReposicao({ aberto, onFechar }: PropsModal) {
   const solicitante = useNomeUsuario();
-  const { sku, campo: campoPeca } = usarProdutoSelecionado();
-  const { lojaId, campo: campoLoja } = usarLoja("Loja que precisa da peça");
+  const { sku, campo: campoPeca } = useProdutoSelecionado();
+  const { lojaId, campo: campoLoja } = useLojaDaOperacao("Loja que precisa da peça");
   const [destinatario, setDestinatario] = useState("");
   const [quantidade, setQuantidade] = useState(2);
 

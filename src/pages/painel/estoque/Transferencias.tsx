@@ -140,7 +140,7 @@ export function Transferencias() {
               );
             })}
             {visiveis.length === 0 ? (
-              <LinhaVazia colunas={7} texto={filtro === "acao" ? "Nada aguardando você. 👌" : "Nenhuma transferência."} />
+              <LinhaVazia colunas={7} texto={filtro === "acao" ? "Nada aguardando você." : "Nenhuma transferência."} />
             ) : null}
           </tbody>
         </Tabela>
