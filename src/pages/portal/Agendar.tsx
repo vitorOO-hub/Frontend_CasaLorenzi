@@ -82,7 +82,7 @@ export function Agendar() {
           <p className="mt-4 font-display text-xl">
             {tipoRotulo} na casa {nomeLoja(lojaId)}. {info ? `Quem recebe você é ${info.alfaiate.split(",")[0]}.` : ""}
           </p>
-          <p className="mt-6 font-mao text-2xl leading-tight text-caramelo">
+          <p className="mt-6 font-mao text-[14px] leading-relaxed text-caramelo">
             Anotado na agenda da casa. Se precisar mudar, é só responder a mensagem de confirmação. — {info?.autor ?? "a casa"}
           </p>
           <div className="mt-10 flex flex-wrap gap-4">

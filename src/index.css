@@ -34,7 +34,7 @@
   --color-etiqueta: #efe4d1;
   --color-ouro-claro: #e6c9a0;
 
-  --font-mao: "Caveat", cursive;
+  --font-mao: "IBM Plex Mono", ui-monospace, Menlo, monospace;
 
   --color-sucesso: #3f6b4f;
   --color-alerta: #94661c;
@@ -95,7 +95,7 @@
  * redefini-las aqui troca a fonte e as cores só dentro de .loja.
  */
 .loja {
-  --font-display: "EB Garamond", Georgia, serif;
+  --font-display: "Fraunces", Georgia, serif;
   --font-sans: "Jost", ui-sans-serif, system-ui, sans-serif;
   --color-creme: #f6f1e8;
   --color-marinho: #1b2a4a;
@@ -104,6 +104,19 @@
   font-family: var(--font-sans);
   background: var(--color-creme);
   color: var(--color-tinta);
+  font-optical-sizing: auto;
+}
+
+/* Na loja não há itálico: a ênfase vem da cor, não de letra inclinada. */
+.loja em,
+.loja i {
+  font-style: normal;
+}
+.loja h1,
+.loja h2,
+.loja h3 {
+  font-weight: 350;
+  letter-spacing: -0.01em;
 }
 
 @layer components {
@@ -152,5 +165,25 @@
   padding-bottom: 1px;
   &:hover {
     color: var(--color-caramelo);
+  }
+}
+
+/* Entrada do título de cada slide e barra de progresso do carrossel da abertura. */
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes progresso {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
   }
 }

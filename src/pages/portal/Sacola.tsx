@@ -90,7 +90,7 @@ export function Sacola() {
             </div>
           </dl>
           {falta > 0 ? (
-            <p className="mt-4 font-mao text-xl leading-tight text-caramelo">Faltam {moeda(falta)} para a entrega sair por nossa conta.</p>
+            <p className="mt-4 font-mao text-[14px] leading-relaxed text-caramelo">Faltam {moeda(falta)} para a entrega sair por nossa conta.</p>
           ) : null}
           <div className="alinhavo mt-5 flex items-baseline justify-between pt-5">
             <span>Total</span>

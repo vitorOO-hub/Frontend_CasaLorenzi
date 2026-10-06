@@ -168,7 +168,7 @@ function DetalheProduto({ sku }: { sku: string }) {
 
           {adicionado ? (
             <div className="mt-4 flex items-center justify-between gap-4 bg-pergaminho px-4 py-3 text-sm">
-              <span className="font-mao text-xl text-caramelo">Separada para você.</span>
+              <span className="font-mao text-[14px] leading-relaxed text-caramelo">Separada para você.</span>
               <Link to="/sacola" className="link-tracejado">
                 Ver a sacola
               </Link>

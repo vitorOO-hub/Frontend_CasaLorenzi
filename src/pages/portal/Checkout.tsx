@@ -91,7 +91,7 @@ export function Checkout() {
             ? `Suas peças ficam prontas em dois dias úteis na casa ${casa.nome}. ${casas[casa.id]?.alfaiate.split(",")[0] ?? "O alfaiate"} faz o ajuste na hora da retirada.`
             : "Suas peças já estão sendo separadas no ateliê. Mandamos o código de rastreio assim que saírem."}
         </p>
-        <p className="mt-6 font-mao text-2xl text-caramelo">— com carinho, Casa Lorenzi</p>
+        <p className="mt-6 font-mao text-[14px] leading-relaxed text-caramelo">— com carinho, Casa Lorenzi</p>
         <Link to="/conta/pedidos" className={cn(botaoLoja(), "mt-10")}>
           Acompanhar o pedido
         </Link>

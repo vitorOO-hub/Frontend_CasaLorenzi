@@ -179,7 +179,7 @@ export function FichaTecnica({ produto, tamanho }: { produto: Produto; tamanho?:
           <span className="text-right">{v}</span>
         </div>
       ))}
-      <span className="mt-2 block font-mao text-2xl text-[#5b3d22]">— conferido no ateliê</span>
+      <span className="mt-2 block font-mao text-[14px] leading-relaxed text-[#5b3d22]">— conferido no ateliê</span>
     </div>
   );
 }

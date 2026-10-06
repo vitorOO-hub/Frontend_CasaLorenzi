@@ -43,7 +43,7 @@ export function Perfil() {
           {meusPedidos.length} {meusPedidos.length === 1 ? "pedido" : "pedidos"}, {moeda(meusPedidos.reduce((s, p) => s + p.valor, 0))} em peças e{" "}
           {chamados.filter((c) => c.clienteId === cliente.id).length} conversas com a casa.
         </p>
-        <p className="mt-5 font-mao text-2xl leading-tight text-caramelo">
+        <p className="mt-5 font-mao text-[14px] leading-relaxed text-caramelo">
           Suas medidas ficam guardadas com {casas[casaId]?.alfaiate.split(",")[0] ?? "o alfaiate"}, no {nomeLoja(casaId)}.
         </p>
       </aside>

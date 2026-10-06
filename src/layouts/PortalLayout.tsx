@@ -1,5 +1,5 @@
 import { Menu, Search, X } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { MenuUsuario } from "@/components/MenuUsuario";
 import { cn } from "@/components/ui";
@@ -34,7 +34,7 @@ export function Marca({ claro = false, grande = false, className }: { claro?: bo
 
 export function PortalLayout() {
   const sessao = useSessao();
-  const { carrinho } = useEstado();
+  const { carrinho, produtos } = useEstado();
   const navigate = useNavigate();
   const { pathname, search } = useLocation();
   // Menus guardam a rota em que foram abertos: ao navegar, fecham sozinhos.
@@ -42,10 +42,21 @@ export function PortalLayout() {
   const [menuEm, setMenuEm] = useState<string | null>(null);
   const [buscaEm, setBuscaEm] = useState<string | null>(null);
   const [termo, setTermo] = useState("");
+  const [rolou, setRolou] = useState(false);
   const menuAberto = menuEm === rota;
   const buscaAberta = buscaEm === rota;
   const itensSacola = carrinho.reduce((s, i) => s + i.quantidade, 0);
   const cliente = sessao?.tipo === "cliente" ? sessao : null;
+  const home = pathname === "/";
+  // Na home o cabeçalho fica transparente sobre o vídeo até a página rolar.
+  const transparente = home && !rolou && !buscaAberta;
+
+  useEffect(() => {
+    const aoRolar = () => setRolou(window.scrollY > 60);
+    aoRolar();
+    window.addEventListener("scroll", aoRolar, { passive: true });
+    return () => window.removeEventListener("scroll", aoRolar);
+  }, []);
 
   function buscar(e: FormEvent) {
     e.preventDefault();
@@ -53,128 +64,153 @@ export function PortalLayout() {
     setTermo("");
   }
 
+  const categorias = Array.from(new Set(produtos.map((p) => p.categoria))).sort();
+
   return (
     <div className="loja flex min-h-screen flex-col">
-      <div className="flex justify-between border-b border-dashed border-linha px-5 py-2.5 text-xs text-suave md:px-12">
-        <span>
-          <b className="font-medium text-tinta">
-            Edição {EDICAO.numero} · {EDICAO.nome}
-          </b>{" "}
-          — {EDICAO.temporada}
-        </span>
-        <span className="hidden sm:inline">Ibirapuera · Barra · Savassi · e aqui</span>
-      </div>
-
-      <header className="flex items-end justify-between gap-6 px-5 pb-5 pt-6 md:px-12">
-        <div className="flex items-end gap-4">
-          <button className="mb-1 lg:hidden" onClick={() => setMenuEm(rota)} aria-label="Abrir menu">
-            <Menu className="h-5 w-5" strokeWidth={1.5} />
-          </button>
-          <Link to="/" aria-label="Casa Lorenzi — início">
-            <Marca />
-          </Link>
+      <div
+        className={cn(
+          "inset-x-0 top-0 z-40 transition-colors duration-500",
+          home ? "fixed" : "sticky",
+          transparente ? "bg-transparent text-white" : "bg-creme text-tinta shadow-[0_1px_0_#ddd2c0]",
+        )}
+      >
+        <div className={cn("flex justify-center px-5 py-2 text-xs md:px-12", transparente ? "text-white/80" : "border-b border-dashed border-linha text-suave")}>
+          <span>
+            <b className={cn("font-medium", transparente ? "text-white" : "text-tinta")}>
+              Edição {EDICAO.numero} · {EDICAO.nome}
+            </b>{" "}
+            — frete por nossa conta acima de R$ 1.000 · ajustes sempre sem custo
+          </span>
         </div>
 
-        <nav className="flex items-center gap-5 text-sm lg:gap-8" aria-label="Principal">
-          {menu.map((m) => (
-            <NavLink
-              key={m.to}
-              to={m.to}
-              className={({ isActive }) =>
-                cn(
-                  "hidden border-b-[1.5px] pb-0.5 lg:inline",
-                  isActive ? "border-dashed border-caramelo" : "border-transparent hover:border-dashed hover:border-caramelo",
-                )
-              }
-            >
-              {m.rotulo}
-            </NavLink>
-          ))}
-          <button onClick={() => setBuscaEm(buscaAberta ? null : rota)} aria-label="Buscar" className="hover:text-caramelo">
-            <Search className="h-[18px] w-[18px]" strokeWidth={1.5} />
+        <header className="grid grid-cols-[1fr_auto_1fr] items-center px-5 py-4 md:px-12">
+          <button onClick={() => setMenuEm(rota)} className="flex items-center gap-3 justify-self-start text-sm hover:opacity-70" aria-label="Abrir menu">
+            <Menu className="h-5 w-5" strokeWidth={1.4} />
+            <span className="hidden md:inline">Menu</span>
           </button>
-          {cliente ? (
-            <MenuUsuario
-              compacto
-              nome={cliente.nome}
-              detalhe="Cliente Casa Lorenzi"
-              email={cliente.email}
-              onSair={() => {
-                sair();
-                navigate("/");
-              }}
-              itens={
-                <div className="py-1">
-                  {[
-                    ["/conta/pedidos", "Meus pedidos"],
-                    ["/conta/atendimento", "Conversas com a casa"],
-                    ["/conta/perfil", "Meus dados"],
-                  ].map(([to, rotulo]) => (
-                    <Link key={to} to={to!} className="block px-4 py-2 text-sm hover:bg-palha/60">
-                      {rotulo}
-                    </Link>
-                  ))}
-                </div>
-              }
-            />
-          ) : (
-            <Link to="/entrar" className="hidden hover:text-caramelo sm:inline">
-              Entrar
-            </Link>
-          )}
-          <Link to="/sacola" className="whitespace-nowrap hover:text-caramelo">
-            Sacola ({itensSacola})
-          </Link>
-          <Link
-            to="/agendar"
-            className="hidden border border-tinta px-4 py-2 transition-colors hover:bg-tinta hover:text-creme md:inline-block"
-          >
-            Agendar uma prova
-          </Link>
-        </nav>
-      </header>
 
-      {buscaAberta ? (
-        <form onSubmit={buscar} className="border-y border-dashed border-linha px-5 py-4 md:px-12">
-          <div className="mx-auto flex max-w-2xl items-center gap-3 border-b border-tinta pb-2">
-            <Search className="h-4 w-4 text-suave" />
-            <input
-              autoFocus
-              value={termo}
-              onChange={(e) => setTermo(e.target.value)}
-              placeholder="Peça, tecido ou cor — “linho”, “merino”, “Areia de Ipanema”"
-              className="flex-1 bg-transparent text-sm outline-none placeholder:text-suave"
-            />
-            <button type="submit" className="link-tracejado text-sm">
-              Buscar
+          <Link to="/" aria-label="Casa Lorenzi — início" className="text-center font-display text-[28px] leading-none md:text-[34px]">
+            Casa Lorenzi
+          </Link>
+
+          <nav className="flex items-center gap-5 justify-self-end text-sm md:gap-7" aria-label="Atalhos">
+            <button onClick={() => setBuscaEm(buscaAberta ? null : rota)} aria-label="Buscar" className="hover:opacity-70">
+              <Search className="h-[18px] w-[18px]" strokeWidth={1.4} />
             </button>
-          </div>
-        </form>
-      ) : null}
+            {cliente ? (
+              <MenuUsuario
+                compacto
+                nome={cliente.nome}
+                detalhe="Cliente Casa Lorenzi"
+                email={cliente.email}
+                onSair={() => {
+                  sair();
+                  navigate("/");
+                }}
+                itens={
+                  <div className="py-1 text-tinta">
+                    {[
+                      ["/conta/pedidos", "Meus pedidos"],
+                      ["/conta/atendimento", "Conversas com a casa"],
+                      ["/conta/perfil", "Meus dados"],
+                    ].map(([to, rotulo]) => (
+                      <Link key={to} to={to!} className="block px-4 py-2 text-sm hover:bg-palha/60">
+                        {rotulo}
+                      </Link>
+                    ))}
+                  </div>
+                }
+              />
+            ) : (
+              <Link to="/entrar" className="hidden hover:opacity-70 sm:inline">
+                Entrar
+              </Link>
+            )}
+            <Link to="/sacola" className="whitespace-nowrap hover:opacity-70">
+              Sacola ({itensSacola})
+            </Link>
+          </nav>
+        </header>
 
-      {menuAberto ? (
-        <div className="fixed inset-0 z-50 bg-tinta/40 lg:hidden" onClick={() => setMenuEm(null)}>
-          <div className="loja h-full w-80 max-w-[85%] p-6" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-10 flex items-start justify-between">
-              <Marca />
-              <button onClick={() => setMenuEm(null)} aria-label="Fechar menu">
-                <X className="h-5 w-5" />
+        {buscaAberta ? (
+          <form onSubmit={buscar} className="border-t border-dashed border-linha px-5 py-4 md:px-12">
+            <div className="mx-auto flex max-w-2xl items-center gap-3 border-b border-tinta pb-2">
+              <Search className="h-4 w-4 text-suave" />
+              <input
+                autoFocus
+                value={termo}
+                onChange={(e) => setTermo(e.target.value)}
+                placeholder="Peça, tecido ou cor — “linho”, “merino”, “Areia de Ipanema”"
+                className="flex-1 bg-transparent text-sm outline-none placeholder:text-suave"
+              />
+              <button type="submit" className="link-tracejado text-sm">
+                Buscar
               </button>
             </div>
-            <nav className="flex flex-col">
-              {[
-                ...menu,
-                { rotulo: "Agendar uma prova", to: "/agendar" },
-                { rotulo: cliente ? "Minha conta" : "Entrar", to: cliente ? "/conta/pedidos" : "/entrar" },
-              ].map((m) => (
-                <Link key={m.to} to={m.to} className="alinhavo py-4 font-display text-2xl">
-                  {m.rotulo}
+          </form>
+        ) : null}
+      </div>
+
+      {/* Menu vertical: abre na lateral, por cima da página */}
+      <div
+        className={cn("fixed inset-0 z-50 bg-tinta/40 transition-opacity duration-300", menuAberto ? "opacity-100" : "pointer-events-none opacity-0")}
+        onClick={() => setMenuEm(null)}
+        aria-hidden={!menuAberto}
+      >
+        <aside
+          className={cn(
+            "loja flex h-full w-[420px] max-w-[88%] flex-col overflow-y-auto px-8 pb-8 pt-6 transition-transform duration-500 ease-out",
+            menuAberto ? "translate-x-0" : "-translate-x-full",
+          )}
+          onClick={(e) => e.stopPropagation()}
+          aria-label="Menu"
+        >
+          <div className="mb-10 flex items-center justify-between">
+            <Marca />
+            <button onClick={() => setMenuEm(null)} aria-label="Fechar menu" className="self-start">
+              <X className="h-5 w-5" strokeWidth={1.4} />
+            </button>
+          </div>
+
+          <nav className="flex flex-col" aria-label="Principal">
+            <Link to="/loja" className="py-2 font-display text-[34px] leading-tight hover:text-caramelo">
+              Edição {EDICAO.numero} · {EDICAO.nome}
+            </Link>
+            <div className="mb-4 ml-0.5 mt-1 grid grid-cols-2 gap-x-4 gap-y-1.5 text-[15px] text-suave">
+              {categorias.map((c) => (
+                <Link key={c} to={`/loja?categoria=${c}`} className="hover:text-tinta">
+                  {c}
                 </Link>
               ))}
-            </nav>
+            </div>
+            {menu.slice(1).map((m) => (
+              <NavLink
+                key={m.to}
+                to={m.to}
+                className={({ isActive }) => cn("alinhavo py-3 font-display text-[30px] leading-tight hover:text-caramelo", isActive && "text-caramelo")}
+              >
+                {m.rotulo}
+              </NavLink>
+            ))}
+            <Link to="/agendar" className="alinhavo py-3 font-display text-[30px] leading-tight hover:text-caramelo">
+              Agendar uma prova
+            </Link>
+          </nav>
+
+          <div className="mt-auto space-y-2 pt-10 text-sm text-suave">
+            <Link to={cliente ? "/conta/pedidos" : "/entrar"} className="block hover:text-tinta">
+              {cliente ? `Minha conta · ${cliente.nome.split(" ")[0]}` : "Entrar na minha conta"}
+            </Link>
+            <Link to="/conta/atendimento" className="block hover:text-tinta">
+              Fale com a casa · WhatsApp (11) 99876-5432
+            </Link>
+            <Link to="/entrar?time=1" className="block text-xs text-suave/70 hover:text-tinta">
+              Área interna
+            </Link>
           </div>
-        </div>
-      ) : null}
+        </aside>
+      </div>
 
       <main className="flex-1">
         <Outlet />
@@ -198,7 +234,7 @@ function CartaMensal() {
           </span>
         </p>
         {inscrito ? (
-          <p className="font-mao text-2xl text-caramelo">Anotado. A primeira carta chega no começo do mês.</p>
+          <p className="font-mao text-[14px] leading-relaxed text-caramelo">Anotado. A primeira carta chega no começo do mês.</p>
         ) : (
           <form
             className="flex border-b-[1.5px] border-tinta"
