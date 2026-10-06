@@ -23,6 +23,9 @@ export const CORES = {
   giz: { nome: "Branco giz", hex: "#f4f1ea" },
   grafite: { nome: "Grafite", hex: "#4a4d52" },
   carvao: { nome: "Carvão", hex: "#1f1f1f" },
+  vinho: { nome: "Vinho", hex: "#5a1e24" },
+  champanhe: { nome: "Champanhe", hex: "#e6d9c2" },
+  castanha: { nome: "Castanha", hex: "#8b7563" },
 } satisfies Record<string, CorDaCasa>;
 
 type Detalhe = {
@@ -44,21 +47,21 @@ const D = (tecido: string, cores: CorDaCasa[], foto: string, tecelagem: string, 
 });
 
 export const detalhes: Record<string, Detalhe> = {
-  "CL-0101": D("em linho lavado", [CORES.giz, CORES.ceuMinas], "1603394151492-5e9b974b090b", "Linho irlandês", "Bom Retiro, SP", "Gola italiana que fica em pé sem gravata. Fica melhor a cada lavagem."),
-  "CL-0102": D("em oxford de algodão egípcio", [CORES.giz, CORES.ceuMinas], "1594168087746-d94175b42394", "Fio egípcio, tecido em Americana, SP", "Bom Retiro, SP", "A camisa de todo dia, com botão de madrepérola."),
-  "CL-0203": D("em lã fria, cintura alta", [CORES.areiaIpanema, CORES.noitePaulistana], "1590873802674-55bb8f947bc5", "Biella, Itália", "Bom Retiro, SP", "Pregas viradas para dentro e barra feita na hora, na loja."),
-  "CL-0204": D("em lã fria pied-de-poule", [CORES.cafe, CORES.noitePaulistana], "1608234808654-2a8875faa7fd", "Biella, Itália", "Bom Retiro, SP", "Ombro natural, dois botões e forro de cupro que respira."),
-  "CL-0305": D("em crepe de viscose", [CORES.tabaco, CORES.carvao], "1496747611176-843222e1e57c", "Crepe nacional, Blumenau, SC", "Ateliê da Barra, RJ", "Comprimento midi que ajustamos à sua altura sem custo."),
-  "CL-0306": D("em cetim de seda", [CORES.tabaco, CORES.carvao], "1790802222952-eb7e610de0d1", "Como, Itália", "Ateliê da Barra, RJ", "Alças reguláveis e viés cortado à mão."),
-  "CL-0407": D("em merino extrafino", [CORES.mate, CORES.areiaIpanema], "1519831296458-9341fc9d2b18", "Merino de 18,5 mícrons", "Malharia em Monte Sião, MG", "Fina o bastante para ir por baixo do blazer."),
-  "CL-0408": D("em lã merino canelada", [CORES.mate, CORES.areiaIpanema], "1641642231157-0849081598a2", "Merino de 19 mícrons", "Malharia em Monte Sião, MG", "Ponto canelado que não deforma no cotovelo."),
-  "CL-0509": D("em gabardine de algodão", [CORES.areiaIpanema, CORES.noitePaulistana], "1544246108-14b45872b02d", "Gabardine de algodão egípcio", "Bom Retiro, SP", "Cinto forrado e ombro que segura a garoa."),
-  "CL-0510": D("em couro de cordeiro", [CORES.cafe, CORES.carvao], "1700993443419-b6f067e734e4", "Curtume em Franca, SP", "Franca, SP", "Couro que amacia e escurece com o uso."),
-  "CL-0611": D("em crepe plissado", [CORES.carvao, CORES.grafite], "1533659828870-95ee305cee3e", "Crepe plissado permanente", "Ateliê da Barra, RJ", "As pregas não saem na lavagem."),
-  "CL-0712": D("em couro curtido ao vegetal", [CORES.caramelo, CORES.carvao], "1560891958-68bb1fe7fb78", "Curtume em Novo Hamburgo, RS", "Novo Hamburgo, RS", "Cabe um notebook de 13 polegadas e um guarda-chuva."),
-  "CL-0713": D("em couro de cinto de 3,5 cm", [CORES.caramelo, CORES.carvao], "1593030103066-0093718efeb9", "Curtume em Franca, SP", "Franca, SP", "Fivela de latão envelhecido, furos feitos na loja."),
-  "CL-0814": D("em couro de bezerro", [CORES.cafe, CORES.carvao], "1556004583-d2aaffbba592", "Curtume em Franca, SP", "Franca, SP", "Montado à mão, com sola de couro e salto de borracha."),
-  "CL-0815": D("em camurça", [CORES.cafe, CORES.carvao], "1617391258031-f8d80b22fb35", "Curtume em Franca, SP", "Franca, SP", "Elástico lateral e sola que aguenta calçada molhada."),
+  "CL-0101": D("em linho lavado", [CORES.giz, CORES.ceuMinas], "1630952323180-98ad9a192e46", "Linho irlandês", "Bom Retiro, SP", "Gola italiana que fica em pé sem gravata. Fica melhor a cada lavagem."),
+  "CL-0102": D("em oxford de algodão egípcio", [CORES.giz, CORES.ceuMinas], "1781145822880-ab30339ac274", "Fio egípcio, tecido em Americana, SP", "Bom Retiro, SP", "A camisa de todo dia, com botão de madrepérola."),
+  "CL-0203": D("em lã fria, cintura alta", [CORES.areiaIpanema, CORES.noitePaulistana], "1517445312882-bc9910d016b7", "Biella, Itália", "Bom Retiro, SP", "Pregas viradas para dentro e barra feita na hora, na loja."),
+  "CL-0204": D("em lã fria pied-de-poule", [CORES.cafe, CORES.noitePaulistana], "1767609127923-14192f306af8", "Biella, Itália", "Bom Retiro, SP", "Ombro natural, dois botões e forro de cupro que respira."),
+  "CL-0305": D("em crepe de viscose", [CORES.vinho, CORES.carvao], "1770235622504-3851a96ac6ef", "Crepe nacional, Blumenau, SC", "Ateliê da Barra, RJ", "Comprimento midi que ajustamos à sua altura sem custo."),
+  "CL-0306": D("em cetim de seda", [CORES.champanhe, CORES.carvao], "1613415873569-02bfdd371106", "Como, Itália", "Ateliê da Barra, RJ", "Alças reguláveis e viés cortado à mão."),
+  "CL-0407": D("em merino extrafino", [CORES.areiaIpanema, CORES.mate], "1687275152975-52df19f931d0", "Merino de 18,5 mícrons", "Malharia em Monte Sião, MG", "Fina o bastante para ir por baixo do blazer."),
+  "CL-0408": D("em lã merino canelada", [CORES.vinho, CORES.mate], "1608984361471-ff566593088f", "Merino de 19 mícrons", "Malharia em Monte Sião, MG", "Ponto canelado que não deforma no cotovelo."),
+  "CL-0509": D("em gabardine de algodão", [CORES.areiaIpanema, CORES.noitePaulistana], "1633821879282-0c4e91f96232", "Gabardine de algodão egípcio", "Bom Retiro, SP", "Cinto forrado e ombro que segura a garoa."),
+  "CL-0510": D("em couro de cordeiro", [CORES.cafe, CORES.carvao], "1700993443774-306a87b16ae1", "Curtume em Franca, SP", "Franca, SP", "Couro que amacia e escurece com o uso."),
+  "CL-0611": D("em crepe plissado", [CORES.castanha, CORES.carvao], "1573638687899-e2758e4a373f", "Crepe plissado permanente", "Ateliê da Barra, RJ", "As pregas não saem na lavagem."),
+  "CL-0712": D("em couro curtido ao vegetal", [CORES.vinho, CORES.carvao], "1649544284889-2c30c3267013", "Curtume em Novo Hamburgo, RS", "Novo Hamburgo, RS", "Cabe um notebook de 13 polegadas e um guarda-chuva."),
+  "CL-0713": D("em couro de cinto de 3,5 cm", [CORES.tabaco, CORES.carvao], "1776843370483-4f793bc14739", "Curtume em Franca, SP", "Franca, SP", "Fivela de latão envelhecido, furos feitos na loja."),
+  "CL-0814": D("em couro de bezerro", [CORES.cafe, CORES.carvao], "1616243344308-04fb7e776cfe", "Curtume em Franca, SP", "Franca, SP", "Montado à mão, com sola de couro e salto de borracha."),
+  "CL-0815": D("em camurça", [CORES.cafe, CORES.carvao], "1777987601423-f350ac29b3e9", "Curtume em Franca, SP", "Franca, SP", "Elástico lateral e sola que aguenta calçada molhada."),
 };
 
 const padrao: Detalhe = D("", [CORES.noitePaulistana], "", "—", "Bom Retiro, SP", "Peça nova no catálogo.");

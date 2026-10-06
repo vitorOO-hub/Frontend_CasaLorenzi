@@ -103,23 +103,30 @@ export function CartaoProduto({
   const vestida = fotoVestida(produto.sku, grande ? 1400 : 800);
   return (
     <Link to={`/loja/${produto.sku}`} className={cn("group block", grande && "lg:row-span-2")}>
-      <Foto
-        src={vestida ?? fotoEstudio(produto.sku)}
-        alt={produto.nome}
-        className={cn("aspect-[3/4]", grande && "lg:aspect-auto lg:h-[calc(100%-132px)] lg:min-h-[620px]")}
-      >
+      {/* Como num catálogo: a peça sozinha em fundo liso; ao passar o mouse, a peça vestida. */}
+      <div className={cn("relative aspect-[4/5] overflow-hidden bg-areia", grande && "lg:aspect-auto lg:h-[calc(100%-132px)] lg:min-h-[620px]")}>
+        {/* No cartão grande do catálogo a ordem se inverte: primeiro a foto vestida. */}
+        <img
+          src={grande && vestida ? vestida : fotoEstudio(produto.sku)}
+          alt={produto.nome}
+          loading="lazy"
+          className={cn("h-full w-full", grande && vestida ? "object-cover" : "object-contain")}
+        />
         {vestida ? (
           <img
-            src={fotoEstudio(produto.sku)}
+            src={grande ? fotoEstudio(produto.sku) : vestida}
             alt=""
             loading="lazy"
-            className="absolute inset-0 z-[1] h-full w-full bg-areia object-contain p-6 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+            className={cn(
+              "absolute inset-0 z-[1] h-full w-full bg-areia opacity-0 transition-opacity duration-500 group-hover:opacity-100",
+              grande ? "object-contain" : "object-cover",
+            )}
           />
         ) : null}
         {esgotado ? (
           <span className="absolute left-3 top-3 z-[2] bg-creme px-2.5 py-1 text-xs text-suave">Esgotado — volta na próxima edição</span>
         ) : null}
-      </Foto>
+      </div>
       <h3 className="mt-4 text-[21px]">
         <NomePeca produto={produto} />
       </h3>

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { cn } from "@/components/ui";
 import { Foto, botaoLoja } from "@/components/vitrine";
 import { moeda } from "@/lib/dados";
-import { detalheDe, fotoEstudio, fotoVestida } from "@/lib/loja";
+import { detalheDe, fotoEstudio } from "@/lib/loja";
 import { alterarQuantidadeCarrinho, useEstado } from "@/lib/store";
 
 export const FRETE_GRATIS_A_PARTIR = 1000;
@@ -39,7 +39,7 @@ export function Sacola() {
             return (
               <li key={i.sku} className="alinhavo flex gap-5 py-6">
                 <Link to={`/loja/${i.skuBase}`} className="w-24 shrink-0 md:w-32">
-                  <Foto src={fotoVestida(i.skuBase, 400) ?? fotoEstudio(i.skuBase)} alt={i.nome} className="aspect-[3/4]" />
+                  <Foto src={fotoEstudio(i.skuBase)} alt={i.nome} className="aspect-[4/5]" />
                 </Link>
                 <div className="flex flex-1 flex-col">
                   <div className="flex justify-between gap-4">

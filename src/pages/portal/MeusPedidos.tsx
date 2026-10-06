@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Foto } from "@/components/vitrine";
 import { dataBR, moeda, nomeLoja, type StatusPedido } from "@/lib/dados";
-import { fotoEstudio, fotoVestida } from "@/lib/loja";
+import { fotoEstudio } from "@/lib/loja";
 import { useClienteId } from "@/lib/sessao";
 import { useEstado } from "@/lib/store";
 
@@ -62,7 +62,7 @@ export function MeusPedidos() {
           <ul className="mt-6 flex flex-wrap gap-6">
             {p.itens.map((i) => (
               <li key={i.sku} className="flex items-center gap-3 text-sm">
-                <Foto src={fotoVestida(i.sku, 200) ?? fotoEstudio(i.sku)} className="aspect-[3/4] w-14" />
+                <Foto src={fotoEstudio(i.sku)} className="aspect-[4/5] w-14" />
                 <span>
                   <span className="font-display text-[17px]">{i.nome}</span>
                   <span className="block text-xs text-suave">

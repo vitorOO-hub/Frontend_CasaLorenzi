@@ -69,16 +69,18 @@ function DetalheProduto({ sku }: { sku: string }) {
       </nav>
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-12 lg:grid-cols-[1.2fr_1fr] lg:gap-20">
-        {/* Fotos: vestida, estúdio e detalhe */}
+        {/* Fotos: a peça sozinha, a peça vestida e um detalhe */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="col-span-2">
-            <Foto src={vestida ?? fotoEstudio(produto.sku)} alt={produto.nome} className="aspect-[4/5]" />
+          <div className="col-span-2 aspect-[4/5] overflow-hidden bg-areia">
+            <img src={fotoEstudio(produto.sku)} alt={produto.nome} className="h-full w-full object-contain" />
           </div>
-          <div className="aspect-square overflow-hidden bg-areia">
-            <img src={fotoEstudio(produto.sku)} alt="" className="h-full w-full object-contain p-5" />
-          </div>
-          <Foto src={vestida ?? fotoEstudio(produto.sku)} className="aspect-square [&_img]:scale-[1.9] [&_img]:object-[center_35%]" />
-          <Legenda className="col-span-2">Foto da campanha da edição; ao lado, a peça no ateliê e um detalhe do tecido.</Legenda>
+          {vestida ? (
+            <>
+              <Foto src={vestida} alt={`${produto.nome} vestida`} className="aspect-[4/5]" />
+              <Foto src={vestida} className="aspect-[4/5] [&_img]:scale-[1.9] [&_img]:object-[center_40%]" />
+              <Legenda className="col-span-2">A peça no fundo neutro, vestida e de perto.</Legenda>
+            </>
+          ) : null}
         </div>
 
         <div className="lg:sticky lg:top-24 lg:self-start">

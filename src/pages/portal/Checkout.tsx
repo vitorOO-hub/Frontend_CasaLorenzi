@@ -4,7 +4,7 @@ import { Link, Navigate } from "react-router-dom";
 import { cn } from "@/components/ui";
 import { Foto, botaoLoja } from "@/components/vitrine";
 import { lojas, moeda } from "@/lib/dados";
-import { casas, fotoEstudio, fotoVestida } from "@/lib/loja";
+import { casas, fotoEstudio } from "@/lib/loja";
 import { useSessao } from "@/lib/sessao";
 import { finalizarCompra, useEstado } from "@/lib/store";
 import { freteDe } from "./Sacola";
@@ -210,7 +210,7 @@ export function Checkout() {
           <ul className="mt-5 space-y-4">
             {carrinho.map((i) => (
               <li key={i.sku} className="flex gap-3 text-sm">
-                <Foto src={fotoVestida(i.skuBase, 200) ?? fotoEstudio(i.skuBase)} className="aspect-[3/4] w-14 shrink-0" />
+                <Foto src={fotoEstudio(i.skuBase)} className="aspect-[4/5] w-14 shrink-0" />
                 <div className="flex-1">
                   <p className="font-display text-[17px] leading-tight">{i.nome}</p>
                   <p className="text-xs text-suave">
