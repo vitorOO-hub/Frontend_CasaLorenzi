@@ -1,9 +1,9 @@
 import { Menu, Plus, Search, ShoppingBag, X } from "lucide-react";
-import { SeletorFontes } from "@/components/SeletorFontes";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { SeletorFontes } from "@/components/SeletorFontes";
 import { cn } from "@/components/ui";
-import { EDICAO } from "@/lib/loja";
+import { CAMPANHA, EDICAO, unsplash } from "@/lib/loja";
 import { sair, useSessao } from "@/lib/sessao";
 import { useEstado } from "@/lib/store";
 
@@ -25,6 +25,8 @@ export function Marca({ claro = false, grande = false, className }: { claro?: bo
   );
 }
 
+type SecaoMenu = { id: string; rotulo: string; to: string; itens: [string, string][]; destaque: { foto: string; legenda: string; to: string } };
+
 export function PortalLayout() {
   const sessao = useSessao();
   const { carrinho, produtos } = useEstado();
@@ -34,15 +36,17 @@ export function PortalLayout() {
   const rota = `${pathname}${search}`;
   const [menuEm, setMenuEm] = useState<string | null>(null);
   const [buscaEm, setBuscaEm] = useState<string | null>(null);
+  const [painel, setPainel] = useState<{ id: string; rota: string } | null>(null);
   const [termo, setTermo] = useState("");
   const [rolou, setRolou] = useState(false);
   const menuAberto = menuEm === rota;
   const buscaAberta = buscaEm === rota;
+  const painelAberto = painel?.rota === rota ? painel.id : null;
   const itensSacola = carrinho.reduce((s, i) => s + i.quantidade, 0);
   const cliente = sessao?.tipo === "cliente" ? sessao : null;
   const home = pathname === "/";
-  // Na home o cabeçalho fica transparente sobre o vídeo até a página rolar.
-  const transparente = home && !rolou && !buscaAberta;
+  // Na home o cabeçalho fica transparente sobre a abertura até a página rolar.
+  const transparente = home && !rolou && !buscaAberta && !painelAberto;
 
   useEffect(() => {
     const aoRolar = () => setRolou(window.scrollY > 60);
@@ -58,118 +62,152 @@ export function PortalLayout() {
   }
 
   const categorias = Array.from(new Set(produtos.map((p) => p.categoria))).sort();
-  const secoesMenu: { id: string; rotulo: string; itens: [string, string][] }[] = [
-    { id: "destaques", rotulo: "Destaques", itens: [[`Edição ${EDICAO.numero} · ${EDICAO.nome}`, "/loja"], ["Novidades", "/loja"], ["Casacos da estação", "/loja?categoria=Outerwear"], ["Últimas peças", "/loja?ordem=maior"]] },
-    { id: "pronta", rotulo: "Pronta-entrega", itens: [["Ver tudo", "/loja"], ...categorias.map((c): [string, string] => [c, `/loja?categoria=${c}`])] },
-    { id: "sob", rotulo: "Sob medida", itens: [["Como funciona", "/sob-medida"], ["Tecidos da estação", "/sob-medida"], ["Agendar uma conversa", "/agendar?tipo=sob-medida"]] },
-    { id: "casa", rotulo: "A casa", itens: [["Caderno do Ateliê", "/caderno"], ["As três casas", "/casas"], ["1962: a primeira tesoura", "/caderno/1962"]] },
+  const secoesMenu: SecaoMenu[] = [
+    {
+      id: "destaques",
+      rotulo: "Destaques",
+      to: "/loja",
+      itens: [[`Edição ${EDICAO.numero} · ${EDICAO.nome}`, "/loja"], ["Novidades", "/loja"], ["Casacos da estação", "/loja?categoria=Outerwear"], ["Últimas peças", "/loja?ordem=maior"]],
+      destaque: { foto: unsplash(CAMPANHA.edicaoGrande, 700), legenda: `Edição ${EDICAO.numero} · ${EDICAO.nome}`, to: "/loja" },
+    },
+    {
+      id: "pronta",
+      rotulo: "Pronta-entrega",
+      to: "/loja",
+      itens: [["Ver tudo", "/loja"], ...categorias.map((c): [string, string] => [c, `/loja?categoria=${c}`])],
+      destaque: { foto: unsplash(CAMPANHA.prontaEntrega, 700), legenda: "Casacos da estação", to: "/loja?categoria=Outerwear" },
+    },
+    {
+      id: "sob",
+      rotulo: "Sob medida",
+      to: "/sob-medida",
+      itens: [["Como funciona", "/sob-medida"], ["Tecidos da estação", "/sob-medida"], ["Agendar uma conversa", "/agendar?tipo=sob-medida"]],
+      destaque: { foto: unsplash(CAMPANHA.sobMedida, 700), legenda: "Três provas, ajustes para sempre", to: "/sob-medida" },
+    },
+    {
+      id: "casa",
+      rotulo: "A casa",
+      to: "/caderno",
+      itens: [["Caderno do Ateliê", "/caderno"], ["As três casas", "/casas"], ["1962: a primeira tesoura", "/caderno/1962"]],
+      destaque: { foto: unsplash(CAMPANHA.prova1, 700), legenda: "Caderno do Ateliê", to: "/caderno" },
+    },
   ];
 
   const secaoDaRota = secoesMenu.find((m) => m.itens.some(([, to]) => to.split("?")[0] === pathname && pathname !== "/loja"))?.id ?? (pathname === "/loja" ? "pronta" : null);
+  const secaoPainel = secoesMenu.find((m) => m.id === painelAberto);
   const contaLink = cliente ? "/conta/pedidos" : "/entrar";
+  const abrir = (id: string) => setPainel({ id, rota });
 
   return (
-    <div className="loja min-h-screen lg:pl-[248px]">
-      {/* Menu vertical fixo (desktop): marca, navegação em acordeão e atalhos */}
-      <aside
-        className="fixed inset-y-0 left-0 z-40 hidden w-[248px] flex-col border-r border-dashed border-linha bg-creme px-7 pb-7 pt-8 [font-family:var(--font-menu)] lg:flex"
-        aria-label="Menu"
-      >
-        <Link to="/" aria-label="Casa Lorenzi — início" className="[font-family:var(--font-display)]">
-          <span className="block text-[30px] leading-[0.92] text-marinho">
-            Casa
-            <br />
-            Lorenzi
-          </span>
-          <small className="mt-2 block font-sans text-[11px] tracking-wide text-suave">Alfaiates desde 1962</small>
-        </Link>
-
-        <form onSubmit={buscar} className="mt-8 flex items-center gap-2 border-b border-linha pb-1.5 focus-within:border-tinta">
-          <Search className="h-3.5 w-3.5 shrink-0 text-suave" strokeWidth={1.5} />
-          <input
-            value={termo}
-            onChange={(e) => setTermo(e.target.value)}
-            placeholder="BUSCAR"
-            aria-label="Buscar"
-            className="w-full bg-transparent text-[12px] uppercase tracking-[0.14em] outline-none placeholder:text-suave"
-          />
-        </form>
-
-        <div className="-mr-3 mt-7 flex-1 overflow-y-auto pr-3">
-          <NavegacaoVertical secoes={secoesMenu} inicial={secaoDaRota} pathname={pathname} search={search} />
-        </div>
-
-        <div className="mt-6 flex flex-col gap-0.5 border-t border-dashed border-linha pt-5 text-[12px] uppercase tracking-[0.14em]">
-          <Link to="/sacola" className="flex justify-between py-1.5 hover:text-terracota">
-            Sacola <span>{itensSacola}</span>
-          </Link>
-          <Link to={contaLink} className="py-1.5 hover:text-terracota">
-            {cliente ? `Conta · ${cliente.nome.split(" ")[0]}` : "Entrar"}
-          </Link>
-          {cliente ? (
-            <button
-              onClick={() => {
-                sair();
-                navigate("/");
-              }}
-              className="py-1.5 text-left text-suave hover:text-terracota"
-            >
-              Sair
-            </button>
-          ) : null}
-          <Link to="/agendar" className="py-1.5 hover:text-terracota">
-            Agendar uma prova
-          </Link>
-          <Link to="/entrar?time=1" className="py-1.5 text-[11px] text-suave hover:text-tinta">
-            Área interna
-          </Link>
-        </div>
-        <p className="mt-4 font-sans text-[11px] leading-snug text-suave">
-          <b className="font-medium text-tinta">
-            Edição {EDICAO.numero} · {EDICAO.nome}
-          </b>
-          <br />
-          Frete por nossa conta acima de R$ 1.000.
-        </p>
-      </aside>
-
-      {/* Celular e tablet: barra no topo + o mesmo menu vertical em gaveta */}
+    <div className="loja min-h-screen">
       <div
         className={cn(
-          "inset-x-0 top-0 z-40 transition-colors duration-500 lg:hidden",
+          "inset-x-0 top-0 z-40 transition-colors duration-300 [font-family:var(--font-menu)]",
           home ? "fixed" : "sticky",
-          transparente ? "bg-transparent text-white" : "bg-creme text-tinta shadow-[0_1px_0_#dfd9cf]",
+          transparente ? "bg-transparent text-white" : "border-b border-linha bg-creme text-tinta",
         )}
+        onMouseLeave={() => setPainel(null)}
+        onKeyDown={(e) => e.key === "Escape" && setPainel(null)}
       >
-        <header className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-4 md:px-8">
-          <button onClick={() => setMenuEm(rota)} className="flex items-center gap-3 justify-self-start text-sm hover:opacity-70" aria-label="Abrir menu">
+        <header className="mx-auto flex h-16 max-w-[1600px] items-center gap-8 px-4 md:px-8 xl:gap-12">
+          <button onClick={() => setMenuEm(rota)} className="hover:opacity-70 lg:hidden" aria-label="Abrir menu">
             <Menu className="h-5 w-5" strokeWidth={1.4} />
           </button>
-          <Link to="/" aria-label="Casa Lorenzi — início" className="whitespace-nowrap text-center font-display text-[24px] leading-none sm:text-[28px]">
+          <Link to="/" aria-label="Casa Lorenzi — início" onMouseEnter={() => setPainel(null)} className="whitespace-nowrap font-display text-[24px] leading-none">
             Casa Lorenzi
           </Link>
-          <nav className="flex items-center gap-4 justify-self-end text-sm" aria-label="Atalhos">
-            <button onClick={() => setBuscaEm(buscaAberta ? null : rota)} aria-label="Buscar" className="hover:opacity-70">
-              <Search className="h-[18px] w-[18px]" strokeWidth={1.4} />
+
+          <nav className="hidden h-full items-stretch gap-7 lg:flex" aria-label="Principal">
+            {secoesMenu.map((m) => {
+              const marcada = painelAberto ? painelAberto === m.id : secaoDaRota === m.id;
+              return (
+                <Link
+                  key={m.id}
+                  to={m.to}
+                  onMouseEnter={() => abrir(m.id)}
+                  onFocus={() => abrir(m.id)}
+                  aria-expanded={painelAberto === m.id}
+                  className={cn(
+                    "flex items-center border-b-2 pt-0.5 text-[13px] font-medium uppercase tracking-[0.12em]",
+                    marcada ? "border-current" : "border-transparent hover:border-current",
+                  )}
+                >
+                  {m.rotulo}
+                </Link>
+              );
+            })}
+          </nav>
+
+          <nav className="ml-auto flex items-center gap-5 text-[12px] font-medium uppercase tracking-[0.12em]" aria-label="Atalhos" onMouseEnter={() => setPainel(null)}>
+            <button onClick={() => setBuscaEm(buscaAberta ? null : rota)} aria-label="Buscar" className="flex items-center gap-2 uppercase hover:opacity-70">
+              <Search className="h-[17px] w-[17px]" strokeWidth={1.5} />
+              <span className="hidden md:inline">Buscar</span>
             </button>
-            <Link to="/sacola" className="flex items-center gap-1 whitespace-nowrap hover:opacity-70" aria-label={`Sacola com ${itensSacola} peças`}>
-              <ShoppingBag className="h-[18px] w-[18px]" strokeWidth={1.4} /> {itensSacola}
+            <Link to={contaLink} className="hidden hover:opacity-70 md:inline">
+              {cliente ? cliente.nome.split(" ")[0] : "Entrar"}
+            </Link>
+            {cliente ? (
+              <button
+                onClick={() => {
+                  sair();
+                  navigate("/");
+                }}
+                className="hidden uppercase hover:opacity-70 xl:inline"
+              >
+                Sair
+              </button>
+            ) : null}
+            <Link to="/sacola" className="flex items-center gap-1.5 hover:opacity-70" aria-label={`Sacola com ${itensSacola} peças`}>
+              <ShoppingBag className="h-[17px] w-[17px] md:hidden" strokeWidth={1.5} />
+              <span className="hidden md:inline">Sacola</span> ({itensSacola})
             </Link>
           </nav>
         </header>
 
+        {/* Painel do menu: abre ao passar o mouse, ocupa a largura toda */}
+        {secaoPainel ? (
+          <div className="absolute inset-x-0 top-full hidden border-y border-linha bg-creme text-tinta lg:block">
+            <div className="mx-auto grid max-w-[1600px] grid-cols-[1fr_300px] gap-12 px-8 py-10">
+              <div>
+                <p className="mb-5 text-[11px] uppercase tracking-[0.16em] text-suave">{secaoPainel.rotulo}</p>
+                <ul className="grid max-w-3xl grid-flow-col grid-rows-5 gap-x-12 gap-y-2.5">
+                  {secaoPainel.itens.map(([rotulo, to]) => (
+                    <li key={rotulo}>
+                      <Link to={to} className={cn("text-[15px] [font-family:var(--font-sans)] hover:text-terracota", rota === to && "text-terracota")}>
+                        {rotulo}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-8 flex gap-6 text-[11px] uppercase tracking-[0.16em] text-suave">
+                  <Link to="/agendar" className="hover:text-tinta">
+                    Agendar uma prova
+                  </Link>
+                  <span>Frete por nossa conta acima de R$ 1.000</span>
+                </div>
+              </div>
+              <Link to={secaoPainel.destaque.to} className="group block">
+                <span className="foto-grao block aspect-[4/3]">
+                  <img src={secaoPainel.destaque.foto} alt="" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]" />
+                </span>
+                <span className="mt-2.5 block text-[12px] uppercase tracking-[0.14em]">{secaoPainel.destaque.legenda}</span>
+              </Link>
+            </div>
+          </div>
+        ) : null}
+
         {buscaAberta ? (
-          <form onSubmit={buscar} className="border-t border-dashed border-linha bg-creme px-5 py-4 text-tinta">
-            <div className="flex items-center gap-3 border-b border-tinta pb-2">
+          <form onSubmit={buscar} className="border-t border-linha bg-creme px-4 py-4 text-tinta md:px-8">
+            <div className="mx-auto flex max-w-[1600px] items-center gap-3 border-b border-tinta pb-2">
               <Search className="h-4 w-4 text-suave" />
               <input
                 autoFocus
                 value={termo}
                 onChange={(e) => setTermo(e.target.value)}
                 placeholder="Peça, tecido ou cor"
-                className="flex-1 bg-transparent text-sm outline-none placeholder:text-suave"
+                className="flex-1 bg-transparent text-sm outline-none [font-family:var(--font-sans)] placeholder:text-suave"
               />
-              <button type="submit" className="link-tracejado text-sm">
+              <button type="submit" className="text-[12px] font-medium uppercase tracking-[0.12em]">
                 Buscar
               </button>
             </div>
@@ -177,6 +215,7 @@ export function PortalLayout() {
         ) : null}
       </div>
 
+      {/* Celular e tablet: o mesmo menu em gaveta lateral */}
       <div
         className={cn("fixed inset-0 z-50 bg-tinta/30 transition-opacity duration-300 lg:hidden", menuAberto ? "opacity-100" : "pointer-events-none opacity-0")}
         onClick={() => setMenuEm(null)}
@@ -219,9 +258,7 @@ export function PortalLayout() {
   );
 }
 
-type SecaoMenu = { id: string; rotulo: string; itens: [string, string][] };
-
-/** Navegação em coluna: cada seção abre logo abaixo (acordeão), sem sair da lista. */
+/** Navegação em coluna (gaveta do celular): cada seção abre logo abaixo, em acordeão. */
 function NavegacaoVertical({ secoes, inicial, pathname, search }: { secoes: SecaoMenu[]; inicial: string | null; pathname: string; search: string }) {
   const [aberta, setAberta] = useState<string | null>(inicial);
   const atual = `${pathname}${search}`;

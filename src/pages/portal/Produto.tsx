@@ -68,7 +68,7 @@ function DetalheProduto({ sku }: { sku: string }) {
         </Link>
       </nav>
 
-      <div className="grid gap-12 lg:grid-cols-[1.2fr_1fr] lg:gap-20">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-12 lg:grid-cols-[1.2fr_1fr] lg:gap-20">
         {/* Fotos: vestida, estúdio e detalhe */}
         <div className="grid grid-cols-2 gap-3">
           <div className="col-span-2">
@@ -81,7 +81,7 @@ function DetalheProduto({ sku }: { sku: string }) {
           <Legenda className="col-span-2">Foto da campanha da edição; ao lado, a peça no ateliê e um detalhe do tecido.</Legenda>
         </div>
 
-        <div className="lg:sticky lg:top-8 lg:self-start">
+        <div className="lg:sticky lg:top-24 lg:self-start">
           <h1 className="text-[40px] leading-[1.05] md:text-[48px]">
             <NomePeca produto={produto} />
           </h1>
@@ -107,7 +107,7 @@ function DetalheProduto({ sku }: { sku: string }) {
                     cor.nome === c.nome ? "border-dashed border-tinta" : "border-transparent hover:border-linha",
                   )}
                 >
-                  <span className="block h-full w-full rounded-full border border-black/10" style={{ background: c.hex }} />
+                  <span className="block h-full w-full rounded-full border border-tinta/15" style={{ background: c.hex }} />
                 </button>
               ))}
             </div>

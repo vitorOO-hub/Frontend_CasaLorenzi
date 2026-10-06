@@ -72,7 +72,7 @@ export function Checkout() {
   useEffect(() => {
     if (pagamento !== "pix") return;
     let ativo = true;
-    void QRCode.toDataURL(codigoPix, { margin: 1, width: 320, color: { dark: "#16203a", light: "#fbf8f2" } }).then(
+    void QRCode.toDataURL(codigoPix, { margin: 1, width: 320, color: { dark: "#16203a", light: "#faf8f4" } }).then(
       (url) => ativo && setQrPix(url),
     );
     return () => {
@@ -205,7 +205,7 @@ export function Checkout() {
           </Etapa>
         </div>
 
-        <aside className="costurado h-fit bg-pergaminho p-8 lg:sticky lg:top-8">
+        <aside className="costurado h-fit bg-pergaminho p-8 lg:sticky lg:top-24">
           <h2 className="text-[28px]">Suas peças</h2>
           <ul className="mt-5 space-y-4">
             {carrinho.map((i) => (
