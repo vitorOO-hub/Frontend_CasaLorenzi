@@ -121,7 +121,7 @@ export function Saldo() {
                         const s = p.saldos.find((x) => x.lojaId === l.id);
                         const baixo = s && s.quantidade <= s.minimo;
                         return (
-                          <td key={l.id} className={cn(td, "text-right tabular-nums", baixo && "text-alerta", s?.quantidade === 0 && "text-perigo")}>
+                          <td key={l.id} className={cn(td, "text-right tabular-nums", baixo && "font-semibold text-alerta", s?.quantidade === 0 && "font-semibold text-perigo")}>
                             {s?.quantidade ?? 0}
                           </td>
                         );

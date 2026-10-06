@@ -51,7 +51,7 @@ export function Etiqueta({ children, className }: { children: ReactNode; classNa
       className={cn(
         "relative inline-flex items-center gap-2 whitespace-nowrap bg-etiqueta py-1.5 pl-7 pr-3.5 text-[13px] font-medium text-tinta",
         "[clip-path:polygon(11px_0,100%_0,100%_100%,11px_100%,0_50%)]",
-        "before:absolute before:left-[9px] before:top-1/2 before:h-1.5 before:w-1.5 before:-translate-y-1/2 before:rounded-full before:bg-creme before:shadow-[inset_0_0_0_1px_#c9a28c]",
+        "before:absolute before:left-[9px] before:top-1/2 before:h-1.5 before:w-1.5 before:-translate-y-1/2 before:rounded-full before:bg-creme before:shadow-[inset_0_0_0_1px_var(--color-ouro-claro)]",
         className,
       )}
     >
@@ -170,7 +170,7 @@ export function FichaTecnica({ produto, tamanho }: { produto: Produto; tamanho?:
     ["Ajuste", "na loja, sem custo"],
   ];
   return (
-    <div className="relative rotate-[-1deg] bg-etiqueta px-8 py-7 font-mono text-[13px] leading-[1.85] text-tinta shadow-[0_14px_30px_#16203a26] before:pointer-events-none before:absolute before:inset-[9px] before:border-[1.5px] before:border-dashed before:border-[#b39470]">
+    <div className="relative rotate-[-1deg] bg-etiqueta px-8 py-7 font-mono text-[13px] leading-[1.85] text-tinta shadow-[0_14px_30px_#16203a26] before:pointer-events-none before:absolute before:inset-[9px] before:border-[1.5px] before:border-dashed before:border-camelo/60">
       <b className="tracking-wider">CASA LORENZI · DESDE 1962</b>
       {linhas.map(([k, v]) => (
         <div key={k} className="flex gap-2">

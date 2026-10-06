@@ -43,11 +43,12 @@
   --font-mao: "IBM Plex Mono", ui-monospace, Menlo, monospace;
   --font-menu: "Archivo Narrow", "Helvetica Neue", Arial, sans-serif;
 
-  --color-sucesso: #3f6b4f;
-  --color-alerta: #94661c;
-  --color-perigo: #9b2c2c;
+  /* Estados também saem da paleta: ok = azul-aço, alerta = terracota, perigo = ferrugem. */
+  --color-sucesso: #4a7ba0;
+  --color-alerta: #b46746;
+  --color-perigo: #99533a;
 
-  --shadow-suave: 0 1px 2px rgb(28 35 51 / 0.05), 0 12px 32px rgb(28 35 51 / 0.08);
+  --shadow-suave: 0 1px 2px rgb(22 32 58 / 0.05), 0 12px 32px rgb(22 32 58 / 0.08);
 }
 
 @layer base {
@@ -127,7 +128,7 @@
   .foto-grao {
     position: relative;
     overflow: hidden;
-    background: #d9d4cc;
+    background: var(--color-areia-forte);
   }
   .foto-grao img {
     filter: sepia(0.06) saturate(0.85) contrast(1.03);

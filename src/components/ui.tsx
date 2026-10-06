@@ -10,9 +10,10 @@ export type Tom = "neutro" | "ok" | "alerta" | "perigo" | "destaque";
 
 const tons: Record<Tom, string> = {
   neutro: "bg-areia text-suave",
-  ok: "bg-sucesso/10 text-sucesso",
-  alerta: "bg-alerta/10 text-alerta",
-  perigo: "bg-perigo/10 text-perigo",
+  // Terracota e azul-aço ficam fracos em letra miúda: a cor vai no ponto e no fundo, o texto fica escuro.
+  ok: "bg-sucesso/10 text-tinta before:bg-sucesso",
+  alerta: "bg-alerta/12 text-tinta before:bg-alerta",
+  perigo: "bg-perigo/10 text-perigo before:bg-perigo",
   destaque: "bg-marinho-claro text-marinho",
 };
 
@@ -21,6 +22,7 @@ export function Badge({ tom = "neutro", children }: { tom?: Tom; children: React
     <span
       className={cn(
         "inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+        tom !== "neutro" && tom !== "destaque" && "before:mr-1.5 before:h-1.5 before:w-1.5 before:shrink-0 before:rounded-full before:content-['']",
         tons[tom],
       )}
     >

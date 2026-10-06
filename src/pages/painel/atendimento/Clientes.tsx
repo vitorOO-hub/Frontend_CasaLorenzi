@@ -68,7 +68,7 @@ export function Clientes() {
                   {gestor ? <td className={`${td} tabular-nums`}>{moeda(compras.reduce((s, p) => s + p.valor, 0))}</td> : null}
                   <td className={td}>
                     {chamadosEscopo.filter((x) => x.clienteId === c.id).length}
-                    {abertos ? <span className="ml-1 text-xs text-alerta">({abertos} em aberto)</span> : null}
+                    {abertos ? <span className="ml-1 text-xs text-perigo">({abertos} em aberto)</span> : null}
                   </td>
                   <td className={td}>{dataBR(c.desde)}</td>
                 </tr>
