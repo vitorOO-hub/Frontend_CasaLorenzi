@@ -7,7 +7,16 @@ navegador enquanto ela estiver aberta.
 ```bash
 npm install
 npm run dev
+npm test
 ```
+
+## Fluxo de trabalho
+
+- `develop` é o branch intermediário: todo commit novo entra nele.
+- `main` é o branch final: só recebe o que vier de `develop`, depois de testado.
+- Commits seguem o padrão `<tipo>(escopo opcional): <descrição>`, com os tipos
+  `feat`, `fix`, `style`, `refactor`, `test`, `docs` e `chore`.
+  Exemplo: `feat(loja): adiciona filtro por tamanho no catálogo`.
 
 ## Acessos de demonstração
 
