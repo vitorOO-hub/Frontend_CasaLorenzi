@@ -16,12 +16,12 @@ export function Inicio() {
   return (
     <div>
       {/* Dois mundos: pronta-entrega e sob medida */}
-      <div className="grid gap-2.5 px-2.5 md:h-[86vh] md:min-h-[620px] md:grid-cols-2">
+      <div className="grid gap-2.5 px-2.5 lg:h-[86vh] lg:min-h-[620px] lg:grid-cols-2">
         {[
           { foto: CAMPANHA.prontaEntrega, rotulo: "Pronta-entrega", frase: "A coleção, com a barra feita enquanto você espera.", acao: `Ver a Edição ${EDICAO.numero}`, to: "/loja", pos: "center 35%" },
           { foto: CAMPANHA.sobMedida, rotulo: "Sob medida", frase: "Do primeiro risco de giz à terceira prova.", acao: "Como funciona", to: "/sob-medida", pos: "center" },
         ].map((m) => (
-          <Link key={m.to} to={m.to} className="group relative block h-[72vh] md:h-auto">
+          <Link key={m.to} to={m.to} className="group relative block h-[72vh] lg:h-auto">
             <FotoCampanha id={m.foto} largura={1600} posicao={m.pos} className="absolute inset-0" />
             <div className="absolute bottom-6 left-6 right-6 z-[2] max-w-[420px] bg-creme px-6 pb-5 pt-5 md:bottom-7 md:left-7">
               <small className="text-xs tracking-wide text-suave">{m.rotulo}</small>

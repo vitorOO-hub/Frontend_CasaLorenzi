@@ -1,7 +1,9 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Campo, Segmentado, inputClasses } from "@/components/ui";
+import { FotoCampanha } from "@/components/vitrine";
 import { Marca } from "@/layouts/PortalLayout";
+import { CAMPANHA } from "@/lib/loja";
 import { telaInicial } from "@/lib/navegacao";
 import {
   credenciaisInternas,
@@ -44,17 +46,16 @@ export function Entrar() {
   }
 
   return (
-    <div className="grid min-h-screen bg-creme lg:grid-cols-2">
+    <div className="loja grid min-h-screen lg:grid-cols-2">
       <div className="relative hidden overflow-hidden lg:block">
-        <img src="/img/hero.jpg" alt="" className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-marinho-escuro/75" />
+        <FotoCampanha id={CAMPANHA.sobMedida} largura={1400} className="absolute inset-0" />
+        <div className="absolute inset-0 bg-tinta/55" />
         <div className="relative flex h-full flex-col justify-between p-12 text-white">
           <Link to="/" className="self-start">
             <Marca claro className="!text-left" />
           </Link>
           <div className="max-w-md">
-            <span className="filete mb-6" />
-            <p className="text-4xl font-light leading-tight [font-family:var(--font-display)]">
+            <p className="font-display text-4xl leading-tight">
               {lado === "cliente"
                 ? "Seus pedidos, ajustes e conversas com a casa em um só lugar."
                 : "Estoque, atendimento e gestão das três casas, numa operação só."}
@@ -83,7 +84,7 @@ export function Entrar() {
               { value: "interno", label: "Time Casa Lorenzi" },
             ]}
           />
-          <h1 className="mt-8 text-4xl font-light">
+          <h1 className="mt-8 text-[44px] leading-none">
             {lado === "cliente" ? "Entre na sua conta" : "Área interna"}
           </h1>
           <p className="mt-2 text-sm text-suave">
@@ -116,7 +117,7 @@ export function Entrar() {
             {erro ? <p className="text-sm text-perigo">{erro}</p> : null}
             <button
               type="submit"
-              className="w-full bg-marinho py-3.5 text-[11px] font-bold uppercase tracking-[0.2em] text-white hover:bg-marinho-escuro"
+              className="w-full bg-tabaco py-4 text-sm tracking-wide text-[#f3e9da] hover:bg-tinta"
             >
               Entrar
             </button>
