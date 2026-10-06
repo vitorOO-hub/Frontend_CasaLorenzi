@@ -1,9 +1,11 @@
-import { ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Badge, classesBotao } from "@/components/ui";
-import { dataBR, tomChamado } from "@/lib/dados";
+import { cn } from "@/components/ui";
+import { botaoLoja } from "@/components/vitrine";
+import { dataBR } from "@/lib/dados";
 import { useClienteId } from "@/lib/sessao";
 import { useEstado } from "@/lib/store";
+
+const situacao = { Aberto: "Aguardando a casa", "Em andamento": "Em conversa", Resolvido: "Resolvido" } as const;
 
 export function MeusChamados() {
   const { chamados } = useEstado();
@@ -12,40 +14,29 @@ export function MeusChamados() {
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-light">Atendimento</h2>
-          <p className="mt-1 text-sm text-suave">
-            Trocas, ajustes, entregas ou dúvidas — nosso time responde em até 1 dia útil.
-          </p>
-        </div>
-        <Link to="/conta/atendimento/novo" className={classesBotao()}>
-          Abrir chamado
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+        <p className="max-w-lg font-display text-xl">Trocas, ajustes, entregas ou uma dúvida sobre tecido — quem responde é gente da loja, em até um dia útil.</p>
+        <Link to="/conta/atendimento/novo" className={botaoLoja()}>
+          Escrever para a casa
         </Link>
       </div>
 
-      <ul className="divide-y divide-linha bg-papel">
+      <ul>
         {meus.map((c) => (
           <li key={c.id}>
-            <Link
-              to={`/conta/atendimento/${c.id}`}
-              className="flex items-center gap-4 px-6 py-5 transition-colors hover:bg-areia/40"
-            >
+            <Link to={`/conta/atendimento/${c.id}`} className="alinhavo flex flex-wrap items-center gap-4 py-5 hover:bg-pergaminho/60">
               <div className="flex-1">
-                <p className="font-medium">{c.assunto}</p>
-                <p className="mt-1 text-xs text-suave">
-                  {c.protocolo} · {c.motivo} · aberto em {dataBR(c.abertoEm)} ·{" "}
-                  {c.mensagens.length} {c.mensagens.length === 1 ? "mensagem" : "mensagens"}
+                <p className="font-display text-[22px] leading-tight">{c.assunto}</p>
+                <p className="mt-1 text-sm text-suave">
+                  {c.protocolo} · {c.motivo} · desde {dataBR(c.abertoEm)} · {c.mensagens.length}{" "}
+                  {c.mensagens.length === 1 ? "mensagem" : "mensagens"}
                 </p>
               </div>
-              <Badge tom={tomChamado[c.status]}>{c.status}</Badge>
-              <ChevronRight className="h-4 w-4 text-suave" />
+              <span className={cn("text-sm", c.status === "Resolvido" ? "text-suave" : "text-caramelo")}>{situacao[c.status]}</span>
             </Link>
           </li>
         ))}
-        {meus.length === 0 ? (
-          <li className="p-10 text-center text-sm text-suave">Você ainda não abriu chamados.</li>
-        ) : null}
+        {meus.length === 0 ? <li className="py-10 font-display text-xl text-suave">Nenhuma conversa ainda.</li> : null}
       </ul>
     </div>
   );

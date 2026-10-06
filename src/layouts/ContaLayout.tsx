@@ -5,44 +5,40 @@ import { useSessao } from "@/lib/sessao";
 
 const abas = [
   { to: "/conta/pedidos", rotulo: "Meus pedidos" },
-  { to: "/conta/atendimento", rotulo: "Atendimento" },
+  { to: "/conta/atendimento", rotulo: "Conversas com a casa" },
   { to: "/conta/perfil", rotulo: "Meus dados" },
 ];
 
-/** Minha conta: pedidos, atendimento e dados reunidos numa só área. */
+/** Minha conta: pedidos, conversas e dados reunidos numa só área. */
 export function ContaLayout() {
   const sessao = useSessao();
   const primeiroNome = sessao?.nome.split(" ")[0];
 
   return (
-    <div className="mx-auto max-w-6xl px-4 pt-12 md:px-8">
+    <div className="mx-auto max-w-[1180px] px-5 pt-10 md:px-12">
       <ExigeLogin>
-        <div className="mb-10 text-center">
-          <p className="rotulo !text-dourado">Minha conta</p>
-          <h1 className="mt-2 text-4xl font-light md:text-5xl">Olá, {primeiroNome}</h1>
-        </div>
-        <div className="grid gap-10 md:grid-cols-[13rem_1fr]">
-          <nav className="flex gap-6 overflow-x-auto border-b border-linha md:flex-col md:gap-0 md:border-b-0 md:border-r md:pr-6">
-            {abas.map((a) => (
-              <NavLink
-                key={a.to}
-                to={a.to}
-                className={({ isActive }) =>
-                  cn(
-                    "shrink-0 border-b-2 py-3 text-sm transition-colors md:border-b-0 md:border-l-2 md:py-2.5 md:pl-4",
-                    isActive
-                      ? "border-dourado font-semibold text-marinho"
-                      : "border-transparent text-suave hover:text-tinta",
-                  )
-                }
-              >
-                {a.rotulo}
-              </NavLink>
-            ))}
-          </nav>
-          <div className="min-w-0">
-            <Outlet />
-          </div>
+        <h1 className="text-[56px] leading-none md:text-[64px]">
+          Olá, {primeiroNome}
+          <i className="text-caramelo">.</i>
+        </h1>
+        <nav className="mt-8 flex gap-7 overflow-x-auto border-b border-dashed border-linha text-[15px]">
+          {abas.map((a) => (
+            <NavLink
+              key={a.to}
+              to={a.to}
+              className={({ isActive }) =>
+                cn(
+                  "-mb-px shrink-0 border-b-[1.5px] pb-3",
+                  isActive ? "border-dashed border-caramelo text-tinta" : "border-transparent text-suave hover:text-tinta",
+                )
+              }
+            >
+              {a.rotulo}
+            </NavLink>
+          ))}
+        </nav>
+        <div className="pt-10">
+          <Outlet />
         </div>
       </ExigeLogin>
     </div>

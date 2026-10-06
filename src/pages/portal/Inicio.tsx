@@ -1,163 +1,174 @@
-import { ArrowRight, RefreshCw, Scissors, Store, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
-import { CartaoProduto, FotoProduto, TituloVitrine } from "@/components/vitrine";
+import { CabecalhoSecao, CartaoProduto, FotoCampanha, FichaTecnica, Legenda, botaoLoja } from "@/components/vitrine";
+import { CasaCartao } from "./Casas";
 import { lojas } from "@/lib/dados";
+import { CAMPANHA, EDICAO, materias, retratos } from "@/lib/loja";
 import { useEstado } from "@/lib/store";
+import { CartaoMateria } from "./Caderno";
 
-const categorias = [
-  { nome: "Alfaiataria", sku: "CL-0204", texto: "Blazers e calças de corte preciso" },
-  { nome: "Camisaria", sku: "CL-0101", texto: "Linho, oxford e algodão egípcio" },
-  { nome: "Malharia", sku: "CL-0407", texto: "Tricots e lã merino" },
-  { nome: "Acessórios", sku: "CL-0712", texto: "Couro curtido à mão" },
-];
-
-const servicos = [
-  { icone: Scissors, titulo: "Ajustes sem custo", texto: "Barra, manga e cintura feitos no nosso ateliê." },
-  { icone: Store, titulo: "Retire na loja", texto: "Compre online e retire em uma das três casas." },
-  { icone: Truck, titulo: "Frete grátis", texto: "Para compras acima de R$ 1.000 em todo o Brasil." },
-  { icone: RefreshCw, titulo: "Troca em 30 dias", texto: "Primeira troca gratuita, online ou na loja." },
-];
+const ARARA = ["CL-0509", "CL-0204", "CL-0407", "CL-0203", "CL-0101"];
 
 export function Inicio() {
   const { produtos } = useEstado();
-  const destaques = produtos.filter((p) => p.saldos.some((s) => s.quantidade > 0)).slice(0, 8);
+  const arara = ARARA.map((s) => produtos.find((p) => p.sku === s)).filter((p) => p !== undefined);
+  const blazer = produtos.find((p) => p.sku === "CL-0204");
 
   return (
     <div>
-      {/* Hero editorial */}
-      <section className="relative flex min-h-[78vh] items-center overflow-hidden">
-        <img
-          src="/img/hero.jpg"
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-marinho-escuro/90 via-marinho-escuro/60 to-marinho-escuro/10" />
-        <div className="relative mx-auto w-full max-w-7xl px-4 py-24 md:px-8">
-          <div className="max-w-xl text-white">
-            <p className="rotulo !text-dourado">Coleção permanente · Outono 2026</p>
-            <h1 className="mt-5 text-5xl font-light leading-[1.05] md:text-7xl">
-              O bom corte
+      {/* Dois mundos: pronta-entrega e sob medida */}
+      <div className="grid gap-2.5 px-2.5 md:h-[86vh] md:min-h-[620px] md:grid-cols-2">
+        {[
+          { foto: CAMPANHA.prontaEntrega, rotulo: "Pronta-entrega", frase: "A coleção, com a barra feita enquanto você espera.", acao: `Ver a Edição ${EDICAO.numero}`, to: "/loja", pos: "center 35%" },
+          { foto: CAMPANHA.sobMedida, rotulo: "Sob medida", frase: "Do primeiro risco de giz à terceira prova.", acao: "Como funciona", to: "/sob-medida", pos: "center" },
+        ].map((m) => (
+          <Link key={m.to} to={m.to} className="group relative block h-[72vh] md:h-auto">
+            <FotoCampanha id={m.foto} largura={1600} posicao={m.pos} className="absolute inset-0" />
+            <div className="absolute bottom-6 left-6 right-6 z-[2] max-w-[420px] bg-creme px-6 pb-5 pt-5 md:bottom-7 md:left-7">
+              <small className="text-xs tracking-wide text-suave">{m.rotulo}</small>
+              <b className="mt-1 block font-display text-[28px] font-normal leading-tight md:text-[32px]">{m.frase}</b>
+              <span className="link-tracejado mt-3 inline-block text-sm group-hover:text-caramelo">{m.acao}</span>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* Edição atual */}
+      <section className="mx-auto grid max-w-[1360px] items-start gap-12 px-5 pt-28 md:grid-cols-[7fr_4fr] md:gap-[72px] md:px-12">
+        <div>
+          <FotoCampanha id={CAMPANHA.edicaoGrande} largura={1400} className="aspect-[4/5]" />
+          <Legenda destaque="Helena veste o Trench Milano em Areia de Ipanema.">Fotografada numa terça de garoa, na Rua Oscar Freire.</Legenda>
+        </div>
+        <div className="md:pt-10">
+          <p className="text-[15px] text-caramelo">Edição {EDICAO.numero}</p>
+          <h1 className="mb-7 mt-2.5 text-[56px] leading-[0.95] md:text-[76px]">
+            {EDICAO.nome}
+            <i className="text-caramelo">.</i>
+          </h1>
+          <p className="font-display text-[21px] leading-normal">{EDICAO.texto}</p>
+          <p className="mt-4 text-[15px] text-suave">Dezoito peças, produzidas em séries de no máximo quarenta. Quando acabam, não voltam.</p>
+          <div className="ml-auto mt-11 w-[72%]">
+            <FotoCampanha id={CAMPANHA.edicaoDetalhe} largura={700} className="aspect-square" />
+            <Legenda>De perto: gabardine de algodão com cinto forrado.</Legenda>
+          </div>
+        </div>
+      </section>
+
+      {/* Arara da semana: grade irregular */}
+      <section className="mx-auto max-w-[1360px] px-5 pt-32 md:px-12">
+        <CabecalhoSecao titulo="Na arara desta semana" acao="Todas as peças" para="/loja" />
+        <div className="grid gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr]">
+          {arara.map((p, i) => (
+            <CartaoProduto
+              key={p.sku}
+              produto={p}
+              grande={i === 0}
+              legenda={i === 0 ? "Corte reto, ombro natural e cinto forrado. Ajustamos a barra e as mangas na hora, em qualquer casa." : undefined}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* Por dentro de uma peça */}
+      <div className="mt-32 bg-marinho text-[#efe6d6]">
+        <div className="mx-auto grid max-w-[1360px] items-center gap-16 px-5 py-24 md:grid-cols-2 md:gap-20 md:px-12">
+          <div>
+            <h2 className="mb-5 text-[44px] leading-none text-[#efe6d6] md:text-[54px]">
+              Por dentro de
               <br />
-              <em className="font-normal">não tem estação.</em>
-            </h1>
-            <p className="mt-6 max-w-md text-base leading-relaxed text-white/75">
-              Alfaiataria, camisaria e malharia em pequenas séries, com acabamento artesanal e
-              ajustes feitos no nosso ateliê.
-            </p>
-            <div className="mt-10 flex flex-wrap gap-3">
-              <Link
-                to="/loja"
-                className="bg-papel px-8 py-3.5 text-[11px] font-bold uppercase tracking-[0.2em] text-marinho transition-colors hover:bg-dourado hover:text-white"
-              >
-                Explorar a coleção
-              </Link>
-              <Link
-                to="/loja?categoria=Alfaiataria"
-                className="border border-white/50 px-8 py-3.5 text-[11px] font-bold uppercase tracking-[0.2em] text-white transition-colors hover:border-white hover:bg-white/10"
-              >
-                Alfaiataria
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Categorias */}
-      <section className="mx-auto max-w-7xl px-4 pt-24 md:px-8">
-        <TituloVitrine sobre="Compre por categoria" titulo="Da arara do ateliê" centro />
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
-          {categorias.map((c) => (
-            <Link key={c.nome} to={`/loja?categoria=${c.nome}`} className="group relative block">
-              <FotoProduto
-                sku={c.sku}
-                alt={c.nome}
-                className="aspect-[3/4] [&_img]:transition-transform [&_img]:duration-700 group-hover:[&_img]:scale-105"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-marinho-escuro/80 via-transparent to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-5 text-white">
-                <h3 className="text-2xl md:text-3xl">{c.nome}</h3>
-                <p className="mt-1 hidden text-xs text-white/70 sm:block">{c.texto}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* Destaques */}
-      <section className="mx-auto max-w-7xl px-4 pt-24 md:px-8">
-        <TituloVitrine
-          sobre="Seleção da casa"
-          titulo="Peças em destaque"
-          acao={
-            <Link
-              to="/loja"
-              className="flex items-center gap-2 border-b border-marinho pb-1 text-[11px] font-bold uppercase tracking-[0.2em] text-marinho hover:border-dourado hover:text-dourado"
-            >
-              Ver coleção completa <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          }
-        />
-        <div className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4 md:gap-x-6">
-          {destaques.map((p) => (
-            <CartaoProduto key={p.sku} produto={p} />
-          ))}
-        </div>
-      </section>
-
-      {/* Editorial do ateliê */}
-      <section className="mx-auto mt-24 max-w-7xl px-4 md:px-8">
-        <div className="grid items-center gap-0 bg-papel md:grid-cols-2">
-          <FotoProduto sku="CL-0509" alt="Trench Coat Milano" className="aspect-[4/5] md:aspect-auto md:h-full" />
-          <div className="px-8 py-14 md:px-16">
-            <span className="filete" />
-            <p className="rotulo mt-6 !text-dourado">O ateliê</p>
-            <h2 className="mt-3 text-4xl font-light leading-tight md:text-5xl">
-              Feito para durar, ajustado para você.
+              <i className="text-ouro-claro">um blazer Lorenzi.</i>
             </h2>
-            <p className="mt-6 text-sm leading-relaxed text-suave">
-              Cada peça passa pelas mãos dos nossos alfaiates antes de chegar até você. Nas três
-              casas, a prova e os ajustes de barra, manga e cintura são cortesia — porque uma boa
-              roupa precisa vestir bem desde o primeiro dia.
+            <p className="max-w-md text-[#efe6d6]/80">
+              Toda peça sai daqui com uma etiqueta costurada no forro. Ela diz de onde veio o tecido, onde foi costurada e quem fez o seu ajuste. É a nossa assinatura — e a sua garantia.
             </p>
-            <Link
-              to="/conta/atendimento/novo"
-              className="mt-8 inline-flex items-center gap-2 bg-marinho px-7 py-3.5 text-[11px] font-bold uppercase tracking-[0.2em] text-white hover:bg-marinho-escuro"
-            >
-              Agendar uma prova <ArrowRight className="h-3.5 w-3.5" />
+            <div className="mt-9 grid grid-cols-3 gap-4">
+              {[
+                [CAMPANHA.prova1, "1ª prova", "O giz marca ombro, cava e cintura."],
+                [CAMPANHA.prova2, "2ª prova", "A peça ainda alinhavada, para ajustar o caimento."],
+                [CAMPANHA.prova3, "3ª prova", "Acabamento à mão e a etiqueta assinada."],
+              ].map(([id, titulo, texto]) => (
+                <div key={titulo}>
+                  <FotoCampanha id={id!} largura={500} className="aspect-[4/5]" />
+                  <p className="mt-2.5 text-[13px] text-[#efe6d6]/75">
+                    <b className="block font-display text-lg font-normal text-white">{titulo}</b>
+                    {texto}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+          {blazer ? (
+            <div className="mx-auto w-full max-w-[470px]">
+              <FichaTecnica produto={blazer} tamanho="40" />
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      {/* Sob medida */}
+      <section className="mx-auto max-w-[1360px] px-5 pt-32 md:px-12">
+        <div className="grid bg-pergaminho md:grid-cols-[5fr_6fr]">
+          <FotoCampanha id={CAMPANHA.amostras} largura={1000} className="min-h-[360px] md:min-h-[560px]" />
+          <div className="p-8 md:p-16">
+            <h2 className="mb-4 text-[40px] leading-tight md:text-[52px]">Uma roupa feita no seu corpo, em três provas.</h2>
+            <p className="text-suave">Você escolhe o tecido entre mais de duzentos cortes que chegam a cada estação. A gente tira trinta e uma medidas e marca três encontros.</p>
+            <Passos />
+            <Link to="/agendar?tipo=sob-medida" className={botaoLoja()}>
+              Marcar a primeira conversa
             </Link>
+            <p className="mt-3.5 text-[13px] text-suave">A partir de R$ 3.900 o terno. Nas três casas.</p>
           </div>
         </div>
       </section>
 
-      {/* Serviços */}
-      <section className="mx-auto max-w-7xl px-4 pt-24 md:px-8">
-        <div className="grid gap-px overflow-hidden border border-linha bg-linha sm:grid-cols-2 lg:grid-cols-4">
-          {servicos.map((s) => (
-            <div key={s.titulo} className="bg-creme p-8 text-center">
-              <s.icone className="mx-auto h-6 w-6 text-dourado" strokeWidth={1.25} />
-              <h3 className="mt-4 text-xl">{s.titulo}</h3>
-              <p className="mt-2 text-sm text-suave">{s.texto}</p>
+      {/* Caderno do Ateliê */}
+      <section className="mx-auto max-w-[1360px] px-5 pt-32 md:px-12">
+        <CabecalhoSecao titulo="Caderno do Ateliê" acao="Ler todas as notas" para="/caderno" />
+        <div className="grid gap-7 md:grid-cols-[1.3fr_1fr_1fr]">
+          {materias.map((m, i) => (
+            <CartaoMateria key={m.slug} materia={m} destaque={i === 0} />
+          ))}
+        </div>
+      </section>
+
+      {/* Quem veste */}
+      <section className="mx-auto max-w-[1360px] px-5 pt-32 md:px-12">
+        <CabecalhoSecao titulo="Quem veste Lorenzi" />
+        <div className="grid grid-cols-2 items-end gap-4 md:grid-cols-[1fr_1.2fr_1fr_1.2fr]">
+          {retratos.map((r, i) => (
+            <div key={r.nome}>
+              <FotoCampanha id={r.foto} largura={600} className={i % 2 ? "aspect-[3/4.4]" : "aspect-[3/4]"} />
+              <Legenda destaque={r.nome}>{r.texto}</Legenda>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Lojas */}
-      <section className="mx-auto max-w-7xl px-4 pt-24 md:px-8">
-        <TituloVitrine sobre="Visite-nos" titulo="Nossas casas" centro />
-        <div className="grid gap-6 md:grid-cols-3">
-          {lojas.map((l) => (
-            <div key={l.id} className="border-t border-dourado/60 pt-6 text-center">
-              <h3 className="text-2xl">{l.nome}</h3>
-              <p className="mt-2 text-sm text-suave">{l.endereco}</p>
-              <p className="text-sm text-suave">{l.cidade}</p>
-              <p className="mt-3 text-xs uppercase tracking-[0.16em] text-tinta/70">
-                Seg. a sáb. 10h–22h · Dom. 14h–20h
-              </p>
-            </div>
+      {/* As casas */}
+      <section className="mx-auto max-w-[1360px] px-5 pt-32 md:px-12">
+        <CabecalhoSecao titulo="As três casas" acao="Endereços e horários" para="/casas" />
+        <div className="grid gap-7 md:grid-cols-3">
+          {lojas.slice(0, 3).map((l) => (
+            <CasaCartao key={l.id} loja={l} />
           ))}
         </div>
       </section>
+    </div>
+  );
+}
+
+export function Passos() {
+  return (
+    <div className="my-7">
+      {[
+        "Conversa e escolha do tecido — 40 minutos, com café.",
+        "Primeira e segunda prova, três semanas depois.",
+        "Prova final e entrega. Ajustes para sempre, sem custo.",
+      ].map((t, i) => (
+        <div key={t} className="alinhavo grid grid-cols-[40px_1fr] py-3.5 text-[15px]">
+          <span className="font-display text-[22px] text-caramelo">{i + 1}</span>
+          {t}
+        </div>
+      ))}
     </div>
   );
 }

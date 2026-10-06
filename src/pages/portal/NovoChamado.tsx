@@ -1,15 +1,21 @@
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Botao, Campo, Select, Voltar, classesBotao, inputClasses } from "@/components/ui";
+import { cn } from "@/components/ui";
+import { botaoLoja } from "@/components/vitrine";
 import { clientes, dataBR, type Chamado } from "@/lib/dados";
 import { useClienteId } from "@/lib/sessao";
 import { abrirChamado, useEstado } from "@/lib/store";
+import { CampoLoja, campoLoja } from "./Checkout";
 
-const motivos: Chamado["motivo"][] = ["Troca", "Defeito", "Entrega", "Dúvida"];
+const motivos: { valor: Chamado["motivo"]; rotulo: string }[] = [
+  { valor: "Troca", rotulo: "Troca ou ajuste" },
+  { valor: "Defeito", rotulo: "Algum problema na peça" },
+  { valor: "Entrega", rotulo: "Entrega" },
+  { valor: "Dúvida", rotulo: "Dúvida sobre tecido ou tamanho" },
+];
 
 export function NovoChamado() {
   const [params] = useSearchParams();
-  const pedidoInicial = params.get("pedido") ?? "";
   const sku = params.get("sku") ?? undefined;
   const { pedidos, produtos } = useEstado();
   const clienteId = useClienteId();
@@ -19,26 +25,22 @@ export function NovoChamado() {
 
   const [assunto, setAssunto] = useState(peca ? `Dúvida sobre ${peca.nome}` : "");
   const [motivo, setMotivo] = useState<Chamado["motivo"]>(peca ? "Dúvida" : "Troca");
-  const [pedidoId, setPedidoId] = useState(pedidoInicial);
+  const [pedidoId, setPedidoId] = useState(params.get("pedido") ?? "");
   const [descricao, setDescricao] = useState("");
   const [anexos, setAnexos] = useState<string[]>([]);
   const [criado, setCriado] = useState<{ id: string; protocolo: string } | null>(null);
 
   if (criado) {
     return (
-      <div className="bg-papel p-10 text-center">
-        <span className="filete mx-auto mb-5" />
-        <p className="rotulo !text-dourado">Chamado registrado</p>
-        <h2 className="mt-2 text-4xl font-light">{criado.protocolo}</h2>
-        <p className="mt-3 text-sm text-suave">
-          Recebemos sua mensagem. Nosso time responde em até 1 dia útil.
-        </p>
-        <div className="mt-6 flex justify-center gap-2">
-          <Link to={`/conta/atendimento/${criado.id}`} className={classesBotao()}>
-            Acompanhar conversa
+      <div className="max-w-xl">
+        <h2 className="text-[40px] leading-tight">Recebemos sua mensagem.</h2>
+        <p className="mt-3 font-display text-xl">Protocolo {criado.protocolo}. Alguém da loja responde em até um dia útil — normalmente bem antes.</p>
+        <div className="mt-8 flex flex-wrap gap-4">
+          <Link to={`/conta/atendimento/${criado.id}`} className={botaoLoja()}>
+            Ver a conversa
           </Link>
-          <Link to="/conta/atendimento" className={classesBotao("secundario")}>
-            Ver todos
+          <Link to="/conta/atendimento" className={botaoLoja("contorno")}>
+            Todas as conversas
           </Link>
         </div>
       </div>
@@ -46,83 +48,75 @@ export function NovoChamado() {
   }
 
   return (
-    <div className="max-w-xl">
-      <Voltar to="/conta/atendimento">Atendimento</Voltar>
-      <h2 className="text-3xl font-light">Abrir chamado</h2>
-      <p className="mt-1 text-sm text-suave">
-        Conte o que aconteceu — o time já enxerga seu histórico em todas as casas.
-      </p>
-
-      <form
-        className="mt-6 space-y-4 bg-papel p-6"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const relacionado = meusPedidos.find((p) => p.id === pedidoId);
-          const novo = abrirChamado({
-            clienteId: cliente.id,
-            nomeCliente: cliente.nome,
-            assunto,
-            motivo,
-            descricao,
-            lojaId: relacionado?.lojaId ?? "l1",
-            pedidoId: pedidoId || undefined,
-            sku,
-            anexos,
-          });
-          setCriado({ id: novo.id, protocolo: novo.protocolo });
-        }}
-      >
-        <Campo label="Assunto">
-          <input
-            required
-            value={assunto}
-            onChange={(e) => setAssunto(e.target.value)}
-            placeholder="Ex.: Ajuste de barra da calça"
-            className={inputClasses}
-          />
-        </Campo>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Campo label="Motivo">
-            <Select
-              value={motivo}
-              onChange={(e) => setMotivo(e.target.value as Chamado["motivo"])}
-              opcoes={motivos.map((m) => ({ value: m, label: m }))}
-            />
-          </Campo>
-          <Campo label="Pedido relacionado">
-            <Select
-              value={pedidoId}
-              onChange={(e) => setPedidoId(e.target.value)}
-              opcoes={[
-                { value: "", label: "Nenhum" },
-                ...meusPedidos.map((p) => ({ value: p.id, label: `${p.id} · ${dataBR(p.data)}` })),
-              ]}
-            />
-          </Campo>
+    <form
+      className="max-w-2xl space-y-5"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const relacionado = meusPedidos.find((p) => p.id === pedidoId);
+        const novo = abrirChamado({
+          clienteId: cliente.id,
+          nomeCliente: cliente.nome,
+          assunto,
+          motivo,
+          descricao,
+          lojaId: relacionado?.lojaId ?? "l1",
+          pedidoId: pedidoId || undefined,
+          sku,
+          anexos,
+        });
+        setCriado({ id: novo.id, protocolo: novo.protocolo });
+      }}
+    >
+      <Link to="/conta/atendimento" className="link-tracejado text-sm">
+        Conversas com a casa
+      </Link>
+      <h2 className="text-[40px] leading-tight">Escrever para a casa</h2>
+      <div>
+        <span className="mb-2 block text-sm text-suave">Sobre o que é?</span>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {motivos.map((m) => (
+            <button
+              key={m.valor}
+              type="button"
+              onClick={() => setMotivo(m.valor)}
+              className={cn(
+                "border-[1.5px] px-4 py-3 text-left text-[15px]",
+                motivo === m.valor ? "border-dashed border-tinta bg-pergaminho" : "border-linha hover:border-tinta/50",
+              )}
+            >
+              {m.rotulo}
+            </button>
+          ))}
         </div>
-        <Campo label="Mensagem">
-          <textarea
-            required
-            rows={5}
-            value={descricao}
-            onChange={(e) => setDescricao(e.target.value)}
-            placeholder="Descreva com detalhes"
-            className={inputClasses}
-          />
-        </Campo>
-        <Campo label="Fotos (opcional)" ajuda={anexos.length ? anexos.join(", ") : undefined}>
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={(e) => setAnexos(Array.from(e.target.files ?? []).map((f) => f.name))}
-            className={`${inputClasses} file:mr-3 file:border-0 file:bg-areia file:px-3 file:py-1 file:text-xs`}
-          />
-        </Campo>
-        <div className="flex justify-end pt-2">
-          <Botao type="submit">Enviar chamado</Botao>
-        </div>
-      </form>
-    </div>
+      </div>
+      <CampoLoja rotulo="Assunto">
+        <input required value={assunto} onChange={(e) => setAssunto(e.target.value)} placeholder="Ex.: ajustar a barra da calça" className={campoLoja} />
+      </CampoLoja>
+      <CampoLoja rotulo="Pedido relacionado">
+        <select value={pedidoId} onChange={(e) => setPedidoId(e.target.value)} className={campoLoja}>
+          <option value="">Nenhum</option>
+          {meusPedidos.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.id} · {dataBR(p.data)}
+            </option>
+          ))}
+        </select>
+      </CampoLoja>
+      <CampoLoja rotulo="Conte com detalhes">
+        <textarea required rows={5} value={descricao} onChange={(e) => setDescricao(e.target.value)} className={campoLoja} />
+      </CampoLoja>
+      <CampoLoja rotulo="Fotos da peça (opcional)">
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={(e) => setAnexos(Array.from(e.target.files ?? []).map((f) => f.name))}
+          className={cn(campoLoja, "file:mr-3 file:border-0 file:bg-palha file:px-3 file:py-1 file:text-xs")}
+        />
+      </CampoLoja>
+      <button type="submit" className={botaoLoja()}>
+        Enviar
+      </button>
+    </form>
   );
 }

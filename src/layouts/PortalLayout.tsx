@@ -1,35 +1,33 @@
-import { Headset, Menu, Search, ShoppingBag, UserRound, X } from "lucide-react";
+import { Menu, Search, X } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { MenuUsuario } from "@/components/MenuUsuario";
 import { cn } from "@/components/ui";
-import { lojas } from "@/lib/dados";
+import { EDICAO } from "@/lib/loja";
 import { sair, useSessao } from "@/lib/sessao";
 import { useEstado } from "@/lib/store";
 
-export const categoriasMenu = [
-  { rotulo: "Coleção", to: "/loja" },
-  { rotulo: "Alfaiataria", to: "/loja?categoria=Alfaiataria" },
-  { rotulo: "Camisaria", to: "/loja?categoria=Camisaria" },
-  { rotulo: "Malharia", to: "/loja?categoria=Malharia" },
-  { rotulo: "Outerwear", to: "/loja?categoria=Outerwear" },
-  { rotulo: "Acessórios", to: "/loja?categoria=Acessórios" },
+const menu = [
+  { rotulo: "Pronta-entrega", to: "/loja" },
+  { rotulo: "Sob medida", to: "/sob-medida" },
+  { rotulo: "Caderno do Ateliê", to: "/caderno" },
+  { rotulo: "As casas", to: "/casas" },
 ];
 
-export function Marca({ claro = false, className }: { claro?: boolean; className?: string }) {
+/** Marca empilhada, alinhada à esquerda. */
+export function Marca({ claro = false, grande = false, className }: { claro?: boolean; grande?: boolean; className?: string }) {
   return (
-    <span className={cn("block text-center leading-none", className)}>
-      <span
-        className={cn(
-          "block whitespace-nowrap font-display text-[19px] font-normal uppercase tracking-[0.2em] sm:text-[26px] sm:tracking-[0.28em] md:text-[30px]",
-          claro ? "text-white" : "text-marinho",
-        )}
-      >
-        Casa Lorenzi
+    <span className={cn("block font-display leading-[0.9]", claro ? "text-creme" : "text-marinho", className)}>
+      <span className={cn("block", grande ? "text-[60px] md:text-[88px]" : "text-[34px]")}>
+        Casa
+        <br />
+        Lorenzi
       </span>
-      <span className="mt-1.5 block text-[9px] font-semibold uppercase tracking-[0.42em] text-dourado">
-        Alfaiataria · 1962
-      </span>
+      {grande ? null : (
+        <small className={cn("mt-2 block font-sans text-[11px] tracking-wide", claro ? "text-creme/60" : "text-suave")}>
+          Alfaiates desde 1962
+        </small>
+      )}
     </span>
   );
 }
@@ -43,10 +41,9 @@ export function PortalLayout() {
   const rota = `${pathname}${search}`;
   const [menuEm, setMenuEm] = useState<string | null>(null);
   const [buscaEm, setBuscaEm] = useState<string | null>(null);
+  const [termo, setTermo] = useState("");
   const menuAberto = menuEm === rota;
   const buscaAberta = buscaEm === rota;
-  const setMenuAberto = (v: boolean) => setMenuEm(v ? rota : null);
-  const [termo, setTermo] = useState("");
   const itensSacola = carrinho.reduce((s, i) => s + i.quantidade, 0);
   const cliente = sessao?.tipo === "cliente" ? sessao : null;
 
@@ -56,160 +53,125 @@ export function PortalLayout() {
     setTermo("");
   }
 
-  const categoriaAtiva = (to: string) => rota === to;
-
   return (
-    <div className="flex min-h-screen flex-col bg-creme">
-      <div className="bg-marinho-escuro px-4 py-2 text-center text-[11px] tracking-[0.12em] text-white/80">
-        Frete grátis acima de R$ 1.000 <span className="mx-2 text-dourado">·</span> Ajustes de
-        alfaiataria sem custo <span className="mx-2 hidden text-dourado sm:inline">·</span>
-        <span className="hidden sm:inline">Até 10x sem juros</span>
+    <div className="loja flex min-h-screen flex-col">
+      <div className="flex justify-between border-b border-dashed border-linha px-5 py-2.5 text-xs text-suave md:px-12">
+        <span>
+          <b className="font-medium text-tinta">
+            Edição {EDICAO.numero} · {EDICAO.nome}
+          </b>{" "}
+          — {EDICAO.temporada}
+        </span>
+        <span className="hidden sm:inline">Ibirapuera · Barra · Savassi · e aqui</span>
       </div>
 
-      <header className="sticky top-0 z-40 border-b border-linha bg-papel/95 backdrop-blur">
-        <div className="mx-auto grid max-w-7xl grid-cols-[1fr_auto_1fr] items-center gap-4 px-4 py-4 md:px-8 md:py-5">
-          <div className="flex items-center gap-3">
-            <button
-              className="text-tinta lg:hidden"
-              onClick={() => setMenuAberto(true)}
-              aria-label="Abrir menu"
-            >
-              <Menu className="h-5 w-5" strokeWidth={1.5} />
-            </button>
-            <button
-              className="text-tinta hover:text-marinho"
-              onClick={() => setBuscaEm(buscaAberta ? null : rota)}
-              aria-label="Buscar"
-            >
-              <Search className="h-5 w-5" strokeWidth={1.5} />
-            </button>
-          </div>
-
+      <header className="flex items-end justify-between gap-6 px-5 pb-5 pt-6 md:px-12">
+        <div className="flex items-end gap-4">
+          <button className="mb-1 lg:hidden" onClick={() => setMenuEm(rota)} aria-label="Abrir menu">
+            <Menu className="h-5 w-5" strokeWidth={1.5} />
+          </button>
           <Link to="/" aria-label="Casa Lorenzi — início">
             <Marca />
           </Link>
-
-          <div className="flex items-center justify-end gap-4">
-            <Link
-              to="/conta/atendimento"
-              className="hidden text-tinta hover:text-marinho sm:block"
-              aria-label="Atendimento"
-              title="Atendimento"
-            >
-              <Headset className="h-5 w-5" strokeWidth={1.5} />
-            </Link>
-            {cliente ? (
-              <MenuUsuario
-                compacto
-                nome={cliente.nome}
-                detalhe="Cliente Casa Lorenzi"
-                email={cliente.email}
-                onSair={() => {
-                  sair();
-                  navigate("/");
-                }}
-                itens={
-                  <div className="py-1">
-                    {[
-                      ["/conta/pedidos", "Meus pedidos"],
-                      ["/conta/atendimento", "Atendimento"],
-                      ["/conta/perfil", "Meus dados"],
-                    ].map(([to, rotulo]) => (
-                      <Link
-                        key={to}
-                        to={to!}
-                        className="block px-4 py-2 text-sm hover:bg-areia/60 hover:text-marinho"
-                      >
-                        {rotulo}
-                      </Link>
-                    ))}
-                  </div>
-                }
-              />
-            ) : (
-              <Link to="/entrar" className="text-tinta hover:text-marinho" aria-label="Entrar">
-                <UserRound className="h-5 w-5" strokeWidth={1.5} />
-              </Link>
-            )}
-            <Link to="/sacola" className="relative text-tinta hover:text-marinho" aria-label="Sacola">
-              <ShoppingBag className="h-5 w-5" strokeWidth={1.5} />
-              {itensSacola ? (
-                <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-dourado px-1 text-[9px] font-bold text-white">
-                  {itensSacola}
-                </span>
-              ) : null}
-            </Link>
-          </div>
         </div>
 
-        <nav className="hidden justify-center gap-9 pb-4 lg:flex" aria-label="Categorias">
-          {categoriasMenu.map((c) => (
-            <Link
-              key={c.to}
-              to={c.to}
-              className={cn(
-                "border-b pb-1 text-[11px] font-semibold uppercase tracking-[0.2em] transition-colors",
-                categoriaAtiva(c.to)
-                  ? "border-dourado text-marinho"
-                  : "border-transparent text-tinta/75 hover:text-marinho",
-              )}
+        <nav className="flex items-center gap-5 text-sm lg:gap-8" aria-label="Principal">
+          {menu.map((m) => (
+            <NavLink
+              key={m.to}
+              to={m.to}
+              className={({ isActive }) =>
+                cn(
+                  "hidden border-b-[1.5px] pb-0.5 lg:inline",
+                  isActive ? "border-dashed border-caramelo" : "border-transparent hover:border-dashed hover:border-caramelo",
+                )
+              }
             >
-              {c.rotulo}
-            </Link>
+              {m.rotulo}
+            </NavLink>
           ))}
+          <button onClick={() => setBuscaEm(buscaAberta ? null : rota)} aria-label="Buscar" className="hover:text-caramelo">
+            <Search className="h-[18px] w-[18px]" strokeWidth={1.5} />
+          </button>
+          {cliente ? (
+            <MenuUsuario
+              compacto
+              nome={cliente.nome}
+              detalhe="Cliente Casa Lorenzi"
+              email={cliente.email}
+              onSair={() => {
+                sair();
+                navigate("/");
+              }}
+              itens={
+                <div className="py-1">
+                  {[
+                    ["/conta/pedidos", "Meus pedidos"],
+                    ["/conta/atendimento", "Conversas com a casa"],
+                    ["/conta/perfil", "Meus dados"],
+                  ].map(([to, rotulo]) => (
+                    <Link key={to} to={to!} className="block px-4 py-2 text-sm hover:bg-palha/60">
+                      {rotulo}
+                    </Link>
+                  ))}
+                </div>
+              }
+            />
+          ) : (
+            <Link to="/entrar" className="hidden hover:text-caramelo sm:inline">
+              Entrar
+            </Link>
+          )}
+          <Link to="/sacola" className="whitespace-nowrap hover:text-caramelo">
+            Sacola ({itensSacola})
+          </Link>
+          <Link
+            to="/agendar"
+            className="hidden border border-tinta px-4 py-2 transition-colors hover:bg-tinta hover:text-creme md:inline-block"
+          >
+            Agendar uma prova
+          </Link>
         </nav>
-
-        {buscaAberta ? (
-          <form onSubmit={buscar} className="border-t border-linha bg-papel px-4 py-4">
-            <div className="mx-auto flex max-w-2xl items-center gap-3 border-b border-marinho pb-2">
-              <Search className="h-4 w-4 text-suave" />
-              <input
-                autoFocus
-                value={termo}
-                onChange={(e) => setTermo(e.target.value)}
-                placeholder="O que você procura? Ex.: blazer, linho, mocassim"
-                className="flex-1 bg-transparent text-sm outline-none placeholder:text-suave"
-              />
-              <button type="submit" className="rotulo !text-marinho">
-                Buscar
-              </button>
-            </div>
-          </form>
-        ) : null}
       </header>
 
-      {/* Menu lateral no celular */}
+      {buscaAberta ? (
+        <form onSubmit={buscar} className="border-y border-dashed border-linha px-5 py-4 md:px-12">
+          <div className="mx-auto flex max-w-2xl items-center gap-3 border-b border-tinta pb-2">
+            <Search className="h-4 w-4 text-suave" />
+            <input
+              autoFocus
+              value={termo}
+              onChange={(e) => setTermo(e.target.value)}
+              placeholder="Peça, tecido ou cor — “linho”, “merino”, “Areia de Ipanema”"
+              className="flex-1 bg-transparent text-sm outline-none placeholder:text-suave"
+            />
+            <button type="submit" className="link-tracejado text-sm">
+              Buscar
+            </button>
+          </div>
+        </form>
+      ) : null}
+
       {menuAberto ? (
-        <div className="fixed inset-0 z-50 bg-marinho-escuro/50 lg:hidden" onClick={() => setMenuAberto(false)}>
-          <div
-            className="h-full w-80 max-w-[85%] bg-papel p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-8 flex items-center justify-between">
-              <Marca className="!text-left" />
-              <button onClick={() => setMenuAberto(false)} aria-label="Fechar menu">
+        <div className="fixed inset-0 z-50 bg-tinta/40 lg:hidden" onClick={() => setMenuEm(null)}>
+          <div className="loja h-full w-80 max-w-[85%] p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-10 flex items-start justify-between">
+              <Marca />
+              <button onClick={() => setMenuEm(null)} aria-label="Fechar menu">
                 <X className="h-5 w-5" />
               </button>
             </div>
             <nav className="flex flex-col">
-              {categoriasMenu.map((c) => (
-                <Link
-                  key={c.to}
-                  to={c.to}
-                  className="border-b border-linha py-3.5 text-sm uppercase tracking-[0.16em]"
-                >
-                  {c.rotulo}
+              {[
+                ...menu,
+                { rotulo: "Agendar uma prova", to: "/agendar" },
+                { rotulo: cliente ? "Minha conta" : "Entrar", to: cliente ? "/conta/pedidos" : "/entrar" },
+              ].map((m) => (
+                <Link key={m.to} to={m.to} className="alinhavo py-4 font-display text-2xl">
+                  {m.rotulo}
                 </Link>
               ))}
             </nav>
-            <div className="mt-8 space-y-3 text-sm text-suave">
-              <Link to={cliente ? "/conta/pedidos" : "/entrar"} className="block">
-                {cliente ? "Minha conta" : "Entrar"}
-              </Link>
-              <Link to="/conta/atendimento" className="block">
-                Atendimento
-              </Link>
-            </div>
           </div>
         </div>
       ) : null}
@@ -218,100 +180,98 @@ export function PortalLayout() {
         <Outlet />
       </main>
 
+      <CartaMensal />
       <Rodape />
     </div>
   );
 }
 
-function Rodape() {
+function CartaMensal() {
   const [inscrito, setInscrito] = useState(false);
   return (
-    <footer className="mt-24 bg-marinho-escuro text-white/70">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 md:grid-cols-[1.4fr_1fr_1fr_1.2fr] md:px-8">
-        <div>
-          <Marca claro className="!text-left" />
-          <p className="mt-6 max-w-xs text-sm leading-relaxed text-white/55">
-            Alfaiataria, camisaria e malharia em pequenas séries. Desde 1962, o bom corte não tem
-            estação.
-          </p>
+    <div className="mt-28 border-y border-dashed border-linha py-14">
+      <div className="mx-auto grid max-w-[1360px] items-center gap-10 px-5 md:grid-cols-2 md:px-12">
+        <p className="font-display text-[30px] leading-tight md:text-[34px]">
+          Uma carta por mês, escrita no ateliê.
+          <span className="block text-[20px] text-suave md:text-[22px]">
+            Novas edições, convites para provas e nenhuma promoção-relâmpago.
+          </span>
+        </p>
+        {inscrito ? (
+          <p className="font-mao text-2xl text-caramelo">Anotado. A primeira carta chega no começo do mês.</p>
+        ) : (
           <form
-            className="mt-6 flex max-w-xs border-b border-white/25"
+            className="flex border-b-[1.5px] border-tinta"
             onSubmit={(e) => {
               e.preventDefault();
               setInscrito(true);
             }}
           >
-            {inscrito ? (
-              <p className="py-2 text-sm text-dourado">Obrigado! Você receberá nossas novidades.</p>
-            ) : (
-              <>
-                <input
-                  type="email"
-                  required
-                  placeholder="Seu e-mail para novidades"
-                  className="flex-1 bg-transparent py-2 text-sm text-white outline-none placeholder:text-white/35"
-                />
-                <button type="submit" className="text-[11px] font-semibold uppercase tracking-[0.2em] text-dourado">
-                  Assinar
-                </button>
-              </>
-            )}
+            <input type="email" required placeholder="Seu e-mail" className="flex-1 bg-transparent py-3.5 outline-none" />
+            <button type="submit" className="text-sm font-medium text-caramelo">
+              Quero receber
+            </button>
           </form>
-        </div>
-
-        <div>
-          <p className="rotulo !text-dourado">Coleção</p>
-          <ul className="mt-5 space-y-2.5 text-sm">
-            {categoriasMenu.map((c) => (
-              <li key={c.to}>
-                <Link to={c.to} className="hover:text-white">
-                  {c.rotulo}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div>
-          <p className="rotulo !text-dourado">Atendimento</p>
-          <ul className="mt-5 space-y-2.5 text-sm">
-            <li>
-              <Link to="/conta/atendimento" className="hover:text-white">
-                Fale conosco
-              </Link>
-            </li>
-            <li>
-              <Link to="/conta/pedidos" className="hover:text-white">
-                Meus pedidos
-              </Link>
-            </li>
-            <li>WhatsApp (11) 99876-5432</li>
-            <li>Seg. a sáb., 10h às 22h</li>
-          </ul>
-        </div>
-
-        <div>
-          <p className="rotulo !text-dourado">Nossas casas</p>
-          <ul className="mt-5 space-y-4 text-sm">
-            {lojas.map((l) => (
-              <li key={l.id}>
-                <span className="block text-white/90">{l.nome}</span>
-                <span className="block text-xs text-white/45">
-                  {l.endereco} · {l.cidade}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        )}
       </div>
-      <div className="border-t border-white/10">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-5 text-xs text-white/40 md:px-8">
-          <p>© 2026 Casa Lorenzi. Protótipo navegável — pagamentos simulados.</p>
-          <NavLink to="/entrar?time=1" className="uppercase tracking-[0.2em] hover:text-white/80">
-            Área interna
-          </NavLink>
-        </div>
+    </div>
+  );
+}
+
+function Rodape() {
+  const colunas: [string, [string, string][]][] = [
+    [
+      "Comprar",
+      [
+        ["Edição 64 · Garoa", "/loja"],
+        ["Pronta-entrega", "/loja"],
+        ["Sob medida", "/sob-medida"],
+        ["Agendar uma prova", "/agendar"],
+      ],
+    ],
+    [
+      "Ajuda",
+      [
+        ["Meus pedidos", "/conta/pedidos"],
+        ["Trocas e ajustes", "/conta/atendimento"],
+        ["Fale com a casa", "/conta/atendimento/novo"],
+        ["WhatsApp (11) 99876-5432", "/conta/atendimento"],
+      ],
+    ],
+    [
+      "A casa",
+      [
+        ["Caderno do Ateliê", "/caderno"],
+        ["As três casas", "/casas"],
+        ["1962: a primeira tesoura", "/caderno/1962"],
+        ["Área interna", "/entrar?time=1"],
+      ],
+    ],
+  ];
+  return (
+    <footer className="px-5 pb-10 pt-20 md:px-12">
+      <div className="mx-auto grid max-w-[1360px] gap-10 sm:grid-cols-2 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+        <Link to="/" className="sm:col-span-2 md:col-span-1">
+          <Marca grande />
+        </Link>
+        {colunas.map(([titulo, links]) => (
+          <div key={titulo}>
+            <h5 className="mb-3 text-[13px] font-medium text-caramelo">{titulo}</h5>
+            <ul className="space-y-2 text-[15px]">
+              {links.map(([rotulo, to]) => (
+                <li key={rotulo}>
+                  <Link to={to} className="hover:text-caramelo">
+                    {rotulo}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </div>
+      <p className="mx-auto mt-14 max-w-[1360px] border-t border-dashed border-linha pt-5 text-center text-xs text-suave">
+        © 2026 Casa Lorenzi · Protótipo — fotos do Unsplash com tratamento de cor; nomes, histórias e eventos são ilustrativos.
+      </p>
     </footer>
   );
 }

@@ -22,6 +22,9 @@ import { CatalogoAdmin } from "./pages/painel/gestao/CatalogoAdmin";
 import { Integracoes } from "./pages/painel/gestao/Integracoes";
 import { Lojas } from "./pages/painel/gestao/Lojas";
 import { Usuarios } from "./pages/painel/gestao/Usuarios";
+import { Agendar } from "./pages/portal/Agendar";
+import { Caderno, MateriaPagina } from "./pages/portal/Caderno";
+import { Casas } from "./pages/portal/Casas";
 import { Catalogo } from "./pages/portal/Catalogo";
 import { Checkout } from "./pages/portal/Checkout";
 import { Inicio } from "./pages/portal/Inicio";
@@ -32,6 +35,7 @@ import { NovoChamado } from "./pages/portal/NovoChamado";
 import { Perfil } from "./pages/portal/Perfil";
 import { Produto } from "./pages/portal/Produto";
 import { Sacola } from "./pages/portal/Sacola";
+import { SobMedida } from "./pages/portal/SobMedida";
 
 function RolarAoTopo() {
   const { pathname } = useLocation();
@@ -52,6 +56,11 @@ export default function App() {
           <Route path="loja" element={<Catalogo />} />
           <Route path="loja/:sku" element={<Produto />} />
           <Route path="sacola" element={<Sacola />} />
+          <Route path="sob-medida" element={<SobMedida />} />
+          <Route path="agendar" element={<Agendar />} />
+          <Route path="caderno" element={<Caderno />} />
+          <Route path="caderno/:slug" element={<MateriaPagina />} />
+          <Route path="casas" element={<Casas />} />
           <Route
             path="checkout"
             element={

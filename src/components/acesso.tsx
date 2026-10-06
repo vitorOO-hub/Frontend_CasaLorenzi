@@ -31,16 +31,14 @@ export function ExigeLogin({ children, texto }: { children: ReactNode; texto?: s
   if (sessao?.tipo === "cliente") return <>{children}</>;
 
   return (
-    <div className="mx-auto max-w-md py-16 text-center">
-      <span className="filete mx-auto mb-6" />
-      <h1 className="text-4xl font-light">Entre na sua conta</h1>
-      <p className="mt-3 text-sm leading-relaxed text-suave">
-        {texto ??
-          "Acompanhe pedidos, fale com o atendimento e veja seus dados. Navegar pela coleção continua livre."}
+    <div className="mx-auto max-w-xl px-5 py-20 text-center">
+      <h1 className="text-[48px] leading-none">Entre na sua conta.</h1>
+      <p className="mt-4 font-display text-xl text-suave">
+        {texto ?? "Seus pedidos, suas conversas com a casa e as medidas que o alfaiate guardou ficam aqui."}
       </p>
       <Link
         to={`/entrar?voltar=${encodeURIComponent(pathname)}`}
-        className={`${classesBotao()} mt-8 px-10`}
+        className="mt-10 inline-block bg-tabaco px-8 py-4 text-sm tracking-wide text-[#f3e9da] hover:bg-tinta"
       >
         Entrar
       </Link>
