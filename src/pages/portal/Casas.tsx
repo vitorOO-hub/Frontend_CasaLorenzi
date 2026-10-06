@@ -24,7 +24,7 @@ export function CasaCartao({ loja }: { loja: Loja }) {
       {info ? (
         <>
           <span className="mt-3.5 inline-block bg-palha px-3 py-1.5 text-[13px]">{info.agenda}</span>
-          <p className="mt-4 rotate-[-0.6deg] bg-pergaminho px-4 py-3.5 font-mao text-[14px] leading-relaxed text-tabaco shadow-[0_6px_16px_#4a33261a]">
+          <p className="mt-4 rotate-[-0.6deg] bg-pergaminho px-4 py-3.5 font-mao text-[14px] leading-relaxed text-tabaco shadow-[0_6px_16px_#16203a1a]">
             “{info.bilhete}” — {info.autor}
           </p>
         </>

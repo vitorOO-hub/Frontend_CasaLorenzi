@@ -74,7 +74,7 @@ function DetalheProduto({ sku }: { sku: string }) {
           <div className="col-span-2">
             <Foto src={vestida ?? fotoEstudio(produto.sku)} alt={produto.nome} className="aspect-[4/5]" />
           </div>
-          <div className="aspect-square overflow-hidden bg-[#ece3d3]">
+          <div className="aspect-square overflow-hidden bg-areia">
             <img src={fotoEstudio(produto.sku)} alt="" className="h-full w-full object-contain p-5" />
           </div>
           <Foto src={vestida ?? fotoEstudio(produto.sku)} className="aspect-square [&_img]:scale-[1.9] [&_img]:object-[center_35%]" />

@@ -197,8 +197,8 @@ export function DashboardGerente() {
           <div className="space-y-4 pt-2">
             {(
               [
-                ["Loja física", 1 - rv.online, "#2f5fa8"],
-                ["Online", rv.online, "#c47a1e"],
+                ["Loja física", 1 - rv.online, "#4a7ba0"],
+                ["Online", rv.online, "#b46746"],
               ] as const
             ).map(([rotulo, v, cor]) => (
               <div key={rotulo}>

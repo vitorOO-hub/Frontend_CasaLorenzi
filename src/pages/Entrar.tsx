@@ -117,7 +117,7 @@ export function Entrar() {
             {erro ? <p className="text-sm text-perigo">{erro}</p> : null}
             <button
               type="submit"
-              className="w-full bg-tabaco py-4 text-sm tracking-wide text-[#f3e9da] hover:bg-tinta"
+              className="w-full bg-tabaco py-4 text-sm tracking-wide text-creme hover:bg-tinta"
             >
               Entrar
             </button>

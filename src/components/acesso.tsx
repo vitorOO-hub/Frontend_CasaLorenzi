@@ -38,7 +38,7 @@ export function ExigeLogin({ children, texto }: { children: ReactNode; texto?: s
       </p>
       <Link
         to={`/entrar?voltar=${encodeURIComponent(pathname)}`}
-        className="mt-10 inline-block bg-tabaco px-8 py-4 text-sm tracking-wide text-[#f3e9da] hover:bg-tinta"
+        className="mt-10 inline-block bg-tabaco px-8 py-4 text-sm tracking-wide text-creme hover:bg-tinta"
       >
         Entrar
       </Link>

@@ -72,7 +72,7 @@ export function Checkout() {
   useEffect(() => {
     if (pagamento !== "pix") return;
     let ativo = true;
-    void QRCode.toDataURL(codigoPix, { margin: 1, width: 320, color: { dark: "#1a1f2b", light: "#fbf8f2" } }).then(
+    void QRCode.toDataURL(codigoPix, { margin: 1, width: 320, color: { dark: "#16203a", light: "#fbf8f2" } }).then(
       (url) => ativo && setQrPix(url),
     );
     return () => {

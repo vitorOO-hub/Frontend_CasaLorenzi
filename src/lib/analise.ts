@@ -378,9 +378,9 @@ export function giroDiario(movimentos: Movimento[], lojaId: string) {
  * Cor de cada unidade nos comparativos — fixa por loja (nunca pela posição na tela),
  * validada para daltonismo. Lojas criadas depois ficam em cinza neutro.
  */
-const coresUnidade = ["#2f5fa8", "#c47a1e", "#14907a"];
-export const corDaLoja = (lojaId: string) => coresUnidade[lojas.findIndex((l) => l.id === lojaId)] ?? "#7a7f8a";
+const coresUnidade = ["#1f2a48", "#b46746", "#4a7ba0"];
+export const corDaLoja = (lojaId: string) => coresUnidade[lojas.findIndex((l) => l.id === lojaId)] ?? "#5e6b89";
 
 /** Série única usa a cor da marca. */
-export const COR_MARCA = "#1f2f4f";
-export const CORES_DUAS_SERIES = ["#2f5fa8", "#c47a1e"] as const;
+export const COR_MARCA = "#1f2a48";
+export const CORES_DUAS_SERIES = ["#4a7ba0", "#b46746"] as const;

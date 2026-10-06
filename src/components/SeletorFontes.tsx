@@ -59,7 +59,7 @@ export function SeletorFontes() {
   return (
     <div className="fixed bottom-5 right-5 z-[60] font-sans text-tinta">
       {aberto ? (
-        <div className="w-[320px] border border-linha bg-creme shadow-[0_18px_40px_#1a1f2b2e]">
+        <div className="w-[320px] border border-linha bg-creme shadow-[0_18px_40px_#16203a2e]">
           <div className="flex items-center justify-between border-b border-linha px-4 py-3">
             <b className="text-sm font-medium">Testar fontes</b>
             <button onClick={() => setAberto(false)} aria-label="Fechar">
@@ -71,7 +71,7 @@ export function SeletorFontes() {
               <li key={o.id}>
                 <button
                   onClick={() => escolher(o.id)}
-                  className={cn("w-full border-b border-linha/70 px-4 py-3 text-left hover:bg-pergaminho", atual === o.id && "bg-pergaminho shadow-[inset_3px_0_0_#8a5f36]")}
+                  className={cn("w-full border-b border-linha/70 px-4 py-3 text-left hover:bg-pergaminho", atual === o.id && "bg-pergaminho shadow-[inset_3px_0_0_#b46746]")}
                 >
                   <span className="block text-[21px] leading-tight" style={{ fontFamily: o.titulo }}>
                     Casa Lorenzi
@@ -87,7 +87,7 @@ export function SeletorFontes() {
       ) : (
         <button
           onClick={() => setAberto(true)}
-          className="flex items-center gap-2 bg-tinta px-4 py-3 text-sm text-creme shadow-[0_10px_24px_#1a1f2b40] hover:bg-marinho"
+          className="flex items-center gap-2 bg-tinta px-4 py-3 text-sm text-creme shadow-[0_10px_24px_#16203a40] hover:bg-marinho"
         >
           <Type className="h-4 w-4" /> Testar fontes
         </button>

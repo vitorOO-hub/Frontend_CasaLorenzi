@@ -1,8 +1,7 @@
-import { ChevronLeft, ChevronRight, Menu, Search, ShoppingBag, X } from "lucide-react";
+import { Menu, Plus, Search, ShoppingBag, X } from "lucide-react";
 import { SeletorFontes } from "@/components/SeletorFontes";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { MenuUsuario } from "@/components/MenuUsuario";
 import { cn } from "@/components/ui";
 import { EDICAO } from "@/lib/loja";
 import { sair, useSessao } from "@/lib/sessao";
@@ -37,7 +36,6 @@ export function PortalLayout() {
   const [buscaEm, setBuscaEm] = useState<string | null>(null);
   const [termo, setTermo] = useState("");
   const [rolou, setRolou] = useState(false);
-  const [submenu, setSubmenu] = useState<string | null>(null);
   const menuAberto = menuEm === rota;
   const buscaAberta = buscaEm === rota;
   const itensSacola = carrinho.reduce((s, i) => s + i.quantidade, 0);
@@ -67,90 +65,108 @@ export function PortalLayout() {
     { id: "casa", rotulo: "A casa", itens: [["Caderno do Ateliê", "/caderno"], ["As três casas", "/casas"], ["1962: a primeira tesoura", "/caderno/1962"]] },
   ];
 
+  const secaoDaRota = secoesMenu.find((m) => m.itens.some(([, to]) => to.split("?")[0] === pathname && pathname !== "/loja"))?.id ?? (pathname === "/loja" ? "pronta" : null);
+  const contaLink = cliente ? "/conta/pedidos" : "/entrar";
+
   return (
-    <div className="loja flex min-h-screen flex-col">
-      <div
-        className={cn(
-          "inset-x-0 top-0 z-40 transition-colors duration-500",
-          home ? "fixed" : "sticky",
-          transparente ? "bg-transparent text-white" : "bg-creme text-tinta shadow-[0_1px_0_#ddd2c0]",
-        )}
+    <div className="loja min-h-screen lg:pl-[248px]">
+      {/* Menu vertical fixo (desktop): marca, navegação em acordeão e atalhos */}
+      <aside
+        className="fixed inset-y-0 left-0 z-40 hidden w-[248px] flex-col border-r border-dashed border-linha bg-creme px-7 pb-7 pt-8 [font-family:var(--font-menu)] lg:flex"
+        aria-label="Menu"
       >
-        <div className={cn("flex justify-center px-5 py-2 text-xs md:px-12", transparente ? "text-white/80" : "border-b border-dashed border-linha text-suave")}>
-          <span>
-            <b className={cn("font-medium", transparente ? "text-white" : "text-tinta")}>
-              Edição {EDICAO.numero} · {EDICAO.nome}
-            </b>{" "}
-            <span className="hidden sm:inline">— frete por nossa conta acima de R$ 1.000 · ajustes sempre sem custo</span>
+        <Link to="/" aria-label="Casa Lorenzi — início" className="[font-family:var(--font-display)]">
+          <span className="block text-[30px] leading-[0.92] text-marinho">
+            Casa
+            <br />
+            Lorenzi
           </span>
+          <small className="mt-2 block font-sans text-[11px] tracking-wide text-suave">Alfaiates desde 1962</small>
+        </Link>
+
+        <form onSubmit={buscar} className="mt-8 flex items-center gap-2 border-b border-linha pb-1.5 focus-within:border-tinta">
+          <Search className="h-3.5 w-3.5 shrink-0 text-suave" strokeWidth={1.5} />
+          <input
+            value={termo}
+            onChange={(e) => setTermo(e.target.value)}
+            placeholder="BUSCAR"
+            aria-label="Buscar"
+            className="w-full bg-transparent text-[12px] uppercase tracking-[0.14em] outline-none placeholder:text-suave"
+          />
+        </form>
+
+        <div className="-mr-3 mt-7 flex-1 overflow-y-auto pr-3">
+          <NavegacaoVertical secoes={secoesMenu} inicial={secaoDaRota} pathname={pathname} search={search} />
         </div>
 
-        <header className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-4 md:px-12">
-          <button
-            onClick={() => {
-              setSubmenu(null);
-              setMenuEm(rota);
-            }}
-            className="flex items-center gap-3 justify-self-start text-sm hover:opacity-70"
-            aria-label="Abrir menu"
-          >
-            <Menu className="h-5 w-5" strokeWidth={1.4} />
-            <span className="hidden md:inline">Menu</span>
-          </button>
+        <div className="mt-6 flex flex-col gap-0.5 border-t border-dashed border-linha pt-5 text-[12px] uppercase tracking-[0.14em]">
+          <Link to="/sacola" className="flex justify-between py-1.5 hover:text-terracota">
+            Sacola <span>{itensSacola}</span>
+          </Link>
+          <Link to={contaLink} className="py-1.5 hover:text-terracota">
+            {cliente ? `Conta · ${cliente.nome.split(" ")[0]}` : "Entrar"}
+          </Link>
+          {cliente ? (
+            <button
+              onClick={() => {
+                sair();
+                navigate("/");
+              }}
+              className="py-1.5 text-left text-suave hover:text-terracota"
+            >
+              Sair
+            </button>
+          ) : null}
+          <Link to="/agendar" className="py-1.5 hover:text-terracota">
+            Agendar uma prova
+          </Link>
+          <Link to="/entrar?time=1" className="py-1.5 text-[11px] text-suave hover:text-tinta">
+            Área interna
+          </Link>
+        </div>
+        <p className="mt-4 font-sans text-[11px] leading-snug text-suave">
+          <b className="font-medium text-tinta">
+            Edição {EDICAO.numero} · {EDICAO.nome}
+          </b>
+          <br />
+          Frete por nossa conta acima de R$ 1.000.
+        </p>
+      </aside>
 
-          <Link to="/" aria-label="Casa Lorenzi — início" className="whitespace-nowrap text-center font-display text-[24px] leading-none sm:text-[28px] md:text-[34px]">
+      {/* Celular e tablet: barra no topo + o mesmo menu vertical em gaveta */}
+      <div
+        className={cn(
+          "inset-x-0 top-0 z-40 transition-colors duration-500 lg:hidden",
+          home ? "fixed" : "sticky",
+          transparente ? "bg-transparent text-white" : "bg-creme text-tinta shadow-[0_1px_0_#dfd9cf]",
+        )}
+      >
+        <header className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-4 md:px-8">
+          <button onClick={() => setMenuEm(rota)} className="flex items-center gap-3 justify-self-start text-sm hover:opacity-70" aria-label="Abrir menu">
+            <Menu className="h-5 w-5" strokeWidth={1.4} />
+          </button>
+          <Link to="/" aria-label="Casa Lorenzi — início" className="whitespace-nowrap text-center font-display text-[24px] leading-none sm:text-[28px]">
             Casa Lorenzi
           </Link>
-
-          <nav className="flex items-center gap-4 justify-self-end text-sm md:gap-7" aria-label="Atalhos">
+          <nav className="flex items-center gap-4 justify-self-end text-sm" aria-label="Atalhos">
             <button onClick={() => setBuscaEm(buscaAberta ? null : rota)} aria-label="Buscar" className="hover:opacity-70">
               <Search className="h-[18px] w-[18px]" strokeWidth={1.4} />
             </button>
-            {cliente ? (
-              <MenuUsuario
-                compacto
-                nome={cliente.nome}
-                detalhe="Cliente Casa Lorenzi"
-                email={cliente.email}
-                onSair={() => {
-                  sair();
-                  navigate("/");
-                }}
-                itens={
-                  <div className="py-1 text-tinta">
-                    {[
-                      ["/conta/pedidos", "Meus pedidos"],
-                      ["/conta/atendimento", "Conversas com a casa"],
-                      ["/conta/perfil", "Meus dados"],
-                    ].map(([to, rotulo]) => (
-                      <Link key={to} to={to!} className="block px-4 py-2 text-sm hover:bg-palha/60">
-                        {rotulo}
-                      </Link>
-                    ))}
-                  </div>
-                }
-              />
-            ) : (
-              <Link to="/entrar" className="hidden hover:opacity-70 sm:inline">
-                Entrar
-              </Link>
-            )}
             <Link to="/sacola" className="flex items-center gap-1 whitespace-nowrap hover:opacity-70" aria-label={`Sacola com ${itensSacola} peças`}>
-              <ShoppingBag className="h-[18px] w-[18px] sm:hidden" strokeWidth={1.4} />
-              <span className="hidden sm:inline">Sacola</span> ({itensSacola})
+              <ShoppingBag className="h-[18px] w-[18px]" strokeWidth={1.4} /> {itensSacola}
             </Link>
           </nav>
         </header>
 
         {buscaAberta ? (
-          <form onSubmit={buscar} className="border-t border-dashed border-linha px-5 py-4 md:px-12">
-            <div className="mx-auto flex max-w-2xl items-center gap-3 border-b border-tinta pb-2">
+          <form onSubmit={buscar} className="border-t border-dashed border-linha bg-creme px-5 py-4 text-tinta">
+            <div className="flex items-center gap-3 border-b border-tinta pb-2">
               <Search className="h-4 w-4 text-suave" />
               <input
                 autoFocus
                 value={termo}
                 onChange={(e) => setTermo(e.target.value)}
-                placeholder="Peça, tecido ou cor — “linho”, “merino”, “Areia de Ipanema”"
+                placeholder="Peça, tecido ou cor"
                 className="flex-1 bg-transparent text-sm outline-none placeholder:text-suave"
               />
               <button type="submit" className="link-tracejado text-sm">
@@ -161,79 +177,38 @@ export function PortalLayout() {
         ) : null}
       </div>
 
-      {/* Menu lateral (inspirado na Fear of God): itens em caixa alta, submenus que deslizam */}
       <div
-        className={cn("fixed inset-0 z-50 bg-tinta/30 transition-opacity duration-300", menuAberto ? "opacity-100" : "pointer-events-none opacity-0")}
+        className={cn("fixed inset-0 z-50 bg-tinta/30 transition-opacity duration-300 lg:hidden", menuAberto ? "opacity-100" : "pointer-events-none opacity-0")}
         onClick={() => setMenuEm(null)}
         aria-hidden={!menuAberto}
       >
         <aside
           className={cn(
-            "loja flex h-full w-[440px] max-w-[90%] flex-col overflow-hidden transition-transform duration-500 ease-out [font-family:var(--font-menu)]",
+            "loja flex h-full w-[340px] max-w-[88%] flex-col overflow-y-auto px-7 pb-8 pt-5 transition-transform duration-500 ease-out [font-family:var(--font-menu)]",
             menuAberto ? "translate-x-0" : "-translate-x-full",
           )}
           onClick={(e) => e.stopPropagation()}
           aria-label="Menu"
         >
-          <div className="flex h-14 shrink-0 items-center justify-between px-7">
-            {submenu ? (
-              <button onClick={() => setSubmenu(null)} className="flex items-center gap-2 text-[13px] uppercase tracking-[0.14em] hover:text-caramelo">
-                <ChevronLeft className="h-4 w-4" strokeWidth={1.4} /> {secoesMenu.find((m) => m.id === submenu)?.rotulo}
-              </button>
-            ) : (
-              <span />
-            )}
-            <button onClick={() => setMenuEm(null)} aria-label="Fechar menu" className="hover:text-caramelo">
-              <X className="h-5 w-5" strokeWidth={1.3} />
-            </button>
-          </div>
-
-          <div className="relative flex-1 overflow-hidden">
-            {/* Nível 1 */}
-            <div className={cn("absolute inset-0 flex flex-col overflow-y-auto px-7 pb-8 pt-4 transition-transform duration-500 ease-out", submenu && "-translate-x-full")}>
-              <nav className="flex flex-col" aria-label="Principal">
-                {secoesMenu.map((m) => (
-                  <button
-                    key={m.id}
-                    onClick={() => setSubmenu(m.id)}
-                    className="flex items-center justify-between py-3 text-left text-[15px] uppercase tracking-[0.14em] hover:text-caramelo"
-                  >
-                    {m.rotulo}
-                    <ChevronRight className="h-4 w-4" strokeWidth={1.3} />
-                  </button>
-                ))}
-              </nav>
-              <div className="mt-auto flex flex-col gap-1 pt-10 text-[13px] uppercase tracking-[0.14em] text-suave">
-                <Link to={cliente ? "/conta/pedidos" : "/entrar"} className="py-1.5 hover:text-tinta">
-                  {cliente ? `Conta · ${cliente.nome.split(" ")[0]}` : "Conta"}
-                </Link>
-                <Link to="/conta/atendimento/novo" className="py-1.5 hover:text-tinta">
-                  Contato
-                </Link>
-                <Link to="/agendar" className="py-1.5 hover:text-tinta">
-                  Agendar uma prova
-                </Link>
-                <Link to="/entrar?time=1" className="py-1.5 text-[11px] text-suave/70 hover:text-tinta">
-                  Área interna
-                </Link>
-              </div>
-            </div>
-
-            {/* Nível 2: submenu da seção escolhida */}
-            <div className={cn("absolute inset-0 overflow-y-auto px-7 pb-8 pt-4 transition-transform duration-500 ease-out", submenu ? "translate-x-0" : "translate-x-full")}>
-              <nav className="flex flex-col">
-                {(secoesMenu.find((m) => m.id === submenu)?.itens ?? []).map(([rotulo, to]) => (
-                  <Link key={rotulo} to={to} className="py-3 text-[15px] uppercase tracking-[0.14em] hover:text-caramelo">
-                    {rotulo}
-                  </Link>
-                ))}
-              </nav>
-            </div>
+          <button onClick={() => setMenuEm(null)} aria-label="Fechar menu" className="mb-6 self-end hover:text-terracota">
+            <X className="h-5 w-5" strokeWidth={1.3} />
+          </button>
+          <NavegacaoVertical secoes={secoesMenu} inicial={secaoDaRota} pathname={pathname} search={search} />
+          <div className="mt-auto flex flex-col gap-1 pt-10 text-[13px] uppercase tracking-[0.14em]">
+            <Link to={contaLink} className="py-1.5 hover:text-terracota">
+              {cliente ? `Conta · ${cliente.nome.split(" ")[0]}` : "Entrar"}
+            </Link>
+            <Link to="/agendar" className="py-1.5 hover:text-terracota">
+              Agendar uma prova
+            </Link>
+            <Link to="/entrar?time=1" className="py-1.5 text-[11px] text-suave hover:text-tinta">
+              Área interna
+            </Link>
           </div>
         </aside>
       </div>
 
-      <main className="flex-1">
+      <main>
         <Outlet />
       </main>
 
@@ -241,6 +216,48 @@ export function PortalLayout() {
       <Rodape />
       <SeletorFontes />
     </div>
+  );
+}
+
+type SecaoMenu = { id: string; rotulo: string; itens: [string, string][] };
+
+/** Navegação em coluna: cada seção abre logo abaixo (acordeão), sem sair da lista. */
+function NavegacaoVertical({ secoes, inicial, pathname, search }: { secoes: SecaoMenu[]; inicial: string | null; pathname: string; search: string }) {
+  const [aberta, setAberta] = useState<string | null>(inicial);
+  const atual = `${pathname}${search}`;
+  return (
+    <nav className="flex flex-col" aria-label="Principal">
+      {secoes.map((m) => {
+        const ativa = aberta === m.id;
+        return (
+          <div key={m.id}>
+            <button
+              onClick={() => setAberta(ativa ? null : m.id)}
+              aria-expanded={ativa}
+              className={cn("flex w-full items-center justify-between py-2.5 text-left text-[14px] uppercase tracking-[0.14em] hover:text-terracota", ativa && "text-terracota")}
+            >
+              {m.rotulo}
+              <Plus className={cn("h-3.5 w-3.5 transition-transform duration-300", ativa && "rotate-45")} strokeWidth={1.4} />
+            </button>
+            <div className={cn("grid transition-[grid-template-rows] duration-400 ease-out", ativa ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
+              <ul className="overflow-hidden border-l border-dashed border-linha pl-4">
+                {m.itens.map(([rotulo, to], i) => (
+                  <li key={rotulo} className={cn(i === 0 && "pt-1", i === m.itens.length - 1 && "pb-3")}>
+                    <Link
+                      to={to}
+                      tabIndex={ativa ? 0 : -1}
+                      className={cn("block py-1.5 text-[12.5px] uppercase tracking-[0.12em] text-suave hover:text-tinta", atual === to && "text-tinta")}
+                    >
+                      {rotulo}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        );
+      })}
+    </nav>
   );
 }
 

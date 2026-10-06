@@ -36,7 +36,7 @@ export const FotoCampanha = ({ id, largura, ...props }: { id: string; largura?: 
 /** Foto de estúdio da peça (packshot), usada em listas compactas. */
 export function FotoProduto({ sku, alt, className }: { sku: string; alt: string; className?: string }) {
   return (
-    <div className={cn("overflow-hidden bg-[#ece3d3]", className)}>
+    <div className={cn("overflow-hidden bg-areia", className)}>
       <img src={fotoEstudio(sku)} alt={alt} loading="lazy" className="h-full w-full object-cover" />
     </div>
   );
@@ -51,7 +51,7 @@ export function Etiqueta({ children, className }: { children: ReactNode; classNa
       className={cn(
         "relative inline-flex items-center gap-2 whitespace-nowrap bg-etiqueta py-1.5 pl-7 pr-3.5 text-[13px] font-medium text-tinta",
         "[clip-path:polygon(11px_0,100%_0,100%_100%,11px_100%,0_50%)]",
-        "before:absolute before:left-[9px] before:top-1/2 before:h-1.5 before:w-1.5 before:-translate-y-1/2 before:rounded-full before:bg-creme before:shadow-[inset_0_0_0_1px_#c3ad8c]",
+        "before:absolute before:left-[9px] before:top-1/2 before:h-1.5 before:w-1.5 before:-translate-y-1/2 before:rounded-full before:bg-creme before:shadow-[inset_0_0_0_1px_#c9a28c]",
         className,
       )}
     >
@@ -113,7 +113,7 @@ export function CartaoProduto({
             src={fotoEstudio(produto.sku)}
             alt=""
             loading="lazy"
-            className="absolute inset-0 z-[1] h-full w-full bg-[#ece3d3] object-contain p-6 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+            className="absolute inset-0 z-[1] h-full w-full bg-areia object-contain p-6 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
           />
         ) : null}
         {esgotado ? (
@@ -153,7 +153,7 @@ export function CabecalhoSecao({ titulo, acao, para }: { titulo: string; acao?: 
 export const botaoLoja = (variante: "tabaco" | "marinho" | "contorno" = "tabaco") =>
   cn(
     "inline-flex items-center justify-center gap-2 px-7 py-4 text-sm tracking-wide transition-colors disabled:opacity-40",
-    variante === "tabaco" && "bg-tabaco text-[#f3e9da] hover:bg-tinta",
+    variante === "tabaco" && "bg-tabaco text-creme hover:bg-tinta",
     variante === "marinho" && "bg-marinho text-white hover:bg-tinta",
     variante === "contorno" && "border border-tinta hover:bg-tinta hover:text-creme",
   );
@@ -170,16 +170,16 @@ export function FichaTecnica({ produto, tamanho }: { produto: Produto; tamanho?:
     ["Ajuste", "na loja, sem custo"],
   ];
   return (
-    <div className="relative rotate-[-1deg] bg-[#f4ecdf] px-8 py-7 font-mono text-[13px] leading-[1.85] text-[#2a2620] shadow-[0_14px_30px_#4a332626] before:pointer-events-none before:absolute before:inset-[9px] before:border-[1.5px] before:border-dashed before:border-[#b39470]">
+    <div className="relative rotate-[-1deg] bg-etiqueta px-8 py-7 font-mono text-[13px] leading-[1.85] text-tinta shadow-[0_14px_30px_#16203a26] before:pointer-events-none before:absolute before:inset-[9px] before:border-[1.5px] before:border-dashed before:border-[#b39470]">
       <b className="tracking-wider">CASA LORENZI · DESDE 1962</b>
       {linhas.map(([k, v]) => (
         <div key={k} className="flex gap-2">
           <span>{k}</span>
-          <span className="flex-1 overflow-hidden whitespace-nowrap text-[#b39470]">{".".repeat(60)}</span>
+          <span className="flex-1 overflow-hidden whitespace-nowrap text-camelo/60">{".".repeat(60)}</span>
           <span className="text-right">{v}</span>
         </div>
       ))}
-      <span className="mt-2 block font-mao text-[14px] leading-relaxed text-[#5b3d22]">— conferido no ateliê</span>
+      <span className="mt-2 block font-mao text-[14px] leading-relaxed text-ferrugem">— conferido no ateliê</span>
     </div>
   );
 }

@@ -111,15 +111,15 @@ export function Inicio() {
       </div>
 
       {/* Por dentro de uma peça */}
-      <div className="bg-marinho text-[#efe6d6]">
+      <div className="bg-marinho text-creme">
         <div className="mx-auto grid max-w-[1360px] items-center gap-16 px-5 py-24 md:grid-cols-2 md:gap-20 md:px-12">
           <div>
-            <h2 className="mb-5 text-[44px] leading-none text-[#efe6d6] md:text-[54px]">
+            <h2 className="mb-5 text-[44px] leading-none text-creme md:text-[54px]">
               Por dentro de
               <br />
               <i className="text-ouro-claro">um blazer Lorenzi.</i>
             </h2>
-            <p className="max-w-md text-[#efe6d6]/80">
+            <p className="max-w-md text-creme/80">
               Toda peça sai daqui com uma etiqueta costurada no forro. Ela diz de onde veio o tecido, onde foi costurada e quem fez o seu ajuste.
             </p>
             <div className="mt-9 grid grid-cols-3 gap-4">
@@ -130,7 +130,7 @@ export function Inicio() {
               ].map(([id, titulo, texto]) => (
                 <div key={titulo}>
                   <FotoCampanha id={id!} largura={500} className="aspect-[4/5]" />
-                  <p className="mt-2.5 text-[13px] text-[#efe6d6]/75">
+                  <p className="mt-2.5 text-[13px] text-creme/75">
                     <b className="block font-display text-lg font-normal text-white">{titulo}</b>
                     {texto}
                   </p>

@@ -76,7 +76,7 @@ function useAlternancia(total: number, intervalo: number) {
 }
 
 const Escurecer = () => (
-  <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(0deg,rgba(26,31,43,.55)_0%,rgba(26,31,43,0)_45%),linear-gradient(180deg,rgba(26,31,43,.45)_0%,rgba(26,31,43,0)_22%)]" />
+  <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(0deg,rgba(22,32,58,.55)_0%,rgba(22,32,58,0)_45%),linear-gradient(180deg,rgba(22,32,58,.45)_0%,rgba(22,32,58,0)_22%)]" />
 );
 
 function Chamada({ titulo, sobre, acao, to, grande = false }: { titulo: string; sobre?: string; acao: string; to: string; grande?: boolean }) {

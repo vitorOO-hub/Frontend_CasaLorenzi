@@ -11,9 +11,9 @@ import { cn } from "./ui";
 
 export type Serie = { id: string; nome: string; cor: string; valores: number[] };
 
-const SUAVE = "#6b6f7a";
-const GRADE = "#ece6dc";
-const BASE = "#cfc6b7";
+const SUAVE = "#5e6b89";
+const GRADE = "#e8e3da";
+const BASE = "#d2ccc2";
 
 // ---------- Formatação ----------
 
