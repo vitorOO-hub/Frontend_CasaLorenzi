@@ -49,29 +49,30 @@ export function Inicio() {
 
   return (
     <div>
-      {/* Abertura: vídeos e fotos que mudam sozinhos */}
+      {/* Abertura: três slides que mudam sozinhos */}
       <CarrosselCampanha
         slides={[
           { midia: filme(41491), sobre: `Edição ${EDICAO.numero}`, titulo: `${EDICAO.nome}.`, acao: "Ver a coleção", to: "/loja" },
           { midia: foto(CAMPANHA.prontaEntrega, "center 35%"), sobre: "Outerwear", titulo: "O casaco camelo volta à cidade", acao: "Ver casacos", to: "/loja?categoria=Outerwear" },
-          { midia: filme(48151), sobre: "Desde 1962", titulo: "Feito à mão, ajustado a você", acao: "Conheça o ateliê", to: "/caderno/1962" },
           { midia: foto(CAMPANHA.edicaoGrande), sobre: "Trench Milano", titulo: "Areia de Ipanema", acao: "Ver a peça", to: "/loja/CL-0509" },
         ]}
       />
 
-      {/* Dois painéis lado a lado */}
-      <div className="grid gap-[3px] pt-[3px] md:grid-cols-2">
+      <FileiraProdutos titulo={`Novidades da Edição ${EDICAO.numero}`} produtos={novidades} para="/loja" />
+
+      {/* Dois caminhos, em foto parada */}
+      <div className="grid gap-[3px] md:grid-cols-2">
         <PainelMidia
-          className="h-[88svh] min-h-[520px]"
-          midias={[filme(11812)]}
+          className="h-[72svh] min-h-[460px]"
+          midias={[foto(CAMPANHA.sobMedida)]}
           sobre="Sob medida"
           titulo="Do risco de giz à terceira prova"
           acao="Como funciona"
           to="/sob-medida"
         />
         <PainelMidia
-          className="h-[88svh] min-h-[520px]"
-          midias={[foto("1608234808654-2a8875faa7fd"), foto("1590873802674-55bb8f947bc5"), foto("1593030103066-0093718efeb9")]}
+          className="h-[72svh] min-h-[460px]"
+          midias={[foto("1593030103066-0093718efeb9")]}
           sobre="Alfaiataria"
           titulo="Lã fria para o ano todo"
           acao="Ver alfaiataria"
@@ -79,40 +80,9 @@ export function Inicio() {
         />
       </div>
 
-      <FileiraProdutos titulo={`Novidades da Edição ${EDICAO.numero}`} produtos={novidades} para="/loja" />
-
-      {/* Painel inteiro em vídeo */}
-      <PainelMidia
-        className="h-[92svh] min-h-[560px]"
-        midias={[filme(33167)]}
-        sobre="Pronta-entrega"
-        titulo="A arara inteira, ajustada na hora"
-        acao="Ver todas as peças"
-        to="/loja"
-      />
-
-      <div className="grid gap-[3px] pt-[3px] md:grid-cols-2">
-        <PainelMidia
-          className="h-[88svh] min-h-[520px]"
-          midias={[foto("1519831296458-9341fc9d2b18"), foto("1641642231157-0849081598a2"), foto("1619603364937-8d7af41ef206")]}
-          sobre="Malharia"
-          titulo="Merino, sem pressa"
-          acao="Ver malharia"
-          to="/loja?categoria=Malharia"
-        />
-        <PainelMidia
-          className="h-[88svh] min-h-[520px]"
-          midias={[filme(12524)]}
-          sobre="Camisaria"
-          titulo="Linho e algodão egípcio"
-          acao="Ver camisas"
-          to="/loja?categoria=Camisaria"
-        />
-      </div>
-
       {/* Por dentro de uma peça */}
       <div className="bg-marinho text-creme">
-        <div className="mx-auto grid max-w-[1360px] items-center gap-16 px-5 py-24 md:grid-cols-2 md:gap-20 md:px-12">
+        <div className="mx-auto grid max-w-[1360px] grid-cols-[minmax(0,1fr)] items-center gap-16 px-5 py-24 md:grid-cols-2 md:gap-20 md:px-12">
           <div>
             <h2 className="mb-5 text-[44px] leading-none text-creme md:text-[54px]">
               Por dentro de
