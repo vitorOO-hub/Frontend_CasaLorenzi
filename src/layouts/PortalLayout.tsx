@@ -1,18 +1,12 @@
-import { Menu, Search, ShoppingBag, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Menu, Search, ShoppingBag, X } from "lucide-react";
+import { SeletorFontes } from "@/components/SeletorFontes";
 import { useEffect, useState, type FormEvent } from "react";
-import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { MenuUsuario } from "@/components/MenuUsuario";
 import { cn } from "@/components/ui";
 import { EDICAO } from "@/lib/loja";
 import { sair, useSessao } from "@/lib/sessao";
 import { useEstado } from "@/lib/store";
-
-const menu = [
-  { rotulo: "Pronta-entrega", to: "/loja" },
-  { rotulo: "Sob medida", to: "/sob-medida" },
-  { rotulo: "Caderno do Ateliê", to: "/caderno" },
-  { rotulo: "As casas", to: "/casas" },
-];
 
 /** Marca empilhada, alinhada à esquerda. */
 export function Marca({ claro = false, grande = false, className }: { claro?: boolean; grande?: boolean; className?: string }) {
@@ -43,6 +37,7 @@ export function PortalLayout() {
   const [buscaEm, setBuscaEm] = useState<string | null>(null);
   const [termo, setTermo] = useState("");
   const [rolou, setRolou] = useState(false);
+  const [submenu, setSubmenu] = useState<string | null>(null);
   const menuAberto = menuEm === rota;
   const buscaAberta = buscaEm === rota;
   const itensSacola = carrinho.reduce((s, i) => s + i.quantidade, 0);
@@ -65,6 +60,12 @@ export function PortalLayout() {
   }
 
   const categorias = Array.from(new Set(produtos.map((p) => p.categoria))).sort();
+  const secoesMenu: { id: string; rotulo: string; itens: [string, string][] }[] = [
+    { id: "destaques", rotulo: "Destaques", itens: [[`Edição ${EDICAO.numero} · ${EDICAO.nome}`, "/loja"], ["Novidades", "/loja"], ["Casacos da estação", "/loja?categoria=Outerwear"], ["Últimas peças", "/loja?ordem=maior"]] },
+    { id: "pronta", rotulo: "Pronta-entrega", itens: [["Ver tudo", "/loja"], ...categorias.map((c): [string, string] => [c, `/loja?categoria=${c}`])] },
+    { id: "sob", rotulo: "Sob medida", itens: [["Como funciona", "/sob-medida"], ["Tecidos da estação", "/sob-medida"], ["Agendar uma conversa", "/agendar?tipo=sob-medida"]] },
+    { id: "casa", rotulo: "A casa", itens: [["Caderno do Ateliê", "/caderno"], ["As três casas", "/casas"], ["1962: a primeira tesoura", "/caderno/1962"]] },
+  ];
 
   return (
     <div className="loja flex min-h-screen flex-col">
@@ -85,7 +86,14 @@ export function PortalLayout() {
         </div>
 
         <header className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-4 md:px-12">
-          <button onClick={() => setMenuEm(rota)} className="flex items-center gap-3 justify-self-start text-sm hover:opacity-70" aria-label="Abrir menu">
+          <button
+            onClick={() => {
+              setSubmenu(null);
+              setMenuEm(rota);
+            }}
+            className="flex items-center gap-3 justify-self-start text-sm hover:opacity-70"
+            aria-label="Abrir menu"
+          >
             <Menu className="h-5 w-5" strokeWidth={1.4} />
             <span className="hidden md:inline">Menu</span>
           </button>
@@ -153,62 +161,74 @@ export function PortalLayout() {
         ) : null}
       </div>
 
-      {/* Menu vertical: abre na lateral, por cima da página */}
+      {/* Menu lateral (inspirado na Fear of God): itens em caixa alta, submenus que deslizam */}
       <div
-        className={cn("fixed inset-0 z-50 bg-tinta/40 transition-opacity duration-300", menuAberto ? "opacity-100" : "pointer-events-none opacity-0")}
+        className={cn("fixed inset-0 z-50 bg-tinta/30 transition-opacity duration-300", menuAberto ? "opacity-100" : "pointer-events-none opacity-0")}
         onClick={() => setMenuEm(null)}
         aria-hidden={!menuAberto}
       >
         <aside
           className={cn(
-            "loja flex h-full w-[420px] max-w-[88%] flex-col overflow-y-auto px-8 pb-8 pt-6 transition-transform duration-500 ease-out",
+            "loja flex h-full w-[440px] max-w-[90%] flex-col overflow-hidden transition-transform duration-500 ease-out [font-family:var(--font-menu)]",
             menuAberto ? "translate-x-0" : "-translate-x-full",
           )}
           onClick={(e) => e.stopPropagation()}
           aria-label="Menu"
         >
-          <div className="mb-10 flex items-center justify-between">
-            <Marca />
-            <button onClick={() => setMenuEm(null)} aria-label="Fechar menu" className="self-start">
-              <X className="h-5 w-5" strokeWidth={1.4} />
+          <div className="flex h-14 shrink-0 items-center justify-between px-7">
+            {submenu ? (
+              <button onClick={() => setSubmenu(null)} className="flex items-center gap-2 text-[13px] uppercase tracking-[0.14em] hover:text-caramelo">
+                <ChevronLeft className="h-4 w-4" strokeWidth={1.4} /> {secoesMenu.find((m) => m.id === submenu)?.rotulo}
+              </button>
+            ) : (
+              <span />
+            )}
+            <button onClick={() => setMenuEm(null)} aria-label="Fechar menu" className="hover:text-caramelo">
+              <X className="h-5 w-5" strokeWidth={1.3} />
             </button>
           </div>
 
-          <nav className="flex flex-col" aria-label="Principal">
-            <Link to="/loja" className="py-2 font-display text-[34px] leading-tight hover:text-caramelo">
-              Edição {EDICAO.numero} · {EDICAO.nome}
-            </Link>
-            <div className="mb-4 ml-0.5 mt-1 grid grid-cols-2 gap-x-4 gap-y-1.5 text-[15px] text-suave">
-              {categorias.map((c) => (
-                <Link key={c} to={`/loja?categoria=${c}`} className="hover:text-tinta">
-                  {c}
+          <div className="relative flex-1 overflow-hidden">
+            {/* Nível 1 */}
+            <div className={cn("absolute inset-0 flex flex-col overflow-y-auto px-7 pb-8 pt-4 transition-transform duration-500 ease-out", submenu && "-translate-x-full")}>
+              <nav className="flex flex-col" aria-label="Principal">
+                {secoesMenu.map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => setSubmenu(m.id)}
+                    className="flex items-center justify-between py-3 text-left text-[15px] uppercase tracking-[0.14em] hover:text-caramelo"
+                  >
+                    {m.rotulo}
+                    <ChevronRight className="h-4 w-4" strokeWidth={1.3} />
+                  </button>
+                ))}
+              </nav>
+              <div className="mt-auto flex flex-col gap-1 pt-10 text-[13px] uppercase tracking-[0.14em] text-suave">
+                <Link to={cliente ? "/conta/pedidos" : "/entrar"} className="py-1.5 hover:text-tinta">
+                  {cliente ? `Conta · ${cliente.nome.split(" ")[0]}` : "Conta"}
                 </Link>
-              ))}
+                <Link to="/conta/atendimento/novo" className="py-1.5 hover:text-tinta">
+                  Contato
+                </Link>
+                <Link to="/agendar" className="py-1.5 hover:text-tinta">
+                  Agendar uma prova
+                </Link>
+                <Link to="/entrar?time=1" className="py-1.5 text-[11px] text-suave/70 hover:text-tinta">
+                  Área interna
+                </Link>
+              </div>
             </div>
-            {menu.slice(1).map((m) => (
-              <NavLink
-                key={m.to}
-                to={m.to}
-                className={({ isActive }) => cn("alinhavo py-3 font-display text-[30px] leading-tight hover:text-caramelo", isActive && "text-caramelo")}
-              >
-                {m.rotulo}
-              </NavLink>
-            ))}
-            <Link to="/agendar" className="alinhavo py-3 font-display text-[30px] leading-tight hover:text-caramelo">
-              Agendar uma prova
-            </Link>
-          </nav>
 
-          <div className="mt-auto space-y-2 pt-10 text-sm text-suave">
-            <Link to={cliente ? "/conta/pedidos" : "/entrar"} className="block hover:text-tinta">
-              {cliente ? `Minha conta · ${cliente.nome.split(" ")[0]}` : "Entrar na minha conta"}
-            </Link>
-            <Link to="/conta/atendimento" className="block hover:text-tinta">
-              Fale com a casa · WhatsApp (11) 99876-5432
-            </Link>
-            <Link to="/entrar?time=1" className="block text-xs text-suave/70 hover:text-tinta">
-              Área interna
-            </Link>
+            {/* Nível 2: submenu da seção escolhida */}
+            <div className={cn("absolute inset-0 overflow-y-auto px-7 pb-8 pt-4 transition-transform duration-500 ease-out", submenu ? "translate-x-0" : "translate-x-full")}>
+              <nav className="flex flex-col">
+                {(secoesMenu.find((m) => m.id === submenu)?.itens ?? []).map(([rotulo, to]) => (
+                  <Link key={rotulo} to={to} className="py-3 text-[15px] uppercase tracking-[0.14em] hover:text-caramelo">
+                    {rotulo}
+                  </Link>
+                ))}
+              </nav>
+            </div>
           </div>
         </aside>
       </div>
@@ -219,6 +239,7 @@ export function PortalLayout() {
 
       <CartaMensal />
       <Rodape />
+      <SeletorFontes />
     </div>
   );
 }
