@@ -21,17 +21,33 @@ function Camada({ midia, ativa, zoom = true }: { midia: Midia; ativa: boolean; z
   const ref = useRef<HTMLVideoElement>(null);
   const reduzido = useMovimentoReduzido();
 
+  const tocar = ativa && !reduzido;
+
   useEffect(() => {
     const v = ref.current;
     if (!v) return;
-    if (ativa && !reduzido) void v.play().catch(() => undefined);
+    v.muted = true; // navegadores só tocam sozinhos vídeos sem som
+    if (tocar) void v.play().catch(() => undefined);
     else v.pause();
-  }, [ativa, reduzido]);
+  }, [tocar]);
 
   return (
     <div className={cn("absolute inset-0 transition-opacity duration-[1400ms] ease-out", ativa ? "opacity-100" : "opacity-0")}>
       {midia.tipo === "video" ? (
-        <video ref={ref} src={midia.src} muted loop playsInline preload="auto" className="h-full w-full object-cover" />
+        <video
+          ref={ref}
+          src={midia.src}
+          muted
+          loop
+          playsInline
+          autoPlay={tocar}
+          preload="auto"
+          // O vídeo pode ficar pronto depois do efeito: toca assim que puder.
+          onCanPlay={(e) => {
+            if (tocar) void e.currentTarget.play().catch(() => undefined);
+          }}
+          className="h-full w-full object-cover"
+        />
       ) : (
         <img
           src={midia.src}

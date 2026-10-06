@@ -1,4 +1,4 @@
-import { Menu, Search, X } from "lucide-react";
+import { Menu, Search, ShoppingBag, X } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { MenuUsuario } from "@/components/MenuUsuario";
@@ -80,21 +80,21 @@ export function PortalLayout() {
             <b className={cn("font-medium", transparente ? "text-white" : "text-tinta")}>
               Edição {EDICAO.numero} · {EDICAO.nome}
             </b>{" "}
-            — frete por nossa conta acima de R$ 1.000 · ajustes sempre sem custo
+            <span className="hidden sm:inline">— frete por nossa conta acima de R$ 1.000 · ajustes sempre sem custo</span>
           </span>
         </div>
 
-        <header className="grid grid-cols-[1fr_auto_1fr] items-center px-5 py-4 md:px-12">
+        <header className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-4 md:px-12">
           <button onClick={() => setMenuEm(rota)} className="flex items-center gap-3 justify-self-start text-sm hover:opacity-70" aria-label="Abrir menu">
             <Menu className="h-5 w-5" strokeWidth={1.4} />
             <span className="hidden md:inline">Menu</span>
           </button>
 
-          <Link to="/" aria-label="Casa Lorenzi — início" className="text-center font-display text-[28px] leading-none md:text-[34px]">
+          <Link to="/" aria-label="Casa Lorenzi — início" className="whitespace-nowrap text-center font-display text-[24px] leading-none sm:text-[28px] md:text-[34px]">
             Casa Lorenzi
           </Link>
 
-          <nav className="flex items-center gap-5 justify-self-end text-sm md:gap-7" aria-label="Atalhos">
+          <nav className="flex items-center gap-4 justify-self-end text-sm md:gap-7" aria-label="Atalhos">
             <button onClick={() => setBuscaEm(buscaAberta ? null : rota)} aria-label="Buscar" className="hover:opacity-70">
               <Search className="h-[18px] w-[18px]" strokeWidth={1.4} />
             </button>
@@ -127,8 +127,9 @@ export function PortalLayout() {
                 Entrar
               </Link>
             )}
-            <Link to="/sacola" className="whitespace-nowrap hover:opacity-70">
-              Sacola ({itensSacola})
+            <Link to="/sacola" className="flex items-center gap-1 whitespace-nowrap hover:opacity-70" aria-label={`Sacola com ${itensSacola} peças`}>
+              <ShoppingBag className="h-[18px] w-[18px] sm:hidden" strokeWidth={1.4} />
+              <span className="hidden sm:inline">Sacola</span> ({itensSacola})
             </Link>
           </nav>
         </header>
