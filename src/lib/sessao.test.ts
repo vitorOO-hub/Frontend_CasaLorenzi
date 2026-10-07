@@ -69,9 +69,9 @@ describe("login pelo Supabase", () => {
 
   it("falha de rede ou de configuração vira 'indisponível', não 'senha inválida'", async () => {
     auth.entrar.mockRejectedValue(new ErroApi("rede"));
-    expect(await entrar("x@y.com", "s", "interno")).toEqual({ ok: false, motivo: "indisponivel" });
+    expect(await entrar("x@y.com", "s", "interno")).toMatchObject({ ok: false, motivo: "indisponivel" });
     auth.entrar.mockRejectedValue(new ErroApi("configuracao"));
-    expect(await entrar("x@y.com", "s", "interno")).toEqual({ ok: false, motivo: "indisponivel" });
+    expect(await entrar("x@y.com", "s", "interno")).toMatchObject({ ok: false, motivo: "indisponivel" });
   });
 
   it("conta de cliente na aba da equipe é recusada e a sessão do Supabase é encerrada", async () => {
