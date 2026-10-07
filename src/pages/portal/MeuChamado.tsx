@@ -62,6 +62,7 @@ export function MeuChamado() {
         status: statusDaApi(chamadoApi.status.codigo),
         abertoEm: chamadoApi.aberto_em.slice(0, 10),
         pecas: chamadoApi.pecas.map((p) => `${p.produto} · ${p.cor}, ${p.tamanho}`),
+        anexos: chamadoApi.anexos.map((a) => a.nome),
         mensagens: mensagensApi.map((m) => ({ id: m.id_mensagem, autor: m.autor, nome: m.nome, data: dataHoraBR(m.enviada_em), texto: m.texto })),
       };
     }
@@ -76,6 +77,7 @@ export function MeuChamado() {
       status: chamadoLocal.status,
       abertoEm: chamadoLocal.abertoEm,
       pecas: chamadoLocal.sku ? [chamadoLocal.sku] : [],
+      anexos: (chamadoLocal.anexos ?? []).map((a) => a.nome),
       mensagens: chamadoLocal.mensagens,
     };
   }, [chamadoApi, chamadoLocal, mensagensApi, modoApi]);
@@ -116,6 +118,7 @@ export function MeuChamado() {
         {chamado.pedido ? ` · pedido ${chamado.pedido}` : ""}
       </p>
       {chamado.pecas.length ? <p className="mt-3 text-sm text-suave">Peça: {chamado.pecas.join("; ")}</p> : null}
+      {chamado.anexos.length ? <p className="mt-2 text-sm text-suave">Anexos: {chamado.anexos.join("; ")}</p> : null}
 
       <div className="mt-8 space-y-5">
         {chamado.mensagens.map((m) => {
