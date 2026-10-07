@@ -1,77 +1,138 @@
-import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { CartaoGrafico, GraficoBarras, GraficoLinhas, Variacao, horasFmt, pct } from "@/components/graficos";
 import { Badge, Metrica } from "@/components/ui";
-import {
-  COR_MARCA,
-  baldes,
-  filtrarAtendimentos,
-  resumoAtendimentos,
-  serie,
-  todosOsAtendimentos,
-  variacao,
-} from "@/lib/analise";
-import { dataBR, lojas, nomeCliente, prioridadeChamado, tomPrioridade } from "@/lib/dados";
-import { useEstado } from "@/lib/store";
+import { useDashboardAtendimento } from "@/hooks/useDashboardAtendimento";
+import { COR_MARCA, baldes, serie, variacao } from "@/lib/analise";
+import type { DashboardAtendimento, ItemFila } from "@/lib/atendimentoApi";
+import { useSessao } from "@/lib/sessao";
 import { BarraFiltros, Cabecalho, FiltroSelect, useFiltros } from "./comum";
+import { DashboardAtendenteDemo } from "./AtendenteDemo";
 
-const MOTIVOS = ["Dúvida", "Troca", "Entrega", "Defeito"];
-const CANAIS = ["WhatsApp", "Portal", "E-mail", "Loja"];
-const ordem = { Alta: 0, Média: 1, Baixa: 2 } as const;
+const tomPrioridade = { urgente: "perigo", alta: "perigo", media: "alerta", baixa: "neutro" } as const;
 
-/** Atendente: a fila de agora e como o atendimento está indo no período. */
+const dataHoraBR = (iso: string) =>
+  new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+
+/** Início do atendente: conta real consulta a API; acesso de demonstração mostra dados simulados. */
 export function DashboardAtendente() {
-  const { chamados } = useEstado();
+  const sessao = useSessao();
+  return sessao?.tipo === "interno" && sessao.real ? <DashboardAtendenteReal /> : <DashboardAtendenteDemo />;
+}
+
+function DashboardAtendenteReal() {
   const f = useFiltros();
-  const todos = useMemo(() => todosOsAtendimentos(chamados), [chamados]);
-
-  const recorte = (r: { inicio: string; fim: string }) => ({
-    ...r,
-    lojaIds: f.loja ? [f.loja] : [],
-    canal: f.canal,
-    motivo: f.motivo,
+  const { inicio, fim } = f.intervalo.atual;
+  const { dados, carregando, erro, recarregar } = useDashboardAtendimento({
+    inicio,
+    fim,
+    idLoja: f.loja || undefined,
+    canal: f.canal || undefined,
+    categoria: f.motivo || undefined,
   });
-  const atual = filtrarAtendimentos(todos, recorte(f.intervalo.atual));
-  const ra = resumoAtendimentos(atual);
-  const raAnt = resumoAtendimentos(filtrarAtendimentos(todos, recorte(f.intervalo.anterior)));
 
-  // A fila é sempre "agora": só respeita loja, canal e motivo.
-  const fila = chamados
-    .filter((c) => c.status !== "Resolvido")
-    .filter((c) => (!f.loja || c.lojaId === f.loja) && (!f.canal || c.canal === f.canal) && (!f.motivo || c.motivo === f.motivo));
-  const semResposta = fila.filter((c) => c.status === "Aberto");
-  const urgentes = fila.filter((c) => prioridadeChamado(c) === "Alta");
-
-  const bs = baldes(f.periodo);
-  const volume = serie(atual, bs, (xs) => xs.length);
-  const porMotivo = MOTIVOS.map((m) => atual.filter((a) => a.motivo === m).length);
-  const respostaCanal = CANAIS.map((c) => resumoAtendimentos(atual.filter((a) => a.canal === c)).respostaMedia ?? 0);
+  const d = dados?.dashboard;
+  const fila = dados?.fila;
+  const loja = d?.opcoes.lojas.find((l) => l.id_loja === (d.escopo.id_loja ?? f.loja));
 
   return (
     <div>
-      <Cabecalho descricao="Atendimento · todos os canais e todas as casas" />
+      <Cabecalho descricao={`Atendimento · todos os canais · ${loja ? loja.nome : "todas as casas"}`} />
 
       <BarraFiltros filtros={f}>
+        {d?.escopo.pode_escolher_loja ? (
+          <FiltroSelect
+            rotulo="Loja"
+            valor={f.loja}
+            onChange={(v) => f.definir("loja", v)}
+            opcoes={d.opcoes.lojas.map((l) => ({ value: l.id_loja, label: l.nome }))}
+            todos="Todas"
+          />
+        ) : null}
         <FiltroSelect
-          rotulo="Loja"
-          valor={f.loja}
-          onChange={(v) => f.definir("loja", v)}
-          opcoes={lojas.map((l) => ({ value: l.id, label: l.nome }))}
-          todos="Todas"
+          rotulo="Canal"
+          valor={f.canal}
+          onChange={(v) => f.definir("canal", v)}
+          opcoes={(d?.opcoes.canais ?? []).map((c) => ({ value: c.codigo, label: c.nome }))}
         />
-        <FiltroSelect rotulo="Canal" valor={f.canal} onChange={(v) => f.definir("canal", v)} opcoes={CANAIS} />
-        <FiltroSelect rotulo="Motivo" valor={f.motivo} onChange={(v) => f.definir("motivo", v)} opcoes={MOTIVOS} />
+        <FiltroSelect
+          rotulo="Motivo"
+          valor={f.motivo}
+          onChange={(v) => f.definir("motivo", v)}
+          opcoes={(d?.opcoes.categorias ?? []).map((c) => ({ value: c.codigo, label: c.nome }))}
+        />
       </BarraFiltros>
 
+      {erro ? (
+        <div role="alert" className="mb-6 flex items-center justify-between gap-4 rounded-sm border border-perigo/40 bg-papel p-4 text-sm">
+          <span>{erro}</span>
+          <button onClick={recarregar} className="shrink-0 text-xs font-semibold text-marinho">
+            Tentar de novo
+          </button>
+        </div>
+      ) : null}
+
+      {!d || !fila ? (
+        erro ? null : <p className="py-16 text-center text-sm text-suave">Carregando os dados do atendimento…</p>
+      ) : (
+        <div aria-busy={carregando} className={carregando ? "opacity-60 transition-opacity" : "transition-opacity"}>
+          <Painel d={d} fila={fila} periodo={f.periodo} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Painel({
+  d,
+  fila,
+  periodo,
+}: {
+  d: DashboardAtendimento;
+  fila: { total_aberto: number; sem_resposta: number; urgentes: number; itens: ItemFila[] };
+  periodo: Parameters<typeof baldes>[0];
+}) {
+  const bs = baldes(periodo);
+  const volume = serie(d.volume_diario, bs, (xs) => xs.reduce((soma, x) => soma + x.total, 0));
+  const { atual, anterior } = d;
+  const categorias = d.por_categoria.map((c) => c.nome);
+  const porCategoria = d.por_categoria.map((c) => c.total);
+  const canais = d.resposta_por_canal.map((c) => c.nome);
+  const respostaCanal = d.resposta_por_canal.map((c) => c.resposta_media_horas ?? 0);
+
+  return (
+    <>
       <div className="mb-6 grid grid-cols-2 gap-4 xl:grid-cols-4">
-        <Metrica rotulo="Sem resposta agora" valor={semResposta.length} nota={`${fila.length} em aberto · ${urgentes.length} urgentes`} to="/painel/atendimento" destaque={semResposta.length > 0} />
-        <Metrica rotulo="Chamados recebidos" valor={ra.total} extra={<Variacao valor={variacao(ra.total, raAnt.total)} inverter />} />
+        <Metrica
+          rotulo="Sem resposta agora"
+          valor={fila.sem_resposta}
+          nota={`${fila.total_aberto} em aberto · ${fila.urgentes} urgentes`}
+          to="/painel/atendimento"
+          destaque={fila.sem_resposta > 0}
+        />
+        <Metrica
+          rotulo="Chamados recebidos"
+          valor={atual.total}
+          extra={<Variacao valor={variacao(atual.total, anterior.total)} inverter />}
+        />
         <Metrica
           rotulo="Primeira resposta (média)"
-          valor={ra.respostaMedia === null ? "—" : horasFmt(ra.respostaMedia)}
-          extra={<Variacao valor={ra.respostaMedia && raAnt.respostaMedia ? variacao(ra.respostaMedia, raAnt.respostaMedia) : null} inverter />}
+          valor={atual.resposta_media_horas === null ? "—" : horasFmt(atual.resposta_media_horas)}
+          extra={
+            <Variacao
+              valor={
+                atual.resposta_media_horas && anterior.resposta_media_horas
+                  ? variacao(atual.resposta_media_horas, anterior.resposta_media_horas)
+                  : null
+              }
+              inverter
+            />
+          }
         />
-        <Metrica rotulo="Taxa de resolução" valor={pct(ra.taxaResolucao)} nota={`${ra.resolvidos} resolvidos no período`} />
+        <Metrica
+          rotulo="Taxa de resolução"
+          valor={pct(atual.taxa_resolucao)}
+          nota={`${atual.resolvidos} resolvidos no período`}
+        />
       </div>
 
       <div className="mb-6 grid gap-6 lg:grid-cols-[3fr_2fr]">
@@ -79,7 +140,11 @@ export function DashboardAtendente() {
           titulo="Chamados recebidos ao longo do tempo"
           tabela={{ cabecalho: ["Período", "Chamados"], linhas: bs.map((b, i) => [b.rotulo, volume[i]!]) }}
         >
-          <GraficoLinhas rotulos={bs.map((b) => b.rotulo)} series={[{ id: "v", nome: "Chamados", cor: COR_MARCA, valores: volume }]} formatar={(n) => String(Math.round(n))} />
+          <GraficoLinhas
+            rotulos={bs.map((b) => b.rotulo)}
+            series={[{ id: "v", nome: "Chamados", cor: COR_MARCA, valores: volume }]}
+            formatar={(n) => String(Math.round(n))}
+          />
         </CartaoGrafico>
 
         <section className="rounded-sm border border-linha bg-papel">
@@ -93,24 +158,23 @@ export function DashboardAtendente() {
             </Link>
           </header>
           <ul className="divide-y divide-linha px-5 pb-2 pt-2">
-            {[...fila]
-              .sort((a, b) => ordem[prioridadeChamado(a)] - ordem[prioridadeChamado(b)] || a.abertoEm.localeCompare(b.abertoEm))
-              .slice(0, 6)
-              .map((c) => (
-                <li key={c.id}>
-                  <Link to={`/painel/atendimento/chamado/${c.id}`} className="flex items-center gap-3 py-3 text-sm hover:text-marinho">
-                    <Badge tom={tomPrioridade[prioridadeChamado(c)]}>{prioridadeChamado(c)}</Badge>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate font-medium">{c.assunto}</span>
-                      <span className="text-xs text-suave">
-                        {nomeCliente(c.clienteId)} · {c.canal} · desde {dataBR(c.abertoEm)}
-                      </span>
-                    </span>
-                    {c.status === "Aberto" ? <span className="text-[10px] font-bold uppercase tracking-wider text-perigo">Sem resposta</span> : null}
-                  </Link>
-                </li>
-              ))}
-            {fila.length === 0 ? <li className="py-6 text-center text-sm text-suave">Fila zerada.</li> : null}
+            {fila.itens.slice(0, 6).map((c) => (
+              <li key={c.id_atendimento} className="flex items-center gap-3 py-3 text-sm">
+                <Badge tom={tomPrioridade[c.prioridade_codigo as keyof typeof tomPrioridade] ?? "neutro"}>
+                  {c.prioridade}
+                </Badge>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-medium">{c.assunto}</span>
+                  <span className="text-xs text-suave">
+                    {c.cliente_nome} · {c.canal} · desde {dataHoraBR(c.aberto_em)}
+                  </span>
+                </span>
+                {c.sem_resposta ? (
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-perigo">Sem resposta</span>
+                ) : null}
+              </li>
+            ))}
+            {fila.itens.length === 0 ? <li className="py-6 text-center text-sm text-suave">Fila zerada.</li> : null}
           </ul>
         </section>
       </div>
@@ -119,18 +183,29 @@ export function DashboardAtendente() {
         <CartaoGrafico
           titulo="Por motivo"
           subtitulo="Chamados recebidos no período"
-          tabela={{ cabecalho: ["Motivo", "Chamados"], linhas: MOTIVOS.map((m, i) => [m, porMotivo[i]!]) }}
+          tabela={{ cabecalho: ["Motivo", "Chamados"], linhas: categorias.map((m, i) => [m, porCategoria[i]!]) }}
         >
-          <GraficoBarras categorias={MOTIVOS} series={[{ id: "m", nome: "Chamados", cor: COR_MARCA, valores: porMotivo }]} formatar={String} />
+          <GraficoBarras
+            categorias={categorias}
+            series={[{ id: "m", nome: "Chamados", cor: COR_MARCA, valores: porCategoria }]}
+            formatar={String}
+          />
         </CartaoGrafico>
         <CartaoGrafico
           titulo="Tempo até a primeira resposta, por canal"
           subtitulo="Média no período — quanto menor, melhor"
-          tabela={{ cabecalho: ["Canal", "Primeira resposta"], linhas: CANAIS.map((c, i) => [c, respostaCanal[i] ? horasFmt(respostaCanal[i]!) : "—"]) }}
+          tabela={{
+            cabecalho: ["Canal", "Primeira resposta"],
+            linhas: canais.map((c, i) => [c, respostaCanal[i] ? horasFmt(respostaCanal[i]!) : "—"]),
+          }}
         >
-          <GraficoBarras categorias={CANAIS} series={[{ id: "r", nome: "Primeira resposta", cor: COR_MARCA, valores: respostaCanal }]} formatar={(n) => (n ? horasFmt(n) : "—")} />
+          <GraficoBarras
+            categorias={canais}
+            series={[{ id: "r", nome: "Primeira resposta", cor: COR_MARCA, valores: respostaCanal }]}
+            formatar={(n) => (n ? horasFmt(n) : "—")}
+          />
         </CartaoGrafico>
       </div>
-    </div>
+    </>
   );
 }
