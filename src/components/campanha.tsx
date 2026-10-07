@@ -116,33 +116,3 @@ export function CarrosselCampanha({ slides, intervalo = 6500 }: { slides: Slide[
     </section>
   );
 }
-
-/** Painel de campanha: um vídeo, ou várias fotos que se alternam, com título central. */
-export function PainelMidia({
-  midias,
-  titulo,
-  sobre,
-  acao,
-  to,
-  className,
-  intervalo = 4200,
-}: {
-  midias: Midia[];
-  titulo: string;
-  sobre?: string;
-  acao: string;
-  to: string;
-  className?: string;
-  intervalo?: number;
-}) {
-  const [ativo] = useAlternancia(midias.length, intervalo);
-  return (
-    <section className={cn("relative overflow-hidden bg-tinta", className)}>
-      {midias.map((m, i) => (
-        <Camada key={i} midia={m} ativa={i === ativo} />
-      ))}
-      <Escurecer />
-      <Chamada titulo={titulo} sobre={sobre} acao={acao} to={to} />
-    </section>
-  );
-}
