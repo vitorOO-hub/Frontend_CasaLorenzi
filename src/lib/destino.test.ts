@@ -22,6 +22,8 @@ describe("voltar seguro", () => {
     "javascript:alert(1)",
     "/javascript:alert(1)",
     "/ com espaço",
+    "/entrar",
+    "/entrar?voltar=%2Fcheckout",
     "painel",
     "",
     null,
@@ -38,8 +40,18 @@ describe("destino depois do login", () => {
     expect(destinoAposLogin(interno("admin"), null)).toBe("/painel");
   });
 
-  it("cliente cai na própria conta", () => {
-    expect(destinoAposLogin(cliente, null)).toBe("/conta/pedidos");
+  it("cliente volta para a loja, sem ir para a conta nem para o painel", () => {
+    expect(destinoAposLogin(cliente, null)).toBe("/");
+  });
+
+  it("cliente volta para a página da loja onde estava, agora logado", () => {
+    expect(destinoAposLogin(cliente, "/loja/CL-0101")).toBe("/loja/CL-0101");
+    expect(destinoAposLogin(cliente, "/loja?categoria=Camisaria")).toBe("/loja?categoria=Camisaria");
+  });
+
+  it("login que veio do próprio login não prende a pessoa na tela", () => {
+    expect(destinoAposLogin(cliente, "/entrar")).toBe("/");
+    expect(destinoAposLogin(interno("admin"), "/entrar")).toBe("/painel");
   });
 
   it("volta para onde a pessoa estava, se o cargo pode abrir", () => {
@@ -55,8 +67,8 @@ describe("destino depois do login", () => {
   });
 
   it("cliente nunca é mandado para a área interna", () => {
-    expect(destinoAposLogin(cliente, "/painel/estoque")).toBe("/conta/pedidos");
-    expect(destinoAposLogin(cliente, "/painel")).toBe("/conta/pedidos");
+    expect(destinoAposLogin(cliente, "/painel/estoque")).toBe("/");
+    expect(destinoAposLogin(cliente, "/painel")).toBe("/");
   });
 
   it("equipe que estava na loja vai para o painel, não para a vitrine", () => {
@@ -64,7 +76,7 @@ describe("destino depois do login", () => {
   });
 
   it("endereço de outro site é ignorado", () => {
-    expect(destinoAposLogin(cliente, "https://site-falso.com")).toBe("/conta/pedidos");
+    expect(destinoAposLogin(cliente, "https://site-falso.com")).toBe("/");
     expect(destinoAposLogin(interno("admin"), "//site-falso.com")).toBe("/painel");
   });
 });

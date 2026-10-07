@@ -87,7 +87,8 @@ export function PortalLayout() {
 
   const secaoDaRota = secoesMenu.find((m) => m.itens.some(([, to]) => to.split("?")[0] === pathname && pathname !== "/loja"))?.id ?? (pathname === "/loja" ? "pronta" : null);
   const secaoPainel = secoesMenu.find((m) => m.id === painelAberto);
-  const contaLink = cliente ? "/conta/pedidos" : "/entrar";
+  // Quem entra pela loja volta para a página onde estava, já logado (ver destinoAposLogin).
+  const contaLink = cliente ? "/conta/pedidos" : `/entrar?voltar=${encodeURIComponent(rota)}`;
   const abrir = (id: string) => setPainel({ id, rota });
 
   return (
