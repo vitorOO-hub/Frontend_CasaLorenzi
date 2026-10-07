@@ -63,8 +63,14 @@ function validarBaseUrl(baseUrl: string): string {
   return baseUrl.replace(/\/+$/, "");
 }
 
+/** O que o FastAPI responde quando a ROTA não existe (as nossas respostas 404 vêm em português). */
+const ROTA_INEXISTENTE = "Not Found";
+
 function mensagemDoStatus(status: number, detalhe: unknown): string {
   if (status === 401) return "Sua sessão expirou. Entre novamente.";
+  // Rota que o servidor não tem: backend desatualizado, e não "registro não encontrado".
+  if (status === 404 && detalhe === ROTA_INEXISTENTE)
+    return "Esta função ainda não existe no servidor. Atualize o backend e reinicie a API.";
   // O backend responde 403, 404, 409 e 422 com a explicação em português ("X já assumiu este chamado").
   if ([403, 404, 409, 422].includes(status) && typeof detalhe === "string" && detalhe) return detalhe;
   if (status === 403) return "Você não tem permissão para ver estes dados.";

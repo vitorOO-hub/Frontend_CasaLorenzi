@@ -26,13 +26,14 @@ function DetalheProduto({ sku }: { sku: string }) {
     return tamanhosApi.length ? tamanhosApi : ((produto && tamanhosPorCategoria[produto.categoria]) ?? ["Único"]);
   }, [produto, variacoes]);
   const cores = useMemo<CorDaCasa[]>(() => {
+    if (produto?.cores?.length) return produto.cores;
     const nomes = Array.from(new Set(variacoes.map((variacao) => variacao.cor).filter(Boolean))).sort();
     if (nomes.length === 0) return d.cores;
     return nomes.map((nome, indice) => ({
       nome,
       hex: d.cores[indice]?.hex ?? d.cores[0]?.hex ?? "#1b2a4a",
     }));
-  }, [d.cores, variacoes]);
+  }, [d.cores, produto?.cores, variacoes]);
   const [tamanho, setTamanho] = useState(tamanhos.length === 1 ? tamanhos[0]! : "");
   const [cor, setCor] = useState<CorDaCasa>(cores[0]!);
   const [quantidade, setQuantidade] = useState(1);
@@ -57,7 +58,9 @@ function DetalheProduto({ sku }: { sku: string }) {
     return Math.floor(disponivel / tamanhos.length) + (i < disponivel % tamanhos.length ? 1 : 0);
   };
   const restantes = tamanhoSelecionado ? estoqueDo(tamanhoSelecionado) : disponivel;
-  const vestida = fotoVestida(produto.sku, 1400);
+  const fotoPrincipal = produto.imagemUrl ?? fotoEstudio(produto.sku);
+  const fotoPrincipalAlt = produto.imagemAlt ?? produto.nome;
+  const vestida = produto.imagemVestidaUrl ?? fotoVestida(produto.sku, 1400);
   const combina = produtos
     .filter((p) => p.sku !== produto.sku && p.categoria !== produto.categoria && produtoTemEstoque(p))
     .slice(0, 3);
@@ -77,6 +80,9 @@ function DetalheProduto({ sku }: { sku: string }) {
       valor: variacao?.preco ?? produto!.preco,
       tamanho: tamanhoSelecionado,
       cor: corSelecionada.nome,
+      imagemUrl: produto!.imagemUrl,
+      imagemAlt: produto!.imagemAlt ?? produto!.nome,
+      tecido: produto!.tecido,
     });
     setAdicionado(true);
   }
@@ -97,7 +103,7 @@ function DetalheProduto({ sku }: { sku: string }) {
         {/* Fotos: a peça sozinha, a peça vestida e um detalhe */}
         <div className="grid grid-cols-2 gap-3">
           <div className="col-span-2 aspect-[4/5] overflow-hidden bg-areia">
-            <img src={fotoEstudio(produto.sku)} alt={produto.nome} className="h-full w-full object-contain" />
+            <img src={fotoPrincipal} alt={fotoPrincipalAlt} className="h-full w-full object-contain" />
           </div>
           {vestida ? (
             <>
@@ -116,7 +122,7 @@ function DetalheProduto({ sku }: { sku: string }) {
             <Preco valor={produto.preco} />
             <span className="text-sm text-suave">{parcela(produto.preco)} sem juros</span>
           </div>
-          <p className="mt-6 font-display text-[20px] leading-normal">{d.nota}</p>
+          <p className="mt-6 font-display text-[20px] leading-normal">{produto.nota ?? d.nota}</p>
 
           <div className="alinhavo mt-8 pt-6">
             <p className="mb-3 text-sm text-suave">

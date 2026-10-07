@@ -498,6 +498,11 @@ export function limparCarrinho() {
   notificar();
 }
 
+export function definirCarrinho(itens: ItemCarrinho[]) {
+  estado.carrinho = itens;
+  notificar();
+}
+
 let sequenciaPedido = 10500;
 
 export function finalizarCompra(clienteId: string, lojaId: string, frete = 0): Pedido | null {

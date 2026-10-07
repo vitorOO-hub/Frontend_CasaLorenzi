@@ -4,7 +4,7 @@ import { cn } from "@/components/ui";
 import { CartaoProduto } from "@/components/vitrine";
 import { produtoTemEstoque } from "@/lib/dados";
 import { useProdutosCatalogo } from "@/lib/catalogoApi";
-import { EDICAO, detalheDe, tipoDe } from "@/lib/loja";
+import { EDICAO } from "@/lib/loja";
 import { useEstado } from "@/lib/store";
 
 type Ordem = "edicao" | "menor" | "maior";
@@ -20,18 +20,17 @@ export function Catalogo() {
 
   // Dentro de uma categoria, o topo mostra só os subtipos dela; trocar de categoria é pelo menu.
   const tipos = useMemo(
-    () => Array.from(new Set(produtos.filter((p) => p.categoria === categoria).map((p) => tipoDe(p.sku)))).sort(),
+    () => Array.from(new Set(produtos.filter((p) => p.categoria === categoria && p.tipo).map((p) => p.tipo!))).sort(),
     [produtos, categoria],
   );
 
   // A busca também procura no tecido e no nome das cores ("linho", "Areia de Ipanema").
   const lista = produtos
     .filter((p) => !categoria || p.categoria === categoria)
-    .filter((p) => !tipo || tipoDe(p.sku) === tipo)
+    .filter((p) => !tipo || p.tipo === tipo)
     .filter((p) => {
       if (!busca) return true;
-      const d = detalheDe(p.sku);
-      return `${p.nome} ${p.categoria} ${d.tecido} ${d.cores.map((c) => c.nome).join(" ")}`
+      return `${p.nome} ${p.categoria} ${p.tipo ?? ""} ${p.tecido ?? ""} ${p.cores?.map((c) => c.nome).join(" ") ?? ""}`
         .toLowerCase()
         .includes(busca.toLowerCase());
     })
@@ -123,7 +122,7 @@ export function Catalogo() {
             key={p.sku}
             produto={p}
             grande={semFiltro && i === 0}
-            legenda={semFiltro && i === 0 ? detalheDe(p.sku).nota : undefined}
+            legenda={semFiltro && i === 0 ? p.nota : undefined}
           />
         ))}
       </div>

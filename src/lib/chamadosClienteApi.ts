@@ -56,6 +56,7 @@ export type ChamadoClienteCriar = {
   assunto: string;
   categoria: string;
   descricao: string;
+  id_loja?: string;
   id_pedido?: string;
   id_item_pedido?: string;
 };

@@ -71,6 +71,7 @@ export function Checkout() {
   const [erroLojas, setErroLojas] = useState<string | null>(null);
   const [pagamento, setPagamento] = useState<Pagamento>("cartao");
   const [parcelas, setParcelas] = useState("1");
+  const [endereco, setEndereco] = useState({ cep: "", rua: "", numero: "", complemento: "", uf: "SP" });
   const [qrPix, setQrPix] = useState<string | null>(null);
   const [pedido, setPedido] = useState<string | null>(null);
   // Uma chave por tentativa de compra: duplo clique ou reenvio não criam dois pedidos.
@@ -101,6 +102,11 @@ export function Checkout() {
       ativo = false;
     };
   }, [pagamento, codigoPix]);
+
+  useEffect(() => {
+    if (sessao?.tipo !== "cliente") return;
+    void acoes.sincronizarCarrinho().catch(() => undefined);
+  }, [sessao?.tipo]);
 
   useEffect(() => {
     if (!modoApi || sessao?.tipo !== "cliente") return;
@@ -166,6 +172,16 @@ export function Checkout() {
                   entrega,
                   metodo_pagamento: metodoPagamentoApi(pagamento),
                   frete: frete.toFixed(2),
+                  endereco_entrega:
+                    entrega === "casa"
+                      ? {
+                          cep: endereco.cep,
+                          rua: endereco.rua,
+                          numero: endereco.numero,
+                          complemento: endereco.complemento || null,
+                          uf: endereco.uf,
+                        }
+                      : null,
                   itens,
                 },
                 chave,
@@ -199,19 +215,19 @@ export function Checkout() {
             {entrega === "casa" ? (
               <div className="grid gap-4 sm:grid-cols-6">
                 <CampoLoja rotulo="CEP" className="sm:col-span-2">
-                  <input defaultValue="01422-001" required inputMode="numeric" className={campoLoja} />
+                  <input value={endereco.cep} onChange={(e) => setEndereco((atual) => ({ ...atual, cep: e.target.value }))} required inputMode="numeric" className={campoLoja} />
                 </CampoLoja>
                 <CampoLoja rotulo="Rua" className="sm:col-span-4">
-                  <input defaultValue="Rua Bela Cintra" required className={campoLoja} />
+                  <input value={endereco.rua} onChange={(e) => setEndereco((atual) => ({ ...atual, rua: e.target.value }))} required className={campoLoja} />
                 </CampoLoja>
                 <CampoLoja rotulo="Número" className="sm:col-span-2">
-                  <input defaultValue="1200" required className={campoLoja} />
+                  <input value={endereco.numero} onChange={(e) => setEndereco((atual) => ({ ...atual, numero: e.target.value }))} required className={campoLoja} />
                 </CampoLoja>
                 <CampoLoja rotulo="Complemento" className="sm:col-span-2">
-                  <input placeholder="Apto, bloco…" className={campoLoja} />
+                  <input value={endereco.complemento} onChange={(e) => setEndereco((atual) => ({ ...atual, complemento: e.target.value }))} placeholder="Apto, bloco…" className={campoLoja} />
                 </CampoLoja>
                 <CampoLoja rotulo="Estado" className="sm:col-span-2">
-                  <select defaultValue="SP" className={campoLoja}>
+                  <select value={endereco.uf} onChange={(e) => setEndereco((atual) => ({ ...atual, uf: e.target.value }))} className={campoLoja}>
                     {estados.map((e) => (
                       <option key={e}>{e}</option>
                     ))}
@@ -273,7 +289,7 @@ export function Checkout() {
           <ul className="mt-5 space-y-4">
             {carrinho.map((i) => (
               <li key={i.sku} className="flex gap-3 text-sm">
-                <Foto src={fotoEstudio(i.skuBase)} className="aspect-[4/5] w-14 shrink-0" />
+                <Foto src={i.imagemUrl ?? fotoEstudio(i.skuBase)} alt={i.imagemAlt ?? i.nome} className="aspect-[4/5] w-14 shrink-0" />
                 <div className="flex-1">
                   <p className="font-display text-[17px] leading-tight">{i.nome}</p>
                   <p className="text-xs text-suave">
@@ -303,7 +319,7 @@ export function Checkout() {
           <button type="submit" disabled={ocupado !== null || aguardandoLojas || Boolean(erroLojas)} className={cn(botaoLoja(), "mt-6 w-full")}>
             {ocupado || aguardandoLojas ? "Confirmando…" : "Confirmar o pedido"}
           </button>
-          <p className="mt-3 text-center text-xs text-suave">Protótipo: nenhum pagamento é processado.</p>
+          <p className="mt-3 text-center text-xs text-suave">O pagamento fica registrado no pedido para acompanhamento da loja.</p>
         </aside>
       </form>
     </div>

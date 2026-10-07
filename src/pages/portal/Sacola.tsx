@@ -1,10 +1,12 @@
 import { Minus, Plus } from "lucide-react";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { cn } from "@/components/ui";
 import { Foto, botaoLoja } from "@/components/vitrine";
 import { moeda } from "@/lib/dados";
 import { detalheDe, fotoEstudio } from "@/lib/loja";
 import * as acoes from "@/lib/acoes";
+import { useSessao } from "@/lib/sessao";
 import { useEstado } from "@/lib/store";
 
 const alterarQuantidadeCarrinho = (sku: string, quantidade: number) => void acoes.alterarQuantidadeCarrinho(sku, quantidade);
@@ -15,9 +17,15 @@ export const freteDe = (subtotal: number) => (subtotal >= FRETE_GRATIS_A_PARTIR 
 
 export function Sacola() {
   const { carrinho } = useEstado();
+  const sessao = useSessao();
   const subtotal = carrinho.reduce((s, i) => s + i.valor * i.quantidade, 0);
   const frete = freteDe(subtotal);
   const falta = FRETE_GRATIS_A_PARTIR - subtotal;
+
+  useEffect(() => {
+    if (sessao?.tipo !== "cliente") return;
+    void acoes.sincronizarCarrinho().catch(() => undefined);
+  }, [sessao?.tipo]);
 
   if (carrinho.length === 0) {
     return (
@@ -39,16 +47,18 @@ export function Sacola() {
         <ul>
           {carrinho.map((i) => {
             const d = detalheDe(i.skuBase);
+            const imagem = i.imagemUrl ?? fotoEstudio(i.skuBase);
+            const tecido = i.tecido ?? d.tecido;
             return (
               <li key={i.sku} className="alinhavo flex gap-5 py-6">
                 <Link to={`/loja/${i.skuBase}`} className="w-24 shrink-0 md:w-32">
-                  <Foto src={fotoEstudio(i.skuBase)} alt={i.nome} className="aspect-[4/5]" />
+                  <Foto src={imagem} alt={i.imagemAlt ?? i.nome} className="aspect-[4/5]" />
                 </Link>
                 <div className="flex flex-1 flex-col">
                   <div className="flex justify-between gap-4">
                     <div>
                       <Link to={`/loja/${i.skuBase}`} className="font-display text-[22px] leading-tight hover:text-caramelo">
-                        {i.nome} <em className="text-suave">{d.tecido}</em>
+                        {i.nome} <em className="text-suave">{tecido}</em>
                       </Link>
                       <p className="mt-1 text-sm text-suave">
                         {i.cor} · tamanho {i.tamanho}

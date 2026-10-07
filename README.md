@@ -110,3 +110,36 @@ A conversa do chamado (`/painel/atendimento/chamado/:id`) e a caixa de conversas
 
 Código: `src/lib/chatAoVivo.ts` (lógica, testada com canais falsos), `src/lib/chatApi.ts` (chamadas e
 validação) e `src/hooks/useChat.ts` (ligação com o React). Exige a migration do chat no backend.
+
+## Início do gerente
+
+O dashboard do gerente (`/painel`) vem da API, com o escopo de loja decidido no servidor
+(`/api/v1/painel/gerencia/dashboard`, `/reposicao` e `/pendencias`, mais `/dashboard/atendimento`
+para os chamados da unidade). Mostra faturamento, pedidos e ticket médio contra o período anterior,
+faturamento ao longo do tempo, movimento por dia da semana, peças mais vendidas, reposição
+prioritária (saldo contra o ritmo de venda), chamados por motivo e mix loja × online. Os filtros de
+período, categoria e canal de venda ficam na URL. Código: `src/lib/gerenciaApi.ts`,
+`src/lib/gerenciaUi.ts` e `src/hooks/useDashboardGerente.ts`.
+
+## Estoque: saldo e movimentações
+
+As telas **Saldo** e **Movimentações** (`/painel/estoque`) leem a API (`/api/v1/painel/estoque/opcoes`,
+`/saldo` e `/movimentacoes`); nada nelas vem do estoque simulado. O escopo de loja é decidido no
+servidor: operador e gerente veem a própria unidade, o admin vê a rede (colunas por loja). O operador
+vê só as movimentações que ele mesmo registrou. Clicar numa peça do saldo abre o histórico dela.
+Os botões de registrar entrada/saída e de ajuste de inventário gravam no servidor; o ajuste vira pedido
+pendente e o saldo só muda quando o gerente aprova na aba Aprovações (também ligada à API). Código: `src/lib/estoquePainelApi.ts`, `src/lib/estoquePainelUi.ts` e
+`src/hooks/useEstoquePainel.ts`.
+
+## Clientes do atendimento
+
+A lista (`/painel/atendimento/clientes`) e a ficha (`/painel/atendimento/clientes/:id`) leem a API em
+`/api/v1/painel/clientes` (código em `src/lib/clientesApi.ts` e `src/hooks/useClientes.ts`).
+
+- **Seções da lista:** Todos, Com chamado em aberto e Meus clientes (os que têm chamado assumido
+  por quem está logado). Há busca por nome, e-mail ou telefone e paginação.
+- **Rotas privadas:** só atendente, gerente e admin abrem essas telas (mapa em `src/lib/navegacao.ts`,
+  testado em `src/lib/rotas.test.ts`); o servidor repete a checagem de papel e de loja.
+- **Privacidade:** compras, total gasto e ticket médio só chegam para gerente e admin. Para o
+  atendente o servidor manda esses campos nulos e a tela nem monta as colunas e tabelas de compras.
+  O documento (CPF) nunca é enviado. Id que não é um UUID nem chega a consultar a API.

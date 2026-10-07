@@ -231,3 +231,17 @@ describe("POST", () => {
     expect((init.headers as Record<string, string>)["Content-Type"]).toBeUndefined();
   });
 });
+
+describe("404 de rota inexistente", () => {
+  it("o 'Not Found' em inglês do FastAPI vira um aviso de backend desatualizado", async () => {
+    const { cliente } = montar([json({ detail: "Not Found" }, { status: 404 })]);
+    const erro = (await cliente.get("/x", aceita).catch((e: unknown) => e)) as Error;
+    expect(erro.message).toContain("ainda não existe no servidor");
+    expect(erro.message).not.toContain("Not Found");
+  });
+
+  it("404 de registro (em português, vindo da nossa API) continua mostrando a explicação", async () => {
+    const { cliente } = montar([json({ detail: "Cliente nao encontrado" }, { status: 404 })]);
+    await expect(cliente.get("/x", aceita)).rejects.toMatchObject({ status: 404, message: "Cliente nao encontrado" });
+  });
+});

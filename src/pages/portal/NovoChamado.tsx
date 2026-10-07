@@ -154,15 +154,17 @@ export function NovoChamado() {
       <CampoLoja rotulo="Conte com detalhes">
         <textarea required rows={5} value={descricao} onChange={(e) => setDescricao(e.target.value)} className={campoLoja} />
       </CampoLoja>
-      <CampoLoja rotulo="Fotos da peça (opcional)">
-        <input
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={(e) => setAnexos(Array.from(e.target.files ?? []).map((f) => f.name))}
-          className={cn(campoLoja, "file:mr-3 file:border-0 file:bg-palha file:px-3 file:py-1 file:text-xs")}
-        />
-      </CampoLoja>
+      {modoApi ? null : (
+        <CampoLoja rotulo="Fotos da peça (opcional)">
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={(e) => setAnexos(Array.from(e.target.files ?? []).map((f) => f.name))}
+            className={cn(campoLoja, "file:mr-3 file:border-0 file:bg-palha file:px-3 file:py-1 file:text-xs")}
+          />
+        </CampoLoja>
+      )}
       {erro ? <p role="alert" className="text-sm text-perigo">{erro}</p> : null}
       <button type="submit" disabled={ocupado !== null} className={botaoLoja()}>
         {ocupado ? "Enviando…" : "Enviar"}

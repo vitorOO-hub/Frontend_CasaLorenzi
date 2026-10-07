@@ -8,6 +8,15 @@
  */
 import { ErroApi } from "@/api/erros";
 import { MOTIVOS_CHAMADO, type MotivoChamado, type Papel } from "@/api/tipos";
+import { usandoApi } from "@/api/config";
+import {
+  adicionarItemCarrinhoCliente,
+  atualizarItemCarrinhoCliente,
+  limparCarrinhoCliente,
+  obterCarrinhoCliente,
+  removerItemCarrinhoCliente,
+  type CarrinhoClienteApi,
+} from "./carrinhoClienteApi";
 import { nomeLoja, type Chamado, type Pedido, type Usuario } from "./dados";
 import { lojaDoPapel, sessaoAtual } from "./sessao";
 import * as store from "./store";
@@ -304,17 +313,61 @@ export async function enviarMensagem(chamadoId: string, mensagem: string) {
 
 // ===================== Compra =====================
 
+const carrinhoApiLigado = () => usandoApi() && sessaoAtual()?.tipo === "cliente";
+
+function aplicarCarrinhoApi(carrinho: CarrinhoClienteApi) {
+  store.definirCarrinho(
+    carrinho.itens.map((item) => ({
+      idVariacao: item.id_variacao,
+      sku: item.sku,
+      skuBase: item.sku,
+      nome: item.produto,
+      quantidade: item.quantidade,
+      valor: Number(item.preco_unitario),
+      tamanho: item.tamanho,
+      cor: item.cor,
+      imagemUrl: item.imagem_url,
+      imagemAlt: item.imagem_alt ?? item.produto,
+      tecido: item.tecido,
+    })),
+  );
+}
+
+export async function sincronizarCarrinho() {
+  if (!carrinhoApiLigado()) return;
+  aplicarCarrinhoApi(await obterCarrinhoCliente());
+}
+
 export async function adicionarAoCarrinho(item: store.ItemCarrinho) {
   inteiroPositivo(item.quantidade);
+  if (carrinhoApiLigado()) {
+    if (!item.idVariacao) throw new ErroApi("validacao", "Atualize a peça pela loja antes de adicionar à sacola.");
+    aplicarCarrinhoApi(await adicionarItemCarrinhoCliente({ id_variacao: item.idVariacao, quantidade: item.quantidade }));
+    return;
+  }
   store.adicionarAoCarrinho(item);
 }
 
 export async function alterarQuantidadeCarrinho(sku: string, quantidade: number) {
   if (!Number.isInteger(quantidade) || quantidade < 0) throw new ErroApi("validacao", "Quantidade inválida.");
+  if (carrinhoApiLigado()) {
+    const item = estado().carrinho.find((i) => i.sku === sku);
+    if (!item?.idVariacao) throw new ErroApi("validacao", "Atualize a peça pela loja antes de alterar a sacola.");
+    aplicarCarrinhoApi(
+      quantidade === 0
+        ? await removerItemCarrinhoCliente(item.idVariacao)
+        : await atualizarItemCarrinhoCliente(item.idVariacao, quantidade),
+    );
+    return;
+  }
   store.alterarQuantidadeCarrinho(sku, quantidade);
 }
 
 export async function limparCarrinho() {
+  if (carrinhoApiLigado()) {
+    aplicarCarrinhoApi(await limparCarrinhoCliente());
+    return;
+  }
   store.limparCarrinho();
 }
 

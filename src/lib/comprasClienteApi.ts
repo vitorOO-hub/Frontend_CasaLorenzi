@@ -16,6 +16,9 @@ export type ItemPedidoClienteApi = {
   id_variacao: string;
   sku: string;
   produto: string;
+  imagem_url: string | null;
+  imagem_alt: string | null;
+  tecido: string | null;
   cor: string;
   tamanho: string;
   quantidade: number;
@@ -51,6 +54,13 @@ export type CheckoutClienteCriar = {
   entrega: "casa" | "loja";
   metodo_pagamento: MetodoPagamentoCheckout;
   frete: string;
+  endereco_entrega?: {
+    cep: string;
+    rua: string;
+    numero: string;
+    complemento?: string | null;
+    uf: string;
+  } | null;
   itens: { id_variacao: string; quantidade: number }[];
 };
 
@@ -78,6 +88,9 @@ function validarItemPedido(dados: unknown): ItemPedidoClienteApi {
     id_variacao: texto(o.id_variacao, "id_variacao"),
     sku: texto(o.sku, "sku"),
     produto: texto(o.produto, "produto"),
+    imagem_url: textoOuNulo(o.imagem_url, "imagem_url"),
+    imagem_alt: textoOuNulo(o.imagem_alt, "imagem_alt"),
+    tecido: textoOuNulo(o.tecido, "tecido"),
     cor: texto(o.cor, "cor"),
     tamanho: texto(o.tamanho, "tamanho"),
     quantidade: numero(o.quantidade, "quantidade"),
