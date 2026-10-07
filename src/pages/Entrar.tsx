@@ -10,6 +10,7 @@ import {
   credencialCliente,
   entrarComoCliente,
   entrarComoFuncionario,
+  entrarComoFuncionarioReal,
   rotuloPapel,
   type Papel,
 } from "@/lib/sessao";
@@ -22,6 +23,7 @@ export function Entrar() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState<string | null>(null);
+  const [enviando, setEnviando] = useState(false);
 
   function preencher(e: string, s: string) {
     setEmail(e);
@@ -34,15 +36,26 @@ export function Entrar() {
     preencher("", "");
   }
 
-  function enviar(ev: FormEvent) {
+  async function enviar(ev: FormEvent) {
     ev.preventDefault();
     if (lado === "cliente") {
       if (!entrarComoCliente(email, senha)) return setErro("E-mail ou senha inválidos.");
       return navigate(voltar ?? "/conta/pedidos");
     }
-    const s = entrarComoFuncionario(email, senha);
-    if (s?.tipo !== "interno") return setErro("E-mail ou senha inválidos.");
-    navigate(telaInicial(s.papel));
+    setEnviando(true);
+    setErro(null);
+    try {
+      // Primeiro a conta real do Supabase; os acessos de demonstração seguem valendo como reserva.
+      const real = await entrarComoFuncionarioReal(email, senha);
+      if (real.ok) return navigate(telaInicial(real.sessao.tipo === "interno" ? real.sessao.papel : "atendente"));
+      if (real.motivo === "sem_acesso")
+        return setErro("Sua conta ainda não tem acesso à área interna. Fale com o administrador.");
+      const demo = entrarComoFuncionario(email, senha);
+      if (demo?.tipo !== "interno") return setErro("E-mail ou senha inválidos.");
+      navigate(telaInicial(demo.papel));
+    } finally {
+      setEnviando(false);
+    }
   }
 
   return (
@@ -117,9 +130,10 @@ export function Entrar() {
             {erro ? <p className="text-sm text-perigo">{erro}</p> : null}
             <button
               type="submit"
-              className="w-full bg-tabaco py-4 text-sm tracking-wide text-creme hover:bg-tinta"
+              disabled={enviando}
+              className="w-full bg-tabaco py-4 text-sm tracking-wide text-creme hover:bg-tinta disabled:opacity-60"
             >
-              Entrar
+              {enviando ? "Entrando…" : "Entrar"}
             </button>
           </form>
 

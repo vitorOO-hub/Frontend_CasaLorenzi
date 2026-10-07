@@ -1,5 +1,7 @@
 import { useSyncExternalStore } from "react";
+import { decodificarClaims, lojaDoToken, papelDoToken } from "./claims";
 import { CLIENTE_DEMO_ID, clientes, lojas, type Loja } from "./dados";
+import { supabase } from "./supabase";
 
 export type Papel = "atendente" | "operador" | "gerente" | "administrador";
 
@@ -19,7 +21,15 @@ export const rotuloPapel: Record<Papel, string> = {
 
 export type Sessao =
   | { tipo: "cliente"; clienteId: string; nome: string; email: string }
-  | { tipo: "interno"; papel: Papel; nome: string; email: string };
+  | {
+      tipo: "interno";
+      papel: Papel;
+      nome: string;
+      email: string;
+      /** Login real no Supabase: o papel e a loja vêm do token e a área consulta a API. */
+      real?: boolean;
+      lojaId?: string;
+    };
 
 type Credencial = { email: string; senha: string };
 
@@ -81,6 +91,43 @@ export function entrarComoCliente(email: string, senha: string): Sessao | null {
   return sessao;
 }
 
+export type ResultadoLogin =
+  | { ok: true; sessao: Sessao }
+  | { ok: false; motivo: "credenciais" | "sem_acesso" | "indisponivel" };
+
+/** Login real da equipe no Supabase Auth; papel e loja vêm das claims do token. */
+export async function entrarComoFuncionarioReal(
+  email: string,
+  senha: string,
+): Promise<ResultadoLogin> {
+  if (!supabase) return { ok: false, motivo: "indisponivel" };
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: email.trim().toLowerCase(),
+    password: senha,
+  });
+  if (error || !data.session) {
+    return { ok: false, motivo: error?.status && error.status >= 500 ? "indisponivel" : "credenciais" };
+  }
+  const claims = decodificarClaims(data.session.access_token) ?? {};
+  const papel = papelDoToken(claims.papel);
+  if (!papel) {
+    await supabase.auth.signOut();
+    return { ok: false, motivo: "sem_acesso" };
+  }
+  const nome = data.user.user_metadata?.nome;
+  sessao = {
+    tipo: "interno",
+    papel,
+    nome: typeof nome === "string" && nome ? nome : (data.user.email ?? email).split("@")[0]!,
+    email: data.user.email ?? email,
+    real: true,
+    lojaId: lojaDoToken(claims),
+  };
+  filtroUnidade = "";
+  avisar();
+  return { ok: true, sessao };
+}
+
 export function entrarComoFuncionario(email: string, senha: string): Sessao | null {
   const papel = (Object.keys(credenciaisInternas) as Papel[]).find(
     (p) =>
@@ -95,6 +142,7 @@ export function entrarComoFuncionario(email: string, senha: string): Sessao | nu
 }
 
 export function sair() {
+  if (sessao?.tipo === "interno" && sessao.real) void supabase?.auth.signOut();
   sessao = null;
   filtroUnidade = "";
   avisar();
@@ -109,7 +157,9 @@ export function usePapel(): Papel {
 }
 
 export function useNomeUsuario(): string {
-  return equipe[usePapel()].nome;
+  const s = useSessao();
+  const papel = usePapel();
+  return s?.tipo === "interno" ? s.nome : equipe[papel].nome;
 }
 
 export function definirFiltroUnidade(id: string) {
@@ -125,7 +175,10 @@ export function useFiltroUnidade(): string {
 /** Loja à qual o cargo está restrito; null quando enxerga a rede inteira. */
 export function useLojaEscopo(): string | null {
   const papel = usePapel();
+  const s = useSessao();
   const filtro = useFiltroUnidade();
+  // Sessão real: a loja é um UUID do banco, que não existe nos dados simulados das outras telas.
+  if (s?.tipo === "interno" && s.real) return null;
   if (papel === "administrador") return filtro || null;
   return equipe[papel].lojaId ?? null;
 }

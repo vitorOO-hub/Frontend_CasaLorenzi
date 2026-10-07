@@ -28,7 +28,8 @@ export function PainelLayout() {
 
   if (sessao?.tipo !== "interno") return <Navigate to="/entrar?time=1" replace />;
 
-  const pessoa = equipe[papel];
+  // Sessão real: nome do cadastro e loja do token; a demonstração usa o elenco simulado.
+  const pessoa = sessao.real ? { nome: sessao.nome, lojaId: undefined } : equipe[papel];
   const visiveis = secoesDoPapel(papel);
   const contagem = (s: Secao) =>
     abasDoPapel(s, papel).reduce((soma, a) => soma + (a.pendencia ? pendencias[a.pendencia] : 0), 0);

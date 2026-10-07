@@ -5,7 +5,7 @@ import { Segmentado, Select, cn } from "@/components/ui";
 import { lojas } from "@/lib/dados";
 import { HOJE, corDaLoja, intervalos, rotuloPeriodo, type Periodo } from "@/lib/analise";
 import { dataBR } from "@/lib/dados";
-import { equipe, usePapel } from "@/lib/sessao";
+import { useNomeUsuario } from "@/lib/sessao";
 
 const PERIODOS: Periodo[] = [7, 30, 90, 365];
 
@@ -145,12 +145,12 @@ function saudacao() {
 }
 
 export function Cabecalho({ descricao }: { descricao: string }) {
-  const papel = usePapel();
+  const nome = useNomeUsuario();
   return (
     <div className="mb-5">
       <p className="rotulo !text-dourado">{dataBR(HOJE)}</p>
       <h1 className="mt-1 text-4xl font-light">
-        {saudacao()}, {equipe[papel].nome.split(" ")[0]}
+        {saudacao()}, {nome.split(" ")[0]}
       </h1>
       <p className="mt-1 text-sm text-suave">{descricao}</p>
     </div>
