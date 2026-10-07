@@ -39,16 +39,18 @@ export function Sacola() {
         <ul>
           {carrinho.map((i) => {
             const d = detalheDe(i.skuBase);
+            const imagem = i.imagemUrl ?? fotoEstudio(i.skuBase);
+            const tecido = i.tecido ?? d.tecido;
             return (
               <li key={i.sku} className="alinhavo flex gap-5 py-6">
                 <Link to={`/loja/${i.skuBase}`} className="w-24 shrink-0 md:w-32">
-                  <Foto src={fotoEstudio(i.skuBase)} alt={i.nome} className="aspect-[4/5]" />
+                  <Foto src={imagem} alt={i.imagemAlt ?? i.nome} className="aspect-[4/5]" />
                 </Link>
                 <div className="flex flex-1 flex-col">
                   <div className="flex justify-between gap-4">
                     <div>
                       <Link to={`/loja/${i.skuBase}`} className="font-display text-[22px] leading-tight hover:text-caramelo">
-                        {i.nome} <em className="text-suave">{d.tecido}</em>
+                        {i.nome} <em className="text-suave">{tecido}</em>
                       </Link>
                       <p className="mt-1 text-sm text-suave">
                         {i.cor} · tamanho {i.tamanho}

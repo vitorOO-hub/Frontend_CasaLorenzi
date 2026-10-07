@@ -34,10 +34,10 @@ export const FotoCampanha = ({ id, largura, ...props }: { id: string; largura?: 
 );
 
 /** Foto de estúdio da peça (packshot), usada em listas compactas. */
-export function FotoProduto({ sku, alt, className }: { sku: string; alt: string; className?: string }) {
+export function FotoProduto({ sku, src, alt, className }: { sku: string; src?: string | null; alt: string; className?: string }) {
   return (
     <div className={cn("overflow-hidden bg-areia", className)}>
-      <img src={fotoEstudio(sku)} alt={alt} loading="lazy" className="h-full w-full object-cover" />
+      <img src={src || fotoEstudio(sku)} alt={alt} loading="lazy" className="h-full w-full object-cover" />
     </div>
   );
 }
@@ -80,7 +80,7 @@ export function Legenda({ destaque, children, className }: { destaque?: string; 
 
 /** Nome completo da peça: nome + tecido em itálico. */
 export function NomePeca({ produto, className }: { produto: Produto; className?: string }) {
-  const { tecido } = detalheDe(produto.sku);
+  const tecido = produto.tecido ?? detalheDe(produto.sku).tecido;
   return (
     <span className={cn("font-display leading-tight", className)}>
       {produto.nome} {tecido ? <em className="text-suave">{tecido}</em> : null}
@@ -98,23 +98,24 @@ export function CartaoProduto({
   grande?: boolean;
   legenda?: string;
 }) {
-  const { cores } = detalheDe(produto.sku);
+  const cores = produto.cores?.length ? produto.cores : detalheDe(produto.sku).cores;
   const esgotado = !produtoTemEstoque(produto);
-  const vestida = fotoVestida(produto.sku, grande ? 1400 : 800);
+  const estudio = produto.imagemUrl ?? fotoEstudio(produto.sku);
+  const vestida = produto.imagemVestidaUrl ?? fotoVestida(produto.sku, grande ? 1400 : 800);
   return (
     <Link to={`/loja/${produto.sku}`} className={cn("group block", grande && "lg:row-span-2")}>
       {/* Como num catálogo: a peça sozinha em fundo liso; ao passar o mouse, a peça vestida. */}
       <div className={cn("relative aspect-[4/5] overflow-hidden bg-areia", grande && "lg:aspect-auto lg:h-[calc(100%-132px)] lg:min-h-[620px]")}>
         {/* No cartão grande do catálogo a ordem se inverte: primeiro a foto vestida. */}
         <img
-          src={grande && vestida ? vestida : fotoEstudio(produto.sku)}
-          alt={produto.nome}
+          src={grande && vestida ? vestida : estudio}
+          alt={produto.imagemAlt ?? produto.nome}
           loading="lazy"
           className={cn("h-full w-full", grande && vestida ? "object-cover" : "object-contain")}
         />
         {vestida ? (
           <img
-            src={grande ? fotoEstudio(produto.sku) : vestida}
+            src={grande ? estudio : vestida}
             alt=""
             loading="lazy"
             className={cn(
@@ -170,9 +171,9 @@ export function FichaTecnica({ produto, tamanho }: { produto: Produto; tamanho?:
   const d = detalheDe(produto.sku);
   const linhas: [string, string][] = [
     [produto.nome, `nº ${produto.sku.slice(3)}`],
-    ["Tecido", d.tecido.replace(/^em /, "")],
-    ["Origem", d.tecelagem],
-    ["Costurado em", d.costuradoEm],
+    ["Tecido", (produto.tecido ?? d.tecido).replace(/^em /, "")],
+    ["Origem", produto.tecelagem ?? d.tecelagem],
+    ["Costurado em", produto.costuradoEm ?? d.costuradoEm],
     ["Tamanho", tamanho ?? "—"],
     ["Ajuste", "na loja, sem custo"],
   ];
