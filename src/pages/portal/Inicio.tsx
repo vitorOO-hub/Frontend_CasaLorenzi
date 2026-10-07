@@ -3,6 +3,7 @@ import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { CarrosselCampanha, PainelMidia, filme, foto } from "@/components/campanha";
 import { CabecalhoSecao, CartaoProduto, FotoCampanha, FichaTecnica } from "@/components/vitrine";
+import { useProdutosCatalogo } from "@/lib/catalogoApi";
 import { lojas, type Produto } from "@/lib/dados";
 import { CAMPANHA, EDICAO, materias } from "@/lib/loja";
 import { useEstado } from "@/lib/store";
@@ -43,9 +44,12 @@ function FileiraProdutos({ titulo, produtos, para }: { titulo: string; produtos:
 }
 
 export function Inicio() {
-  const { produtos } = useEstado();
-  const novidades = NOVIDADES.map((s) => produtos.find((p) => p.sku === s)).filter((p) => p !== undefined);
-  const blazer = produtos.find((p) => p.sku === "CL-0204");
+  const estado = useEstado();
+  const { produtos, carregando, erro } = useProdutosCatalogo(estado.produtos);
+  const produtosDisponiveis = carregando || erro ? [] : produtos;
+  const novidadesPreferidas = NOVIDADES.map((s) => produtosDisponiveis.find((p) => p.sku === s)).filter((p) => p !== undefined);
+  const novidades = novidadesPreferidas.length >= 4 ? novidadesPreferidas : produtosDisponiveis.slice(0, 8);
+  const blazer = produtosDisponiveis.find((p) => p.sku === "CL-0204");
 
   return (
     <div>
@@ -58,7 +62,11 @@ export function Inicio() {
         ]}
       />
 
-      <FileiraProdutos titulo={`Novidades da Edição ${EDICAO.numero}`} produtos={novidades} para="/loja" />
+      {carregando || erro ? (
+        <section className="mx-auto max-w-[1440px] px-5 py-24 text-sm text-suave md:px-12">{carregando ? "Carregando peças..." : erro}</section>
+      ) : (
+        <FileiraProdutos titulo={`Novidades da Edição ${EDICAO.numero}`} produtos={novidades} para="/loja" />
+      )}
 
       {/* Dois caminhos, em foto parada */}
       <div className="grid gap-[3px] md:grid-cols-2">
