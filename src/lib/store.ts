@@ -54,7 +54,7 @@ const estado: Estado = {
 };
 
 // O estado sobrevive ao recarregar a página enquanto a aba estiver aberta.
-const CHAVE = "casa-lorenzi:estado:v2";
+const CHAVE = "casa-lorenzi:estado:v3";
 
 try {
   const salvo = sessionStorage.getItem(CHAVE);

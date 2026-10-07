@@ -218,7 +218,7 @@ function p(
 export const produtosIniciais: Produto[] = [
   p("CL-0101", "Camisa de Linho Ravena", "Camisaria", 389, [14, 9, 6]),
   p("CL-0102", "Camisa Oxford Bianca", "Camisaria", 329, [0, 0, 0]),
-  p("CL-0203", "Calça Alfaiataria Torino", "Alfaiataria", 649, [8, 3, 11]),
+  p("CL-0203", "Calça Alfaiataria Torino", "Calças", 649, [8, 3, 11]),
   p("CL-0204", "Blazer Estruturado Modena", "Alfaiataria", 1290, [2, 1, 0], [5, 5, 5]),
   p("CL-0305", "Vestido Midi Amalfi", "Vestidos", 899, [7, 12, 5]),
   p("CL-0306", "Vestido Slip Verona", "Vestidos", 749, [0, 0, 0]),
@@ -842,6 +842,7 @@ export const registrosImportacao: RegistroImportacao[] = [
 export const tamanhosPorCategoria: Record<string, string[]> = {
   Camisaria: ["P", "M", "G", "GG"],
   Alfaiataria: ["38", "40", "42", "44"],
+  Calças: ["38", "40", "42", "44"],
   Vestidos: ["P", "M", "G"],
   Malharia: ["P", "M", "G", "GG"],
   Outerwear: ["P", "M", "G"],
@@ -858,6 +859,10 @@ export const coresPorCategoria: Record<string, { nome: string; hex: string }[]> 
   ],
   Alfaiataria: [
     { nome: "Grafite", hex: "#4a4d52" },
+    { nome: "Marinho", hex: "#1f2f4f" },
+  ],
+  Calças: [
+    { nome: "Areia", hex: "#d9c8a9" },
     { nome: "Marinho", hex: "#1f2f4f" },
   ],
   Vestidos: [
