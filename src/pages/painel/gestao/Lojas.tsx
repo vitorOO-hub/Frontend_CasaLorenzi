@@ -1,9 +1,11 @@
 import { MapPin, UserRound } from "lucide-react";
 import { useState } from "react";
-import { Botao, Campo, Card, Modal, Titulo, inputClasses } from "@/components/ui";
+import { AvisoErro, Botao, Campo, Card, Modal, Titulo, inputClasses } from "@/components/ui";
+import * as acoes from "@/lib/acoes";
 import { moeda, type Loja } from "@/lib/dados";
-import { useLojasVisiveis, useNomeUsuario, usePapel } from "@/lib/sessao";
-import { salvarLoja, useEstado } from "@/lib/store";
+import { useLojasVisiveis, usePapel } from "@/lib/sessao";
+import { useEstado } from "@/lib/store";
+import { useAcao } from "@/lib/useAcao";
 
 const vazio = { nome: "", cidade: "", endereco: "", responsavel: "" };
 
@@ -11,11 +13,12 @@ export function Lojas() {
   const { produtos, chamados, pedidos, usuarios } = useEstado();
   const lojas = useLojasVisiveis();
   const admin = usePapel() === "admin";
-  const autor = useNomeUsuario();
+  const { executar, ocupado, erro, limparErro } = useAcao();
   const [editando, setEditando] = useState<Loja | "nova" | null>(null);
   const [form, setForm] = useState(vazio);
 
   function abrir(l: Loja | "nova") {
+    limparErro();
     setEditando(l);
     setForm(l === "nova" ? vazio : { nome: l.nome, cidade: l.cidade, endereco: l.endereco, responsavel: l.responsavel });
   }
@@ -82,8 +85,8 @@ export function Lojas() {
           className="space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
-            salvarLoja(editando === "nova" || !editando ? null : editando.id, form, autor);
-            setEditando(null);
+            const id = editando === "nova" || !editando ? null : editando.id;
+            void executar("loja", () => acoes.salvarLoja(id, form)).then((ok) => ok && setEditando(null));
           }}
         >
           {(
@@ -104,11 +107,14 @@ export function Lojas() {
               />
             </Campo>
           ))}
+          <AvisoErro erro={erro} />
           <div className="flex justify-end gap-2 pt-2">
             <Botao variante="secundario" onClick={() => setEditando(null)}>
               Cancelar
             </Botao>
-            <Botao type="submit">Salvar</Botao>
+            <Botao type="submit" disabled={ocupado !== null}>
+              {ocupado ? "Salvando…" : "Salvar"}
+            </Botao>
           </div>
         </form>
       </Modal>

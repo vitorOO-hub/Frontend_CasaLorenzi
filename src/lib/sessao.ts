@@ -95,6 +95,12 @@ export function entrarComoFuncionario(email: string, senha: string): Sessao | nu
   return sessao;
 }
 
+/** Sessão atual fora de componentes (as ações leem quem executa daqui, como o backend lê do token). */
+export const sessaoAtual = () => sessao;
+
+/** Loja fixa do cargo; null para quem enxerga a rede inteira (admin, atendente). */
+export const lojaDoPapel = (papel: Papel): string | null => equipe[papel].lojaId ?? null;
+
 export function sair() {
   sessao = null;
   filtroUnidade = "";

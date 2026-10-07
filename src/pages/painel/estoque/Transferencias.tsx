@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ModalReposicao, ModalTransferencia } from "@/components/estoque";
 import {
+  AvisoErro,
   Badge,
   Botao,
   Card,
@@ -15,15 +16,10 @@ import {
   th,
 } from "@/components/ui";
 import { dataBR, lojas, nomeLoja, tomReposicao, tomTransferencia, type SolicitacaoTransferencia } from "@/lib/dados";
-import { useLojaEscopo, useNomeUsuario } from "@/lib/sessao";
-import {
-  aceitarReposicao,
-  aceitarTransferencia,
-  confirmarRecebimento,
-  recusarReposicao,
-  recusarTransferencia,
-  useEstado,
-} from "@/lib/store";
+import * as acoes from "@/lib/acoes";
+import { useLojaEscopo } from "@/lib/sessao";
+import { useEstado } from "@/lib/store";
+import { useAcao } from "@/lib/useAcao";
 
 type Filtro = "acao" | "andamento" | "todas";
 
@@ -31,7 +27,7 @@ type Filtro = "acao" | "andamento" | "todas";
 export function Transferencias() {
   const { produtos, transferencias, reposicoes } = useEstado();
   const escopo = useLojaEscopo();
-  const usuario = useNomeUsuario();
+  const { executar, ocupado, erro, limparErro } = useAcao();
   const [filtro, setFiltro] = useState<Filtro>("acao");
   const [modal, setModal] = useState<"transferencia" | "reposicao" | null>(null);
 
@@ -82,6 +78,7 @@ export function Transferencias() {
         />
       </div>
 
+      <AvisoErro erro={erro} onFechar={limparErro} className="mb-6" />
       <Card>
         <Tabela>
           <thead>
@@ -119,15 +116,15 @@ export function Transferencias() {
                   <td className={td}>
                     {acao === "enviar" ? (
                       <div className="flex gap-2">
-                        <Botao pequeno onClick={() => aceitarTransferencia(t.id, usuario)}>
+                        <Botao pequeno disabled={ocupado === t.id} onClick={() => void executar(t.id, () => acoes.aceitarTransferencia(t.id))}>
                           Aceitar envio
                         </Botao>
-                        <Botao pequeno variante="secundario" onClick={() => recusarTransferencia(t.id)}>
+                        <Botao pequeno variante="secundario" disabled={ocupado === t.id} onClick={() => void executar(t.id, () => acoes.recusarTransferencia(t.id))}>
                           Recusar
                         </Botao>
                       </div>
                     ) : acao === "receber" ? (
-                      <Botao pequeno onClick={() => confirmarRecebimento(t.id, usuario)}>
+                      <Botao pequeno disabled={ocupado === t.id} onClick={() => void executar(t.id, () => acoes.receberTransferencia(t.id))}>
                         Confirmar recebimento
                       </Botao>
                     ) : (
@@ -178,10 +175,10 @@ export function Transferencias() {
                   <td className={td}>
                     {paraMim ? (
                       <div className="flex gap-2">
-                        <Botao pequeno onClick={() => aceitarReposicao(r.id, quemAtende, usuario)}>
+                        <Botao pequeno disabled={ocupado === r.id} onClick={() => void executar(r.id, () => acoes.aceitarReposicao(r.id, quemAtende))}>
                           Atender{escopo ? "" : ` (${nomeLoja(quemAtende)})`}
                         </Botao>
-                        <Botao pequeno variante="secundario" onClick={() => recusarReposicao(r.id, usuario)}>
+                        <Botao pequeno variante="secundario" disabled={ocupado === r.id} onClick={() => void executar(r.id, () => acoes.recusarReposicao(r.id))}>
                           Recusar
                         </Botao>
                       </div>

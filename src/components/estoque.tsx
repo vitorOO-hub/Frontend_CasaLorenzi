@@ -1,14 +1,10 @@
 import { useState } from "react";
 import { lojas, nomeLoja } from "@/lib/dados";
-import { podeAprovar, useLojaEscopo, useNomeUsuario, usePapel } from "@/lib/sessao";
-import {
-  abrirReposicao,
-  registrarMovimento,
-  solicitarAjuste,
-  solicitarTransferencia,
-  useEstado,
-} from "@/lib/store";
-import { Botao, Campo, Modal, Segmentado, Select, inputClasses } from "./ui";
+import * as acoes from "@/lib/acoes";
+import { podeAprovar, useLojaEscopo, usePapel } from "@/lib/sessao";
+import { useEstado } from "@/lib/store";
+import { useAcao } from "@/lib/useAcao";
+import { AvisoErro, Botao, Campo, Modal, Segmentado, Select, inputClasses } from "./ui";
 
 type PropsModal = { aberto: boolean; onFechar: () => void; skuFixo?: string };
 
@@ -47,14 +43,19 @@ function useLojaDaOperacao(titulo = "Loja") {
   return { lojaId: escopo ?? lojaId, campo };
 }
 
-function Rodape({ onFechar, enviar }: { onFechar: () => void; enviar: string }) {
+function Rodape({ onFechar, enviar, ocupado, erro }: { onFechar: () => void; enviar: string; ocupado: boolean; erro: string | null }) {
   return (
-    <div className="flex justify-end gap-2 pt-2">
-      <Botao variante="secundario" onClick={onFechar}>
-        Cancelar
-      </Botao>
-      <Botao type="submit">{enviar}</Botao>
-    </div>
+    <>
+      <AvisoErro erro={erro} />
+      <div className="flex justify-end gap-2 pt-2">
+        <Botao variante="secundario" onClick={onFechar}>
+          Cancelar
+        </Botao>
+        <Botao type="submit" disabled={ocupado}>
+          {ocupado ? "Enviando…" : enviar}
+        </Botao>
+      </div>
+    </>
   );
 }
 
@@ -64,7 +65,7 @@ const motivos = {
 };
 
 export function ModalMovimento({ aberto, onFechar, skuFixo }: PropsModal) {
-  const responsavel = useNomeUsuario();
+  const { executar, ocupado, erro } = useAcao();
   const { sku, produto, campo: campoPeca } = useProdutoSelecionado(skuFixo);
   const { lojaId, campo: campoLoja } = useLojaDaOperacao();
   const [tipo, setTipo] = useState<"Entrada" | "Saída">("Entrada");
@@ -80,9 +81,7 @@ export function ModalMovimento({ aberto, onFechar, skuFixo }: PropsModal) {
         className="space-y-4"
         onSubmit={(e) => {
           e.preventDefault();
-          if (quantidade <= 0) return;
-          registrarMovimento(sku, lojaId, tipo === "Saída" ? -quantidade : quantidade, tipo, responsavel, motivo);
-          onFechar();
+          void executar("movimento", () => acoes.movimentar({ sku, lojaId, tipo, quantidade, observacao: motivo })).then((ok) => ok && onFechar());
         }}
       >
         <Segmentado
@@ -119,14 +118,14 @@ export function ModalMovimento({ aberto, onFechar, skuFixo }: PropsModal) {
         <p className="rounded-sm bg-areia/60 px-4 py-3 text-sm">
           Saldo em {nomeLoja(lojaId)}: <strong>{atual}</strong> → <strong className="text-marinho">{novo}</strong>
         </p>
-        <Rodape onFechar={onFechar} enviar="Registrar" />
+        <Rodape onFechar={onFechar} enviar="Registrar" ocupado={!!ocupado} erro={erro} />
       </form>
     </Modal>
   );
 }
 
 export function ModalAjuste({ aberto, onFechar, skuFixo }: PropsModal) {
-  const solicitante = useNomeUsuario();
+  const { executar, ocupado, erro, limparErro } = useAcao();
   const papel = usePapel();
   const { sku, produto, campo: campoPeca } = useProdutoSelecionado(skuFixo);
   const { lojaId, campo: campoLoja } = useLojaDaOperacao();
@@ -141,6 +140,7 @@ export function ModalAjuste({ aberto, onFechar, skuFixo }: PropsModal) {
     setEnviado(false);
     setContado(null);
     setMotivo("");
+    limparErro();
     onFechar();
   }
 
@@ -162,9 +162,9 @@ export function ModalAjuste({ aberto, onFechar, skuFixo }: PropsModal) {
           className="space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
-            if (!diferenca || !motivo.trim()) return;
-            solicitarAjuste(sku, lojaId, diferenca, motivo.trim(), solicitante);
-            setEnviado(true);
+            void executar("ajuste", () => acoes.solicitarAjuste({ sku, lojaId, quantidadeProposta: proposta, motivo })).then(
+              (ok) => ok && setEnviado(true),
+            );
           }}
         >
           {campoPeca}
@@ -188,7 +188,7 @@ export function ModalAjuste({ aberto, onFechar, skuFixo }: PropsModal) {
               className={inputClasses}
             />
           </Campo>
-          <Rodape onFechar={fechar} enviar="Enviar para aprovação" />
+          <Rodape onFechar={fechar} enviar="Enviar para aprovação" ocupado={!!ocupado} erro={erro} />
         </form>
       )}
     </Modal>
@@ -196,7 +196,7 @@ export function ModalAjuste({ aberto, onFechar, skuFixo }: PropsModal) {
 }
 
 export function ModalTransferencia({ aberto, onFechar, skuFixo }: PropsModal) {
-  const solicitante = useNomeUsuario();
+  const { executar, ocupado, erro } = useAcao();
   const escopo = useLojaEscopo();
   const { sku, produto, campo: campoPeca } = useProdutoSelecionado(skuFixo);
   // Com unidade própria, o pedido é sempre "trazer peças de outra loja para a minha".
@@ -214,8 +214,9 @@ export function ModalTransferencia({ aberto, onFechar, skuFixo }: PropsModal) {
         className="space-y-4"
         onSubmit={(e) => {
           e.preventDefault();
-          solicitarTransferencia(sku, origemValida, destino, quantidade, solicitante);
-          onFechar();
+          void executar("transferencia", () =>
+            acoes.solicitarTransferencia({ sku, origemId: origemValida, destinoId: destino, quantidade }),
+          ).then((ok) => ok && onFechar());
         }}
       >
         {campoPeca}
@@ -255,14 +256,14 @@ export function ModalTransferencia({ aberto, onFechar, skuFixo }: PropsModal) {
           A loja de origem aceita o envio e, quando as peças chegarem, a sua loja confirma o
           recebimento. Acompanhe tudo na aba Transferências.
         </p>
-        <Rodape onFechar={onFechar} enviar="Solicitar" />
+        <Rodape onFechar={onFechar} enviar="Solicitar" ocupado={!!ocupado} erro={erro} />
       </form>
     </Modal>
   );
 }
 
 export function ModalReposicao({ aberto, onFechar }: PropsModal) {
-  const solicitante = useNomeUsuario();
+  const { executar, ocupado, erro } = useAcao();
   const { sku, campo: campoPeca } = useProdutoSelecionado();
   const { lojaId, campo: campoLoja } = useLojaDaOperacao("Loja que precisa da peça");
   const [destinatario, setDestinatario] = useState("");
@@ -274,8 +275,9 @@ export function ModalReposicao({ aberto, onFechar }: PropsModal) {
         className="space-y-4"
         onSubmit={(e) => {
           e.preventDefault();
-          abrirReposicao(sku, lojaId, destinatario || null, quantidade, solicitante);
-          onFechar();
+          void executar("reposicao", () =>
+            acoes.pedirReposicao({ sku, lojaId, destinatarioId: destinatario || null, quantidade }),
+          ).then((ok) => ok && onFechar());
         }}
       >
         {campoPeca}
@@ -304,7 +306,7 @@ export function ModalReposicao({ aberto, onFechar }: PropsModal) {
         <p className="text-xs leading-relaxed text-suave">
           Quando uma loja aceitar, a transferência é criada automaticamente.
         </p>
-        <Rodape onFechar={onFechar} enviar="Abrir pedido" />
+        <Rodape onFechar={onFechar} enviar="Abrir pedido" ocupado={!!ocupado} erro={erro} />
       </form>
     </Modal>
   );

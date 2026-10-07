@@ -1,14 +1,15 @@
 import { useState } from "react";
-import { Badge, Botao, Card, CardTitulo, Select, Tabela, Titulo, td, th } from "@/components/ui";
+import { AvisoErro, Badge, Botao, Card, CardTitulo, Select, Tabela, Titulo, td, th } from "@/components/ui";
+import * as acoes from "@/lib/acoes";
 import { dataBR, lotesImportacao, registrosImportacao } from "@/lib/dados";
-import { useNomeUsuario } from "@/lib/sessao";
-import { logAuditoria, useEstado } from "@/lib/store";
+import { useEstado } from "@/lib/store";
+import { useAcao } from "@/lib/useAcao";
 
 const tomLote = { "Pendente de mapeamento": "alerta", Processado: "ok", "Com erro": "perigo" } as const;
 
 export function Integracoes() {
   const { produtos } = useEstado();
-  const autor = useNomeUsuario();
+  const { executar, ocupado, erro, limparErro } = useAcao();
   const [mapeamentos, setMapeamentos] = useState<Record<string, string>>({});
   const [confirmados, setConfirmados] = useState<string[]>([]);
 
@@ -16,6 +17,7 @@ export function Integracoes() {
     <div>
       <Titulo titulo="Integrações" descricao="Lotes recebidos do ERP Vulto e registros que ainda precisam de um SKU." />
 
+      <AvisoErro erro={erro} onFechar={limparErro} className="mb-6" />
       <Card className="mb-6">
         <CardTitulo titulo="Lotes de importação" />
         <Tabela>
@@ -86,11 +88,12 @@ export function Integracoes() {
                     ) : (
                       <Botao
                         pequeno
-                        disabled={!valor}
-                        onClick={() => {
-                          logAuditoria(autor, "Mapeou registro de importação", `${r.codigoExterno} → ${valor}`);
-                          setConfirmados((c) => [...c, r.id]);
-                        }}
+                        disabled={!valor || ocupado === r.id}
+                        onClick={() =>
+                          void executar(r.id, () => acoes.mapearRegistro(r.codigoExterno, valor)).then(
+                            (ok) => ok && setConfirmados((c) => [...c, r.id]),
+                          )
+                        }
                       >
                         Confirmar
                       </Botao>

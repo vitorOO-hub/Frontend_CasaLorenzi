@@ -2,9 +2,11 @@ import { useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { cn } from "@/components/ui";
 import { botaoLoja } from "@/components/vitrine";
-import { dataBR, nomeCliente, nomeLoja } from "@/lib/dados";
+import * as acoes from "@/lib/acoes";
+import { dataBR, nomeLoja } from "@/lib/dados";
 import { useClienteId } from "@/lib/sessao";
-import { responderChamado, useEstado } from "@/lib/store";
+import { useEstado } from "@/lib/store";
+import { useAcao } from "@/lib/useAcao";
 import { campoLoja } from "./Checkout";
 
 export function MeuChamado() {
@@ -12,6 +14,7 @@ export function MeuChamado() {
   const { chamados } = useEstado();
   const clienteId = useClienteId();
   const [texto, setTexto] = useState("");
+  const { executar, ocupado, erro } = useAcao();
   const chamado = chamados.find((c) => c.id === id && c.clienteId === clienteId);
   if (!chamado) return <Navigate to="/conta/atendimento" replace />;
 
@@ -60,14 +63,14 @@ export function MeuChamado() {
           onSubmit={(e) => {
             e.preventDefault();
             if (!texto.trim()) return;
-            responderChamado(chamado.id, texto, "cliente", nomeCliente(clienteId));
-            setTexto("");
+            void executar("mensagem", () => acoes.enviarMensagem(chamado.id, texto)).then((ok) => ok && setTexto(""));
           }}
         >
           <textarea rows={3} value={texto} onChange={(e) => setTexto(e.target.value)} placeholder="Escreva sua mensagem…" className={campoLoja} />
+          {erro ? <p role="alert" className="mt-3 text-sm text-perigo">{erro}</p> : null}
           <div className="mt-3 flex justify-end">
-            <button type="submit" disabled={!texto.trim()} className={botaoLoja()}>
-              Enviar
+            <button type="submit" disabled={!texto.trim() || ocupado !== null} className={botaoLoja()}>
+              {ocupado ? "Enviando…" : "Enviar"}
             </button>
           </div>
         </form>

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  AvisoErro,
   Botao,
   Campo,
   Card,
@@ -12,16 +13,17 @@ import {
   th,
 } from "@/components/ui";
 import { FotoProduto } from "@/components/vitrine";
+import * as acoes from "@/lib/acoes";
 import { moeda, totalProduto } from "@/lib/dados";
-import { useNomeUsuario } from "@/lib/sessao";
-import { criarProduto, editarProduto, excluirProduto, useEstado } from "@/lib/store";
+import { useEstado } from "@/lib/store";
+import { useAcao } from "@/lib/useAcao";
 
 type Form = { sku: string; nome: string; categoria: string; preco: string };
 const vazio: Form = { sku: "", nome: "", categoria: "Camisaria", preco: "" };
 
 export function CatalogoAdmin() {
   const { produtos } = useEstado();
-  const autor = useNomeUsuario();
+  const { executar, ocupado, erro, limparErro } = useAcao();
   const [form, setForm] = useState<Form | null>(null);
   const [editando, setEditando] = useState<string | null>(null);
   const [excluir, setExcluir] = useState<string | null>(null);
@@ -100,16 +102,17 @@ export function CatalogoAdmin() {
         </Tabela>
       </Card>
 
-      <Modal aberto={!!form} titulo={editando ? "Editar peça" : "Nova peça"} onFechar={() => setForm(null)}>
+      <Modal aberto={!!form} titulo={editando ? "Editar peça" : "Nova peça"} onFechar={() => { limparErro(); setForm(null); }}>
         {form ? (
           <form
             className="space-y-4"
             onSubmit={(e) => {
               e.preventDefault();
               const preco = Number(form.preco) || 0;
-              if (editando) editarProduto(editando, { nome: form.nome, categoria: form.categoria, preco }, autor);
-              else criarProduto({ sku: form.sku.trim().toUpperCase(), nome: form.nome, categoria: form.categoria, preco, autor });
-              setForm(null);
+              const dados = { nome: form.nome, categoria: form.categoria, preco };
+              void executar("salvar", () =>
+                editando ? acoes.editarProduto(editando, dados) : acoes.criarProduto({ ...dados, sku: form.sku }),
+              ).then((ok) => ok && setForm(null));
             }}
           >
             <div className="grid grid-cols-2 gap-4">
@@ -126,33 +129,39 @@ export function CatalogoAdmin() {
             <Campo label="Categoria">
               <input value={form.categoria} onChange={(e) => alterar("categoria", e.target.value)} required className={inputClasses} />
             </Campo>
+            <AvisoErro erro={erro} />
             <div className="flex justify-end gap-2 pt-2">
               <Botao variante="secundario" onClick={() => setForm(null)}>
                 Cancelar
               </Botao>
-              <Botao type="submit">Salvar</Botao>
+              <Botao type="submit" disabled={ocupado !== null}>
+                {ocupado ? "Salvando…" : "Salvar"}
+              </Botao>
             </div>
           </form>
         ) : null}
       </Modal>
 
-      <Modal aberto={!!excluir} titulo="Excluir peça" onFechar={() => setExcluir(null)}>
+      <Modal aberto={!!excluir} titulo="Excluir peça" onFechar={() => { limparErro(); setExcluir(null); }}>
         <p className="text-sm leading-relaxed text-suave">
           A peça <strong className="text-tinta">{excluir}</strong> sai do catálogo de toda a rede e da
-          loja online. A ação fica registrada na auditoria.
+          loja online. A ação fica registrada na auditoria. Peças com estoque ou em pedidos não
+          podem ser excluídas.
         </p>
+        <AvisoErro erro={erro} className="mt-4" />
         <div className="mt-6 flex justify-end gap-2">
           <Botao variante="secundario" onClick={() => setExcluir(null)}>
             Cancelar
           </Botao>
           <Botao
             variante="perigo"
+            disabled={ocupado !== null}
             onClick={() => {
-              if (excluir) excluirProduto(excluir, autor);
-              setExcluir(null);
+              const sku = excluir!;
+              void executar("excluir", () => acoes.excluirProduto(sku)).then((ok) => ok && setExcluir(null));
             }}
           >
-            Excluir
+            {ocupado ? "Excluindo…" : "Excluir"}
           </Botao>
         </div>
       </Modal>

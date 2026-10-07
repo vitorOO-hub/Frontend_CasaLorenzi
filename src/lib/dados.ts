@@ -56,6 +56,7 @@ export type SolicitacaoAjuste = {
   data: string;
   status: StatusAjuste;
   decididoPor?: string;
+  motivoRecusa?: string;
 };
 
 export type StatusReposicao = "Aberta" | "Aceita" | "Recusada";
@@ -119,6 +120,7 @@ export type Chamado = {
   pedidoId?: string;
   sku?: string;
   prioridade?: Prioridade;
+  atendente?: string; // vazio = na fila
   anexos?: Anexo[];
   status: StatusChamado;
   abertoEm: string;

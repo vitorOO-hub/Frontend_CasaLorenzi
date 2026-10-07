@@ -12,10 +12,11 @@ export function Conversa({
 }: {
   chamado: Chamado;
   lado: "cliente" | "atendente";
-  onEnviar: (texto: string) => void;
+  onEnviar: (texto: string) => Promise<boolean>;
   acoesExtras?: React.ReactNode;
 }) {
   const [texto, setTexto] = useState("");
+  const [enviando, setEnviando] = useState(false);
 
   return (
     <div className="flex flex-col rounded-sm border border-linha bg-papel">
@@ -59,8 +60,11 @@ export function Conversa({
           onSubmit={(e) => {
             e.preventDefault();
             if (!texto.trim()) return;
-            onEnviar(texto);
-            setTexto("");
+            setEnviando(true);
+            void onEnviar(texto).then((ok) => {
+              setEnviando(false);
+              if (ok) setTexto("");
+            });
           }}
         >
           <textarea
@@ -72,8 +76,8 @@ export function Conversa({
           />
           <div className="mt-3 flex flex-wrap justify-end gap-2">
             {acoesExtras}
-            <Botao type="submit" disabled={!texto.trim()}>
-              Enviar
+            <Botao type="submit" disabled={!texto.trim() || enviando}>
+              {enviando ? "Enviando…" : "Enviar"}
             </Botao>
           </div>
         </form>

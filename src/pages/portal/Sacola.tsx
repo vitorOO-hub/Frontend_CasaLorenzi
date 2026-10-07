@@ -4,7 +4,10 @@ import { cn } from "@/components/ui";
 import { Foto, botaoLoja } from "@/components/vitrine";
 import { moeda } from "@/lib/dados";
 import { detalheDe, fotoEstudio } from "@/lib/loja";
-import { alterarQuantidadeCarrinho, useEstado } from "@/lib/store";
+import * as acoes from "@/lib/acoes";
+import { useEstado } from "@/lib/store";
+
+const alterarQuantidadeCarrinho = (sku: string, quantidade: number) => void acoes.alterarQuantidadeCarrinho(sku, quantidade);
 
 export const FRETE_GRATIS_A_PARTIR = 1000;
 export const FRETE_PADRAO = 49;

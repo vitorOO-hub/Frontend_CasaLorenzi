@@ -92,6 +92,9 @@ export function useEstado(): Estado {
   return estado;
 }
 
+/** Leitura do estado fora de componentes (usada pelas validações de ./acoes.ts). */
+export const estadoAtual = (): Readonly<Estado> => estado;
+
 const hoje = () => new Date().toISOString().slice(0, 10);
 const agora = () =>
   `${hoje()} ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
@@ -256,12 +259,13 @@ export function aprovarAjuste(id: string, aprovador: string) {
   notificar();
 }
 
-export function recusarAjuste(id: string, aprovador: string) {
+export function recusarAjuste(id: string, aprovador: string, motivoRecusa: string) {
   const a = estado.ajustes.find((x) => x.id === id);
   if (!a || a.status !== "Pendente") return;
   a.status = "Recusado";
   a.decididoPor = aprovador;
-  registrarAuditoria(aprovador, "Recusou ajuste manual", `${a.sku} · ${a.quantidade} un.`);
+  a.motivoRecusa = motivoRecusa;
+  registrarAuditoria(aprovador, "Recusou ajuste manual", `${a.sku} · ${a.quantidade} un. · ${motivoRecusa}`);
   notificar();
 }
 
@@ -328,7 +332,6 @@ export function responderChamado(
     ...chamado.mensagens,
     { id: novoId("m"), autor, nome, data: agora(), texto: texto.trim() },
   ];
-  if (chamado.status === "Aberto" && autor === "atendente") chamado.status = "Em andamento";
   notificar();
 }
 
@@ -336,6 +339,15 @@ export function mudarStatus(chamadoId: string, status: StatusChamado) {
   const chamado = estado.chamados.find((c) => c.id === chamadoId);
   if (!chamado) return;
   chamado.status = status;
+  notificar();
+}
+
+/** Tira o chamado da fila e o atribui ao atendente. */
+export function assumirChamado(chamadoId: string, atendente: string) {
+  const chamado = estado.chamados.find((c) => c.id === chamadoId);
+  if (!chamado) return;
+  chamado.atendente = atendente;
+  chamado.status = "Em andamento";
   notificar();
 }
 
@@ -500,6 +512,16 @@ export function finalizarCompra(clienteId: string, lojaId: string, frete = 0): P
       valor,
     })),
   };
+  for (const item of estado.carrinho) {
+    const produto = produtoDe(item.skuBase);
+    const saldo = produto?.saldos.find((s) => s.lojaId === lojaId);
+    if (!produto || !saldo) continue;
+    saldo.quantidade -= item.quantidade;
+    produto.movimentacoes = [
+      { id: novoId("mv"), data: hoje(), tipo: "Saída", quantidade: -item.quantidade, lojaId, responsavel: "Loja online", observacao: `Pedido ${novo.id}` },
+      ...produto.movimentacoes,
+    ];
+  }
   estado.pedidos = [novo, ...estado.pedidos];
   estado.carrinho = [];
   notificar();
