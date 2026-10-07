@@ -41,7 +41,7 @@ export function Entrar() {
             ? "Esta conta é da equipe. Use a aba “Time Casa Lorenzi”."
             : "Esta conta não tem acesso à área interna. Se você é da equipe, peça ao administrador para conferir seu cadastro.",
         );
-      setErro("Não foi possível entrar agora. Tente de novo em instantes.");
+      setErro(r.detalhe ?? "Não foi possível entrar agora. Tente de novo em instantes.");
     } finally {
       setEnviando(false);
     }

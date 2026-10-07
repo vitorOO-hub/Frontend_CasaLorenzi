@@ -104,7 +104,7 @@ export type Lado = "cliente" | "interno";
 
 export type ResultadoLogin =
   | { ok: true; sessao: Sessao }
-  | { ok: false; motivo: "credenciais" | "lado_errado" | "indisponivel" };
+  | { ok: false; motivo: "credenciais" | "lado_errado" | "indisponivel"; detalhe?: string };
 
 /**
  * Login pelo Supabase Auth (a função pronta `signInWithPassword`). O front não guarda senha nem
@@ -116,7 +116,8 @@ export async function entrar(email: string, senha: string, lado: Lado): Promise<
     conta = await entrarNoSupabase(email, senha);
   } catch (erro) {
     const credenciais = erro instanceof ErroApi && erro.codigo === "nao_autenticado";
-    return { ok: false, motivo: credenciais ? "credenciais" : "indisponivel" };
+    if (credenciais) return { ok: false, motivo: "credenciais" };
+    return { ok: false, motivo: "indisponivel", detalhe: erro instanceof ErroApi ? erro.message : undefined };
   }
   if ((conta.tipo === "interno") !== (lado === "interno")) {
     await sairDaConta().catch(() => undefined);

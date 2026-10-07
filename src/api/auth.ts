@@ -29,9 +29,28 @@ export function sessaoDoToken(token: string): SessaoApi {
   return { tipo: "cliente", id: c.sub, email };
 }
 
+/**
+ * Só credenciais erradas viram "e-mail ou senha incorretos". Qualquer outro motivo (login por e-mail
+ * desligado no projeto, limite de tentativas, Supabase fora do ar) mostra o que de fato aconteceu:
+ * dizer "senha inválida" para uma falha de configuração faz a pessoa trocar de senha à toa.
+ */
+export function erroDoLogin(erro: { code?: string; status?: number; message?: string } | null): ErroApi {
+  if (erro?.code === "email_provider_disabled")
+    return new ErroApi("configuracao", "O login por e-mail e senha está desligado neste projeto do Supabase.", erro.status ?? 422);
+  if (erro?.status === 429 || erro?.code === "over_request_rate_limit")
+    return new ErroApi("limite", "Muitas tentativas de login. Aguarde um minuto e tente de novo.", 429);
+  if (erro?.status && erro.status >= 500) return new ErroApi("servidor", undefined, erro.status);
+  if (!erro) return new ErroApi("nao_autenticado", "E-mail ou senha incorretos.", 401);
+  // Credenciais erradas, e-mail não confirmado e conta inexistente: sem distinguir, de propósito.
+  const credenciais = ["invalid_credentials", "email_not_confirmed", "user_not_found", "validation_failed"];
+  if (!erro.code || credenciais.includes(erro.code))
+    return new ErroApi("nao_autenticado", "E-mail ou senha incorretos.", 401);
+  return new ErroApi("servidor", undefined, erro.status ?? 0);
+}
+
 export async function entrar(email: string, senha: string): Promise<SessaoApi> {
   const { data, error } = await supabase().auth.signInWithPassword({ email: email.trim().toLowerCase(), password: senha });
-  if (error || !data.session) throw new ErroApi("nao_autenticado", "E-mail ou senha incorretos.", 401);
+  if (error || !data.session) throw erroDoLogin(error);
   return sessaoDoToken(data.session.access_token);
 }
 

@@ -123,3 +123,12 @@ describe("sessão ao abrir a página", () => {
     vi.unstubAllGlobals();
   });
 });
+
+describe("motivo da falha no login", () => {
+  it("login por e-mail desligado mostra o motivo real, não 'senha inválida'", async () => {
+    auth.entrar.mockRejectedValue(new ErroApi("configuracao", "O login por e-mail e senha está desligado neste projeto do Supabase."));
+    const r = await entrar("x@y.com", "s", "interno");
+    expect(r).toMatchObject({ ok: false, motivo: "indisponivel" });
+    expect(r.ok === false && r.detalhe).toContain("desligado");
+  });
+});
