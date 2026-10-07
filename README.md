@@ -79,3 +79,18 @@ ainda usam dados simulados, mas só abrem para quem tem o papel certo (`src/lib/
 
 O papel e a loja exibidos vêm do token, mas só para decidir o que mostrar: quem autoriza é sempre
 a API (token validado, papel e loja conferidos no servidor).
+
+## Chamados do atendimento
+
+A fila (`/painel/atendimento`) e a tela do chamado leem e gravam pela API em
+`/api/v1/painel/atendimentos` (código em `src/lib/chamadosApi.ts`, hooks em
+`src/hooks/useChamados.ts`). Quem aparece em cada seção da fila:
+
+- **Fila**: chamados que ninguém assumiu;
+- **Meus chamados**: os que o usuário logado assumiu;
+- **Todos**: tudo que o escopo de loja dele permite.
+
+Atendente e gerente veem a própria loja mais os chamados sem loja; o admin vê a rede e pode filtrar
+por loja. As ações (assumir, responder, resolver) são validadas no servidor, que devolve 409 com a
+explicação em português quando outra pessoa chegou antes. Só gerente e admin veem as compras do
+cliente. Os chamados que o cliente abre na loja ainda são simulados e não aparecem nessa fila.
