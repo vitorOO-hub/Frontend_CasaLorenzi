@@ -5,54 +5,43 @@ import { FotoCampanha } from "@/components/vitrine";
 import { Marca } from "@/layouts/PortalLayout";
 import { CAMPANHA } from "@/lib/loja";
 import { telaInicial } from "@/lib/navegacao";
-import {
-  credenciaisInternas,
-  credencialCliente,
-  entrarComoCliente,
-  entrarComoFuncionario,
-  entrarComoFuncionarioReal,
-  rotuloPapel,
-  type Papel,
-} from "@/lib/sessao";
+import { entrar, type Lado } from "@/lib/sessao";
 
 export function Entrar() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
-  const lado: "cliente" | "interno" = params.get("time") ? "interno" : "cliente";
+  const lado: Lado = params.get("time") ? "interno" : "cliente";
   const voltar = params.get("voltar");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
-  function preencher(e: string, s: string) {
-    setEmail(e);
-    setSenha(s);
-    setErro(null);
-  }
-
-  function trocarLado(novo: "cliente" | "interno") {
+  function trocarLado(novo: Lado) {
     setParams(novo === "interno" ? { time: "1" } : {});
-    preencher("", "");
+    setEmail("");
+    setSenha("");
+    setErro(null);
   }
 
   async function enviar(ev: FormEvent) {
     ev.preventDefault();
-    if (lado === "cliente") {
-      if (!entrarComoCliente(email, senha)) return setErro("E-mail ou senha inválidos.");
-      return navigate(voltar ?? "/conta/pedidos");
-    }
     setEnviando(true);
     setErro(null);
     try {
-      // Primeiro a conta real do Supabase; os acessos de demonstração seguem valendo como reserva.
-      const real = await entrarComoFuncionarioReal(email, senha);
-      if (real.ok) return navigate(telaInicial(real.sessao.tipo === "interno" ? real.sessao.papel : "atendente"));
-      if (real.motivo === "sem_acesso")
-        return setErro("Sua conta ainda não tem acesso à área interna. Fale com o administrador.");
-      const demo = entrarComoFuncionario(email, senha);
-      if (demo?.tipo !== "interno") return setErro("E-mail ou senha inválidos.");
-      navigate(telaInicial(demo.papel));
+      const r = await entrar(email, senha, lado);
+      if (r.ok) {
+        return navigate(r.sessao.tipo === "interno" ? telaInicial(r.sessao.papel) : (voltar ?? "/conta/pedidos"));
+      }
+      setSenha("");
+      if (r.motivo === "credenciais") return setErro("E-mail ou senha inválidos.");
+      if (r.motivo === "lado_errado")
+        return setErro(
+          lado === "cliente"
+            ? "Esta conta é da equipe. Use a aba “Time Casa Lorenzi”."
+            : "Esta conta não tem acesso à área interna. Se você é da equipe, peça ao administrador para conferir seu cadastro.",
+        );
+      setErro("Não foi possível entrar agora. Tente de novo em instantes.");
     } finally {
       setEnviando(false);
     }
@@ -103,7 +92,7 @@ export function Entrar() {
           <p className="mt-2 text-sm text-suave">
             {lado === "cliente"
               ? "Navegar pela coleção não exige login."
-              : "Use seu e-mail corporativo."}
+              : "Entre com a conta que a administração criou para você."}
           </p>
 
           <form onSubmit={enviar} className="mt-8 space-y-4">
@@ -136,34 +125,6 @@ export function Entrar() {
               {enviando ? "Entrando…" : "Entrar"}
             </button>
           </form>
-
-          <div className="mt-10 border-t border-linha pt-6">
-            <p className="rotulo mb-3">Acessos de demonstração</p>
-            <div className="grid gap-2">
-              {lado === "cliente" ? (
-                <button
-                  type="button"
-                  onClick={() => preencher(credencialCliente.email, credencialCliente.senha)}
-                  className="border border-linha bg-papel px-4 py-3 text-left text-xs transition-colors hover:border-marinho"
-                >
-                  <span className="block font-semibold">Cliente · Helena Vasconcelos</span>
-                  <span className="text-suave">{credencialCliente.email}</span>
-                </button>
-              ) : (
-                (Object.keys(credenciaisInternas) as Papel[]).map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => preencher(credenciaisInternas[p].email, credenciaisInternas[p].senha)}
-                    className="border border-linha bg-papel px-4 py-3 text-left text-xs transition-colors hover:border-marinho"
-                  >
-                    <span className="block font-semibold">{rotuloPapel[p]}</span>
-                    <span className="text-suave">{credenciaisInternas[p].email}</span>
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
         </div>
       </div>
     </div>
