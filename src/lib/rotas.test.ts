@@ -14,12 +14,13 @@ describe("rotas privadas da área de atendimento", () => {
     `/painel/atendimento/clientes/${ID}`,
   ];
 
-  it.each(ATENDIMENTO)("%s abre para atendente, gerente e admin", (rota) => {
-    for (const papel of ["atendente", "gerente_loja", "admin"] as Papel[]) expect(podeAcessar(papel, rota)).toBe(true);
+  it.each(ATENDIMENTO)("%s abre para atendente e gerente", (rota) => {
+    for (const papel of ["atendente", "gerente_loja"] as Papel[]) expect(podeAcessar(papel, rota)).toBe(true);
   });
 
-  it.each(ATENDIMENTO)("%s fica fechada para o operador de estoque", (rota) => {
-    expect(podeAcessar("operador_estoque", rota)).toBe(false);
+  // O admin é o dono da rede: acompanha os números, mas não opera o atendimento.
+  it.each(ATENDIMENTO)("%s fica fechada para o operador de estoque e o admin", (rota) => {
+    for (const papel of ["operador_estoque", "admin"] as Papel[]) expect(podeAcessar(papel, rota)).toBe(false);
   });
 
   it("o atendente só enxerga atendimento (nem estoque nem gestão)", () => {
