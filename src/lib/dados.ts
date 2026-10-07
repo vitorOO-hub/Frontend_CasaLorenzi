@@ -22,6 +22,13 @@ export type Movimentacao = {
   observacao?: string;
 };
 
+export type VariacaoProdutoCatalogo = {
+  sku: string;
+  cor: string;
+  tamanho: string;
+  preco: number;
+};
+
 export type Produto = {
   sku: string;
   nome: string;
@@ -29,6 +36,8 @@ export type Produto = {
   preco: number;
   saldos: SaldoLoja[];
   movimentacoes: Movimentacao[];
+  descricao?: string | null;
+  variacoes?: VariacaoProdutoCatalogo[];
 };
 
 export type StatusTransferencia = "Pendente" | "Aceita" | "Recebida" | "Recusada";
@@ -919,6 +928,11 @@ const saldosDe = (p: Produto, lojaIds?: string[]) =>
 
 export const totalProduto = (p: Produto, lojaIds?: string[]) =>
   saldosDe(p, lojaIds).reduce((s, x) => s + x.quantidade, 0);
+
+export const produtoTemEstoque = (p: Produto, lojaIds?: string[]) => {
+  const saldos = saldosDe(p, lojaIds);
+  return saldos.length === 0 || saldos.reduce((s, x) => s + x.quantidade, 0) > 0;
+};
 
 export type StatusEstoque = "OK" | "Estoque baixo" | "Esgotado";
 

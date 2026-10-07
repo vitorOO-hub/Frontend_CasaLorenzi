@@ -1,10 +1,11 @@
 import { Minus, Plus } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { cn } from "@/components/ui";
 import { CartaoProduto, FichaTecnica, Foto, Legenda, NomePeca, Preco, botaoLoja, parcela } from "@/components/vitrine";
-import { skuVariacao, tamanhosPorCategoria, totalProduto } from "@/lib/dados";
-import { detalheDe, fotoEstudio, fotoVestida } from "@/lib/loja";
+import { produtoTemEstoque, skuVariacao, tamanhosPorCategoria, totalProduto } from "@/lib/dados";
+import { detalheDe, fotoEstudio, fotoVestida, type CorDaCasa } from "@/lib/loja";
+import { useProdutosCatalogo } from "@/lib/catalogoApi";
 import * as acoes from "@/lib/acoes";
 import { useEstado } from "@/lib/store";
 
@@ -15,44 +16,66 @@ export function Produto() {
 }
 
 function DetalheProduto({ sku }: { sku: string }) {
-  const { produtos } = useEstado();
-  const produto = produtos.find((p) => p.sku === sku);
-  const d = detalheDe(sku);
-  const tamanhos = (produto && tamanhosPorCategoria[produto.categoria]) ?? ["Único"];
+  const estado = useEstado();
+  const { produtos, carregando } = useProdutosCatalogo(estado.produtos);
+  const produto = produtos.find((p) => p.sku === sku || p.variacoes?.some((variacao) => variacao.sku === sku));
+  const variacoes = useMemo(() => produto?.variacoes ?? [], [produto?.variacoes]);
+  const d = detalheDe(produto?.sku ?? sku);
+  const tamanhos = useMemo(() => {
+    const tamanhosApi = Array.from(new Set(variacoes.map((variacao) => variacao.tamanho).filter(Boolean))).sort();
+    return tamanhosApi.length ? tamanhosApi : ((produto && tamanhosPorCategoria[produto.categoria]) ?? ["Único"]);
+  }, [produto, variacoes]);
+  const cores = useMemo<CorDaCasa[]>(() => {
+    const nomes = Array.from(new Set(variacoes.map((variacao) => variacao.cor).filter(Boolean))).sort();
+    if (nomes.length === 0) return d.cores;
+    return nomes.map((nome, indice) => ({
+      nome,
+      hex: d.cores[indice]?.hex ?? d.cores[0]?.hex ?? "#1b2a4a",
+    }));
+  }, [d.cores, variacoes]);
   const [tamanho, setTamanho] = useState(tamanhos.length === 1 ? tamanhos[0]! : "");
-  const [cor, setCor] = useState(d.cores[0]!);
+  const [cor, setCor] = useState<CorDaCasa>(cores[0]!);
   const [quantidade, setQuantidade] = useState(1);
   const [adicionado, setAdicionado] = useState(false);
   const [aviso, setAviso] = useState(false);
+  const tamanhoSelecionado = tamanhos.includes(tamanho) ? tamanho : tamanhos.length === 1 ? tamanhos[0]! : "";
+  const corSelecionada = cores.find((item) => item.nome === cor.nome) ?? cores[0]!;
 
-  if (!produto) return <Navigate to="/loja" replace />;
+  if (!produto) {
+    if (carregando) {
+      return <p className="px-5 py-24 text-center font-display text-2xl text-suave">Carregando peça...</p>;
+    }
+    return <Navigate to="/loja" replace />;
+  }
 
-  const disponivel = totalProduto(produto);
+  const disponivel = produtoTemEstoque(produto) ? Math.max(totalProduto(produto), variacoes.length || 1) : 0;
   // Distribui o saldo total entre os tamanhos de forma determinística (protótipo).
   const estoqueDo = (t: string) => {
+    if (variacoes.length) return variacoes.filter((variacao) => variacao.tamanho === t).length;
     if (tamanhos.length === 1) return disponivel;
     const i = tamanhos.indexOf(t);
     return Math.floor(disponivel / tamanhos.length) + (i < disponivel % tamanhos.length ? 1 : 0);
   };
-  const restantes = tamanho ? estoqueDo(tamanho) : disponivel;
+  const restantes = tamanhoSelecionado ? estoqueDo(tamanhoSelecionado) : disponivel;
   const vestida = fotoVestida(produto.sku, 1400);
   const combina = produtos
-    .filter((p) => p.sku !== produto.sku && p.categoria !== produto.categoria && totalProduto(p) > 0)
+    .filter((p) => p.sku !== produto.sku && p.categoria !== produto.categoria && produtoTemEstoque(p))
     .slice(0, 3);
 
   function adicionar() {
-    if (!tamanho) {
+    if (!tamanhoSelecionado) {
       setAviso(true);
       return;
     }
+    const variacao = variacoes.find((item) => item.tamanho === tamanhoSelecionado && item.cor === corSelecionada.nome);
     void acoes.adicionarAoCarrinho({
-      sku: skuVariacao(produto!.sku, tamanho, cor.nome),
+      sku: variacao?.sku ?? skuVariacao(produto!.sku, tamanhoSelecionado, corSelecionada.nome),
       skuBase: produto!.sku,
       nome: produto!.nome,
       quantidade,
-      valor: produto!.preco,
-      tamanho,
-      cor: cor.nome,
+      valor: variacao?.preco ?? produto!.preco,
+      tamanho: tamanhoSelecionado,
+      cor: corSelecionada.nome,
     });
     setAdicionado(true);
   }
@@ -96,10 +119,10 @@ function DetalheProduto({ sku }: { sku: string }) {
 
           <div className="alinhavo mt-8 pt-6">
             <p className="mb-3 text-sm text-suave">
-              Cor: <span className="text-tinta">{cor.nome}</span>
+              Cor: <span className="text-tinta">{corSelecionada.nome}</span>
             </p>
             <div className="flex gap-3">
-              {d.cores.map((c) => (
+              {cores.map((c) => (
                 <button
                   key={c.nome}
                   onClick={() => setCor(c)}
@@ -107,7 +130,7 @@ function DetalheProduto({ sku }: { sku: string }) {
                   title={c.nome}
                   className={cn(
                     "h-10 w-10 rounded-full border-[1.5px] p-[3px] transition-colors",
-                    cor.nome === c.nome ? "border-dashed border-tinta" : "border-transparent hover:border-linha",
+                    corSelecionada.nome === c.nome ? "border-dashed border-tinta" : "border-transparent hover:border-linha",
                   )}
                 >
                   <span className="block h-full w-full rounded-full border border-tinta/15" style={{ background: c.hex }} />
@@ -137,7 +160,7 @@ function DetalheProduto({ sku }: { sku: string }) {
                     }}
                     className={cn(
                       "min-w-14 border px-4 py-2.5 text-sm transition-colors",
-                      tamanho === t ? "border-tinta bg-tinta text-creme" : "border-linha bg-pergaminho hover:border-tinta",
+                      tamanhoSelecionado === t ? "border-tinta bg-tinta text-creme" : "border-linha bg-pergaminho hover:border-tinta",
                       sem && "cursor-not-allowed text-suave/50 line-through",
                     )}
                   >
@@ -147,9 +170,9 @@ function DetalheProduto({ sku }: { sku: string }) {
               })}
             </div>
             {aviso ? <p className="mt-2 text-sm text-perigo">Escolha um tamanho — a barra e as mangas a gente ajusta depois.</p> : null}
-            {tamanho && restantes > 0 && restantes <= 5 ? (
+            {tamanhoSelecionado && restantes > 0 && restantes <= 5 ? (
               <p className="mt-3 text-sm text-caramelo">
-                {restantes === 1 ? "Última peça" : `Restam ${restantes} peças`} no {tamanho} desta edição.
+                {restantes === 1 ? "Última peça" : `Restam ${restantes} peças`} no {tamanhoSelecionado} desta edição.
               </p>
             ) : null}
           </div>
@@ -192,7 +215,7 @@ function DetalheProduto({ sku }: { sku: string }) {
           </ul>
 
           <div className="mt-10">
-            <FichaTecnica produto={produto} tamanho={tamanho || undefined} />
+            <FichaTecnica produto={produto} tamanho={tamanhoSelecionado || undefined} />
           </div>
 
           <Link to={`/conta/atendimento/novo?sku=${produto.sku}`} className="link-tracejado mt-8 inline-block text-sm">
