@@ -11,7 +11,6 @@ import { CampoLoja, campoLoja } from "./Checkout";
 const TIPOS = [
   { id: "ajuste", rotulo: "Ajustar uma peça", nota: "Barra, mangas, cintura — 20 min" },
   { id: "prova", rotulo: "Provar a pronta-entrega", nota: "Separamos as peças no seu tamanho" },
-  { id: "sob-medida", rotulo: "Conversa de sob medida", nota: "Escolha de tecido e medidas — 40 min" },
 ] as const;
 
 const HORARIOS = ["10:00", "11:30", "14:00", "15:30", "17:00", "18:30"];
@@ -56,7 +55,7 @@ export function Agendar() {
   const cliente = sessao?.tipo === "cliente" ? clientes.find((c) => c.id === sessao.clienteId) : undefined;
   const dias = proximosDias();
 
-  const tipoInicial = params.get("tipo") === "sob-medida" ? "sob-medida" : peca ? "prova" : "ajuste";
+  const tipoInicial = peca ? "prova" : "ajuste";
   const [tipo, setTipo] = useState<(typeof TIPOS)[number]["id"]>(tipoInicial);
   const [lojaId, setLojaId] = useState("l1");
   const [dia, setDia] = useState(dias[0]!.iso);
@@ -127,7 +126,7 @@ export function Agendar() {
       >
         <section>
           <h2 className="mb-4 text-[28px]">O que vamos fazer</h2>
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-2">
             {TIPOS.map((t) => (
               <Escolha key={t.id} ativa={tipo === t.id} onClick={() => setTipo(t.id)}>
                 <span className="block font-display text-xl">{t.rotulo}</span>

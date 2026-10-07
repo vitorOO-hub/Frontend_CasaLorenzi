@@ -44,7 +44,7 @@ export function Perfil() {
           {chamados.filter((c) => c.clienteId === cliente.id).length} conversas com a casa.
         </p>
         <p className="mt-5 font-mao text-[14px] leading-relaxed text-caramelo">
-          Suas medidas ficam guardadas com {casas[casaId]?.alfaiate.split(",")[0] ?? "o alfaiate"}, no {nomeLoja(casaId)}.
+          Sua casa é o {nomeLoja(casaId)}. Quem faz os seus ajustes é {casas[casaId]?.alfaiate.split(",")[0] ?? "o alfaiate"}.
         </p>
       </aside>
     </div>

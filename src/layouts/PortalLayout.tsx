@@ -78,13 +78,6 @@ export function PortalLayout() {
       destaque: { foto: unsplash(CAMPANHA.prontaEntrega, 700), legenda: "Casacos da estação", to: "/loja?categoria=Outerwear" },
     },
     {
-      id: "sob",
-      rotulo: "Sob medida",
-      to: "/sob-medida",
-      itens: [["Como funciona", "/sob-medida"], ["Tecidos da estação", "/sob-medida"], ["Agendar uma conversa", "/agendar?tipo=sob-medida"]],
-      destaque: { foto: unsplash(CAMPANHA.sobMedida, 700), legenda: "Três provas, ajustes para sempre", to: "/sob-medida" },
-    },
-    {
       id: "casa",
       rotulo: "A casa",
       to: "/caderno",
@@ -337,7 +330,6 @@ function Rodape() {
       [
         ["Edição 64 · Garoa", "/loja"],
         ["Pronta-entrega", "/loja"],
-        ["Sob medida", "/sob-medida"],
         ["Agendar uma prova", "/agendar"],
       ],
     ],

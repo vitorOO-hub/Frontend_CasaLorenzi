@@ -64,11 +64,11 @@ export function Inicio() {
       <div className="grid gap-[3px] md:grid-cols-2">
         <PainelMidia
           className="h-[72svh] min-h-[460px]"
-          midias={[foto(CAMPANHA.sobMedida)]}
-          sobre="Sob medida"
-          titulo="Do risco de giz à terceira prova"
-          acao="Como funciona"
-          to="/sob-medida"
+          midias={[foto(CAMPANHA.amostras)]}
+          sobre="Caderno do Ateliê"
+          titulo="Por que a lã fria não esquenta"
+          acao="Ler a nota"
+          to="/caderno/la-fria"
         />
         <PainelMidia
           className="h-[72svh] min-h-[460px]"
@@ -94,9 +94,9 @@ export function Inicio() {
             </p>
             <div className="mt-9 grid grid-cols-3 gap-4">
               {[
-                [CAMPANHA.prova1, "1ª prova", "O giz marca ombro, cava e cintura."],
-                [CAMPANHA.prova2, "2ª prova", "A peça alinhavada, para ajustar o caimento."],
-                [CAMPANHA.prova3, "3ª prova", "Acabamento à mão e a etiqueta assinada."],
+                [CAMPANHA.prova1, "Corte", "O giz risca o molde direto sobre a lã."],
+                [CAMPANHA.prova2, "Alinhavo", "As partes alinhavadas, para acertar o caimento."],
+                [CAMPANHA.prova3, "Acabamento", "Casas de botão à mão e a etiqueta assinada."],
               ].map(([id, titulo, texto]) => (
                 <div key={titulo}>
                   <FotoCampanha id={id!} largura={500} className="aspect-[4/5]" />
@@ -135,24 +135,6 @@ export function Inicio() {
           ))}
         </div>
       </section>
-    </div>
-  );
-}
-
-/** Os três passos do sob medida (também usado na página Sob medida). */
-export function Passos() {
-  return (
-    <div className="my-7">
-      {[
-        "Conversa e escolha do tecido — 40 minutos, com café.",
-        "Primeira e segunda prova, três semanas depois.",
-        "Prova final e entrega. Ajustes para sempre, sem custo.",
-      ].map((t, i) => (
-        <div key={t} className="alinhavo grid grid-cols-[40px_1fr] py-3.5 text-[15px]">
-          <span className="font-display text-[22px] text-caramelo">{i + 1}</span>
-          {t}
-        </div>
-      ))}
     </div>
   );
 }

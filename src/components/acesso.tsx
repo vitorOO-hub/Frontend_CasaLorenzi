@@ -34,7 +34,7 @@ export function ExigeLogin({ children, texto }: { children: ReactNode; texto?: s
     <div className="mx-auto max-w-xl px-5 py-20 text-center">
       <h1 className="text-[48px] leading-none">Entre na sua conta.</h1>
       <p className="mt-4 font-display text-xl text-suave">
-        {texto ?? "Seus pedidos, suas conversas com a casa e as medidas que o alfaiate guardou ficam aqui."}
+        {texto ?? "Seus pedidos e suas conversas com a casa ficam aqui."}
       </p>
       <Link
         to={`/entrar?voltar=${encodeURIComponent(pathname)}`}
