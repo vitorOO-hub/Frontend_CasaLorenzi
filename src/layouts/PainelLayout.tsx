@@ -2,7 +2,7 @@ import { LogOut, Store } from "lucide-react";
 import { Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Bloqueio } from "@/components/acesso";
 import { MenuUsuario } from "@/components/MenuUsuario";
-import { Contador, Select, cn } from "@/components/ui";
+import { Select, cn } from "@/components/ui";
 import { lojas, nomeLoja } from "@/lib/dados";
 import { abasDoPapel, podeAcessar, secoesDoPapel, type Secao } from "@/lib/navegacao";
 import { usePendencias } from "@/lib/pendencias";
@@ -23,6 +23,28 @@ const aoAbrir =
   "opacity-0 transition-opacity duration-200 group-hover/menu:opacity-100 group-focus-within/menu:opacity-100";
 const aoFechar =
   "transition-opacity duration-200 group-hover/menu:opacity-0 group-focus-within/menu:opacity-0";
+
+// Rótulos em Archivo Narrow e o tom apagado dos textos da barra.
+const ROTULO = "[font-family:var(--font-menu)]";
+const APAGADO = "text-[#9dabca]";
+
+// Marcações da fita métrica na borda direita da barra.
+const FITA = {
+  backgroundImage:
+    "repeating-linear-gradient(to bottom, rgba(255,255,255,.30) 0 1px, transparent 1px 50px)," +
+    "repeating-linear-gradient(to bottom, rgba(255,255,255,.13) 0 1px, transparent 1px 10px)",
+  backgroundRepeat: "no-repeat, no-repeat",
+  backgroundSize: "15px 100%, 7px 100%",
+  backgroundPosition: "right top, right top",
+};
+
+/** Iniciais do primeiro e do último nome, para o avatar da barra. */
+function iniciais(nome: string) {
+  const partes = nome.trim().split(/\s+/).filter(Boolean);
+  if (!partes.length) return "";
+  const ultima = partes.length > 1 ? partes[partes.length - 1]![0] : "";
+  return `${partes[0]![0]}${ultima}`.toUpperCase();
+}
 
 export function PainelLayout() {
   const sessao = useSessao();
@@ -52,26 +74,31 @@ export function PainelLayout() {
 
   return (
     <div className="flex min-h-screen bg-creme">
-      {/* Barra lateral: no máximo 4 seções; as subdivisões ficam nas abas de cada seção.
-          Fica recolhida nos ícones e abre por cima do conteúdo ao passar o mouse (ou focar
-          pelo teclado), como o menu da loja. */}
+      {/* Barra lateral "fita métrica": no máximo 4 seções; as subdivisões ficam nas abas de cada
+          seção. Fica recolhida nos ícones e abre por cima do conteúdo ao passar o mouse (ou focar
+          pelo teclado), como o menu da loja. A borda direita traz as marcações de uma fita de
+          alfaiate e as seções são numeradas. */}
       <aside className="group/menu sticky top-0 z-40 hidden h-screen w-16 shrink-0 md:block">
-        <div className="absolute inset-y-0 left-0 flex w-16 flex-col overflow-hidden bg-marinho-escuro px-2 py-8 text-white/90 transition-[width,box-shadow] duration-200 ease-out group-focus-within/menu:w-60 group-focus-within/menu:shadow-2xl group-hover/menu:w-60 group-hover/menu:shadow-2xl">
-          <NavLink to="/painel" className="relative block w-56 px-3" aria-label="Casa Lorenzi — início do painel">
-            <span className={cn("absolute left-0 top-0 w-12 text-center font-display text-[22px] leading-none", aoFechar)}>
+        <div className="absolute inset-y-0 left-0 flex w-16 flex-col overflow-hidden bg-marinho text-creme shadow-[1px_0_0_rgba(255,255,255,.07)] transition-[width,box-shadow] duration-[400ms] ease-[cubic-bezier(.4,0,.2,1)] group-focus-within/menu:w-60 group-focus-within/menu:shadow-[1px_0_0_rgba(255,255,255,.07),16px_0_34px_-22px_rgba(22,32,58,.9)] group-hover/menu:w-60 group-hover/menu:shadow-[1px_0_0_rgba(255,255,255,.07),16px_0_34px_-22px_rgba(22,32,58,.9)] motion-reduce:transition-none">
+          {/* Fita métrica: traço longo a cada 50px e traço curto a cada 10px. */}
+          <span aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-[18px]" style={FITA} />
+
+          <NavLink
+            to="/painel"
+            aria-label="Casa Lorenzi — início do painel"
+            className="relative block h-[78px] shrink-0 border-b border-white/[.09]"
+          >
+            <span className={cn("absolute inset-y-0 left-0 grid w-16 place-items-center font-display text-[22px] tracking-[.03em]", aoFechar)}>
               CL
             </span>
-            <span className={cn("block", aoAbrir)}>
-              <span className="block whitespace-nowrap font-display text-[28px] font-light leading-none tracking-tight">
-                Casa Lorenzi
-              </span>
-              <span className="filete mt-4" />
-              <span className="rotulo mt-3 block !text-white/45">Operações</span>
+            <span className={cn("absolute left-[22px] top-1/2 flex -translate-y-1/2 flex-col gap-[3px] whitespace-nowrap", aoAbrir)}>
+              <span className="font-display text-[21px] leading-none tracking-[.01em]">Casa Lorenzi</span>
+              <span className={cn("text-[10.5px] uppercase tracking-[.2em]", ROTULO, APAGADO)}>Operações</span>
             </span>
           </NavLink>
 
-          <nav className="mt-10 flex w-56 flex-col gap-1" aria-label="Seções">
-            {visiveis.map((s) => {
+          <nav className="flex flex-1 flex-col gap-0.5 py-3.5" aria-label="Seções">
+            {visiveis.map((s, i) => {
               const pendentes = contagem(s);
               return (
                 <NavLink
@@ -80,42 +107,70 @@ export function PainelLayout() {
                   end={s.to === "/painel"}
                   className={({ isActive }) =>
                     cn(
-                      "relative flex items-center gap-3 rounded-sm px-4 py-2.5 text-sm transition-colors",
+                      "relative flex h-12 shrink-0 items-center transition-colors focus-visible:outline-2 focus-visible:-outline-offset-[3px] focus-visible:outline-terracota",
                       isActive
-                        ? "bg-white/10 text-white before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:bg-dourado"
-                        : "text-white/55 hover:bg-white/5 hover:text-white",
+                        ? "bg-white/10 text-creme before:absolute before:inset-y-[7px] before:left-0 before:w-0.5 before:bg-terracota"
+                        : cn(APAGADO, "hover:bg-white/5 hover:text-creme"),
                     )
                   }
                 >
-                  <span className="relative shrink-0">
-                    <s.icone className="h-4 w-4" strokeWidth={1.5} />
-                    {/* Com a barra fechada, as pendências viram um ponto sobre o ícone. */}
-                    {pendentes > 0 ? (
-                      <span className={cn("absolute -right-1 -top-1 h-1.5 w-1.5 rounded-full bg-dourado", aoFechar)} />
-                    ) : null}
-                  </span>
-                  <span className={cn("flex items-center gap-3 whitespace-nowrap", aoAbrir)}>
-                    {s.rotulo}
-                    <Contador valor={pendentes} claro />
-                  </span>
+                  {({ isActive }) => (
+                    <>
+                      <span className="relative z-[1] grid w-16 shrink-0 place-items-center">
+                        <span className="relative">
+                          <s.icone className="h-[19px] w-[19px]" strokeWidth={1.5} />
+                          {/* Com a barra fechada, as pendências viram um ponto sobre o ícone. */}
+                          {pendentes > 0 ? (
+                            <span className={cn("absolute -right-1.5 -top-1 h-[7px] w-[7px] rounded-full bg-terracota ring-2 ring-marinho", aoFechar)} />
+                          ) : null}
+                        </span>
+                      </span>
+                      <span className={cn("relative z-[1] whitespace-nowrap text-[15px] font-medium tracking-[.01em]", aoAbrir)}>
+                        <span className={cn("mr-3 text-xs tracking-[.08em] tabular-nums", ROTULO, isActive ? "text-terracota" : "text-aco")}>
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+                        {s.rotulo}
+                      </span>
+                      {pendentes > 0 ? (
+                        <span
+                          className={cn(
+                            "relative z-[1] ml-auto mr-4 h-5 min-w-[23px] rounded-full bg-white/[.13] px-[7px] text-center text-[11px] font-semibold leading-5 text-creme tabular-nums",
+                            aoAbrir,
+                          )}
+                        >
+                          {pendentes}
+                        </span>
+                      ) : null}
+                    </>
+                  )}
                 </NavLink>
               );
             })}
           </nav>
 
-          <div className="mt-auto w-56 space-y-1 border-t border-white/10 pt-5 text-xs">
-            <div className={cn("whitespace-nowrap px-4 pb-3", aoAbrir)}>
-              <p className="text-sm text-white/80">{pessoa.nome}</p>
-              <p className="text-white/40">{rotuloPapel[papel]}</p>
+          <div className="relative z-[1] shrink-0 border-t border-white/[.09] pb-3.5 pt-2.5">
+            <div className="flex h-12 items-center">
+              <span className="grid w-16 shrink-0 place-items-center">
+                <span className={cn("grid h-[30px] w-[30px] place-items-center rounded-full bg-terracota text-[11px] font-semibold tracking-[.06em] text-white", ROTULO)}>
+                  {iniciais(pessoa.nome)}
+                </span>
+              </span>
+              <span className={cn("flex flex-col gap-0.5 whitespace-nowrap", aoAbrir)}>
+                <span className="text-[13.5px] font-medium text-creme">{pessoa.nome}</span>
+                <span className={cn("text-[11.5px]", APAGADO)}>
+                  {rotuloPapel[papel]}
+                  {pessoa.lojaId ? ` · ${nomeLoja(pessoa.lojaId)}` : ""}
+                </span>
+              </span>
             </div>
-            <NavLink to="/" className="flex items-center gap-3 px-4 py-2 text-white/45 hover:text-white">
-              <Store className="h-4 w-4 shrink-0" strokeWidth={1.5} />
-              <span className={aoAbrir}>Ver loja</span>
-            </NavLink>
-            <button onClick={encerrar} className="flex w-full items-center gap-3 px-4 py-2 text-white/45 hover:text-white">
-              <LogOut className="h-4 w-4 shrink-0" strokeWidth={1.5} />
-              <span className={aoAbrir}>Sair</span>
-            </button>
+            <div className={cn("flex gap-5 whitespace-nowrap pl-[22px] pt-2 text-[13px] font-medium", APAGADO, aoAbrir)}>
+              <NavLink to="/" className="flex items-center gap-2 hover:text-creme">
+                <Store className="h-4 w-4" strokeWidth={1.5} /> Ver loja
+              </NavLink>
+              <button onClick={encerrar} className="flex items-center gap-2 hover:text-creme">
+                <LogOut className="h-4 w-4" strokeWidth={1.5} /> Sair
+              </button>
+            </div>
           </div>
         </div>
       </aside>
