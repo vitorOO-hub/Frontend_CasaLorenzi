@@ -1,7 +1,6 @@
 import { Menu, Plus, Search, ShoppingBag, X } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { SeletorFontes } from "@/components/SeletorFontes";
 import { cn } from "@/components/ui";
 import { CAMPANHA, EDICAO, unsplash } from "@/lib/loja";
 import { sair, useSessao } from "@/lib/sessao";
@@ -246,7 +245,6 @@ export function PortalLayout() {
 
       <CartaMensal />
       <Rodape />
-      <SeletorFontes />
     </div>
   );
 }
