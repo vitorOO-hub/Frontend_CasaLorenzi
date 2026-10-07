@@ -4,6 +4,7 @@ import { supabase } from "@/api/supabase";
 import type { Produto, VariacaoProdutoCatalogo } from "./dados";
 
 export type LinhaVariacaoCatalogo = {
+  id_variacao: string | null;
   sku: string | null;
   cor: string | null;
   tamanho: string | null;
@@ -43,6 +44,7 @@ export function produtoCatalogoDeLinha(linha: LinhaProdutoCatalogo): Produto {
   const variacoes = (linha.variacao_produto ?? [])
     .filter((variacao) => variacao.ativo !== false && variacao.sku)
     .map<VariacaoProdutoCatalogo>((variacao) => ({
+      idVariacao: variacao.id_variacao ?? undefined,
       sku: variacao.sku!,
       cor: texto(variacao.cor, "Única"),
       tamanho: texto(variacao.tamanho, "Único"),
@@ -65,7 +67,7 @@ export async function listarProdutosCatalogo(): Promise<Produto[]> {
   const { data, error } = await supabase()
     .from("produto")
     .select(
-      "id_produto,nome,marca,categoria,descricao,preco_base,ativo,variacao_produto(sku,cor,tamanho,preco_venda)",
+      "id_produto,nome,marca,categoria,descricao,preco_base,ativo,variacao_produto(id_variacao,sku,cor,tamanho,preco_venda)",
     )
     .eq("ativo", true)
     .order("nome", { ascending: true });

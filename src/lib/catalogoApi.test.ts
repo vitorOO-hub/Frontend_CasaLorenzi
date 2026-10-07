@@ -12,9 +12,9 @@ describe("catálogo do Supabase", () => {
       preco_base: "389.90",
       ativo: true,
       variacao_produto: [
-        { sku: "CL-0101-P-BR", cor: "Branco", tamanho: "P", preco_venda: "399.90", ativo: true },
-        { sku: "CL-0101-M-BR", cor: "Branco", tamanho: "M", preco_venda: "409.90", ativo: true },
-        { sku: "CL-0101-G-AZ", cor: "Azul", tamanho: "G", preco_venda: "419.90", ativo: false },
+        { id_variacao: "variacao-p", sku: "CL-0101-P-BR", cor: "Branco", tamanho: "P", preco_venda: "399.90", ativo: true },
+        { id_variacao: "variacao-m", sku: "CL-0101-M-BR", cor: "Branco", tamanho: "M", preco_venda: "409.90", ativo: true },
+        { id_variacao: "variacao-g", sku: "CL-0101-G-AZ", cor: "Azul", tamanho: "G", preco_venda: "419.90", ativo: false },
       ],
     });
 
@@ -28,8 +28,8 @@ describe("catálogo do Supabase", () => {
       movimentacoes: [],
     });
     expect(produto.variacoes).toEqual([
-      { sku: "CL-0101-P-BR", cor: "Branco", tamanho: "P", preco: 399.9 },
-      { sku: "CL-0101-M-BR", cor: "Branco", tamanho: "M", preco: 409.9 },
+      { idVariacao: "variacao-p", sku: "CL-0101-P-BR", cor: "Branco", tamanho: "P", preco: 399.9 },
+      { idVariacao: "variacao-m", sku: "CL-0101-M-BR", cor: "Branco", tamanho: "M", preco: 409.9 },
     ]);
   });
 

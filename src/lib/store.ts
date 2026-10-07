@@ -21,7 +21,7 @@ import {
   type Usuario,
 } from "./dados";
 
-export type ItemCarrinho = ItemPedido & { skuBase: string; tamanho: string; cor: string };
+export type ItemCarrinho = ItemPedido & { skuBase: string; tamanho: string; cor: string; idVariacao?: string };
 
 type Estado = {
   produtos: Produto[];
@@ -490,6 +490,11 @@ export function alterarQuantidadeCarrinho(sku: string, quantidade: number) {
     const item = estado.carrinho.find((i) => i.sku === sku);
     if (item) item.quantidade = quantidade;
   }
+  notificar();
+}
+
+export function limparCarrinho() {
+  estado.carrinho = [];
   notificar();
 }
 
