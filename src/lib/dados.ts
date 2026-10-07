@@ -30,6 +30,8 @@ export type VariacaoProdutoCatalogo = {
   preco: number;
 };
 
+export type CorProdutoCatalogo = { nome: string; hex: string };
+
 export type Produto = {
   sku: string;
   nome: string;
@@ -39,6 +41,15 @@ export type Produto = {
   movimentacoes: Movimentacao[];
   descricao?: string | null;
   variacoes?: VariacaoProdutoCatalogo[];
+  imagemUrl?: string;
+  imagemAlt?: string;
+  imagemVestidaUrl?: string | null;
+  tipo?: string;
+  tecido?: string;
+  tecelagem?: string;
+  costuradoEm?: string;
+  nota?: string;
+  cores?: CorProdutoCatalogo[];
 };
 
 export type StatusTransferencia = "Pendente" | "Aceita" | "Recebida" | "Recusada";
@@ -93,7 +104,15 @@ export type Cliente = {
   desde: string;
 };
 
-export type ItemPedido = { sku: string; nome: string; quantidade: number; valor: number };
+export type ItemPedido = {
+  sku: string;
+  nome: string;
+  quantidade: number;
+  valor: number;
+  imagemUrl?: string | null;
+  imagemAlt?: string | null;
+  tecido?: string | null;
+};
 
 export type StatusPedido = "Entregue" | "Em transporte" | "Separação" | "Cancelado";
 

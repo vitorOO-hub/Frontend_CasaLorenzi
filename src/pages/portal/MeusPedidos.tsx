@@ -52,6 +52,9 @@ function pedidoApiParaTela(pedido: PedidoClienteApi) {
       nome: item.produto,
       quantidade: item.quantidade,
       valor: Number(item.preco_unitario),
+      imagemUrl: item.imagem_url,
+      imagemAlt: item.imagem_alt,
+      tecido: item.tecido,
     })),
   };
 }
@@ -130,7 +133,7 @@ export function MeusPedidos() {
           <ul className="mt-6 flex flex-wrap gap-6">
             {p.itens.map((i) => (
               <li key={i.sku} className="flex items-center gap-3 text-sm">
-                <Foto src={fotoEstudio(i.sku)} className="aspect-[4/5] w-14" />
+                <Foto src={i.imagemUrl ?? fotoEstudio(i.sku)} alt={i.imagemAlt ?? i.nome} className="aspect-[4/5] w-14" />
                 <span>
                   <span className="font-display text-[17px]">{i.nome}</span>
                   <span className="block text-xs text-suave">

@@ -284,7 +284,7 @@ export function Checkout() {
           <ul className="mt-5 space-y-4">
             {carrinho.map((i) => (
               <li key={i.sku} className="flex gap-3 text-sm">
-                <Foto src={fotoEstudio(i.skuBase)} className="aspect-[4/5] w-14 shrink-0" />
+                <Foto src={i.imagemUrl ?? fotoEstudio(i.skuBase)} alt={i.imagemAlt ?? i.nome} className="aspect-[4/5] w-14 shrink-0" />
                 <div className="flex-1">
                   <p className="font-display text-[17px] leading-tight">{i.nome}</p>
                   <p className="text-xs text-suave">

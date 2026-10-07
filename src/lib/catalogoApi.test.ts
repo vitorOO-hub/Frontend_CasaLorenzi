@@ -1,6 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { produtoCatalogoDeLinha } from "./catalogoApi";
 
+const detalhesObrigatorios = {
+  imagem_url: "/img/produtos/CL-0101.jpg",
+  imagem_alt: "Camisa de Linho Ravena",
+  imagem_vestida_url: null,
+  tipo: "Camisas de linho",
+  tecido: "em linho lavado",
+  tecelagem: "Linho irlandês",
+  costurado_em: "Bom Retiro, SP",
+  nota: "Gola italiana que fica em pé.",
+  cores: [{ nome: "Branco giz", hex: "#f4f1ea" }],
+};
+
 describe("catálogo do Supabase", () => {
   it("transforma produto e variações no formato usado pela vitrine", () => {
     const produto = produtoCatalogoDeLinha({
@@ -11,10 +23,11 @@ describe("catálogo do Supabase", () => {
       descricao: "Linho lavado",
       preco_base: "389.90",
       ativo: true,
+      ...detalhesObrigatorios,
       variacao_produto: [
-        { id_variacao: "variacao-p", sku: "CL-0101-P-BR", cor: "Branco", tamanho: "P", preco_venda: "399.90", ativo: true },
-        { id_variacao: "variacao-m", sku: "CL-0101-M-BR", cor: "Branco", tamanho: "M", preco_venda: "409.90", ativo: true },
-        { id_variacao: "variacao-g", sku: "CL-0101-G-AZ", cor: "Azul", tamanho: "G", preco_venda: "419.90", ativo: false },
+        { id_variacao: "variacao-p", sku: "CL-0101-P-BR", cor: "Branco", tamanho: "P", preco_venda: "399.90", ativa: true },
+        { id_variacao: "variacao-m", sku: "CL-0101-M-BR", cor: "Branco", tamanho: "M", preco_venda: "409.90", ativa: true },
+        { id_variacao: "variacao-g", sku: "CL-0101-G-AZ", cor: "Azul", tamanho: "G", preco_venda: "419.90", ativa: false },
       ],
     });
 
@@ -26,14 +39,17 @@ describe("catálogo do Supabase", () => {
       descricao: "Linho lavado",
       saldos: [],
       movimentacoes: [],
+      imagemUrl: "/img/produtos/CL-0101.jpg",
+      tipo: "Camisas de linho",
+      tecido: "em linho lavado",
     });
-    expect(produto.variacoes).toEqual([
+    expect(produto?.variacoes).toEqual([
       { idVariacao: "variacao-p", sku: "CL-0101-P-BR", cor: "Branco", tamanho: "P", preco: 399.9 },
       { idVariacao: "variacao-m", sku: "CL-0101-M-BR", cor: "Branco", tamanho: "M", preco: 409.9 },
     ]);
   });
 
-  it("mantém produto sem variação navegável pelo id", () => {
+  it("descarta produto sem imagem, detalhes completos ou variação ativa", () => {
     const produto = produtoCatalogoDeLinha({
       id_produto: "produto-sem-variacao",
       nome: "Peça Piloto",
@@ -42,11 +58,10 @@ describe("catálogo do Supabase", () => {
       descricao: null,
       preco_base: "120.00",
       ativo: true,
+      ...detalhesObrigatorios,
       variacao_produto: [],
     });
 
-    expect(produto.sku).toBe("produto-sem-variacao");
-    expect(produto.categoria).toBe("Catálogo");
-    expect(produto.preco).toBe(120);
+    expect(produto).toBeNull();
   });
 });
