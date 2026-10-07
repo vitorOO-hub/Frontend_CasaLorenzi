@@ -1,10 +1,12 @@
 import { Minus, Plus } from "lucide-react";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { cn } from "@/components/ui";
 import { Foto, botaoLoja } from "@/components/vitrine";
 import { moeda } from "@/lib/dados";
 import { detalheDe, fotoEstudio } from "@/lib/loja";
 import * as acoes from "@/lib/acoes";
+import { useSessao } from "@/lib/sessao";
 import { useEstado } from "@/lib/store";
 
 const alterarQuantidadeCarrinho = (sku: string, quantidade: number) => void acoes.alterarQuantidadeCarrinho(sku, quantidade);
@@ -15,9 +17,15 @@ export const freteDe = (subtotal: number) => (subtotal >= FRETE_GRATIS_A_PARTIR 
 
 export function Sacola() {
   const { carrinho } = useEstado();
+  const sessao = useSessao();
   const subtotal = carrinho.reduce((s, i) => s + i.valor * i.quantidade, 0);
   const frete = freteDe(subtotal);
   const falta = FRETE_GRATIS_A_PARTIR - subtotal;
+
+  useEffect(() => {
+    if (sessao?.tipo !== "cliente") return;
+    void acoes.sincronizarCarrinho().catch(() => undefined);
+  }, [sessao?.tipo]);
 
   if (carrinho.length === 0) {
     return (
