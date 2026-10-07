@@ -312,6 +312,10 @@ export async function alterarQuantidadeCarrinho(sku: string, quantidade: number)
   store.alterarQuantidadeCarrinho(sku, quantidade);
 }
 
+export async function limparCarrinho() {
+  store.limparCarrinho();
+}
+
 const comprasFeitas = new Map<string, Pedido>();
 
 /**
