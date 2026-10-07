@@ -32,8 +32,8 @@ export type Secao = {
 /** Contadores exibidos como selo nas abas; a barra lateral soma os da seção. */
 export type Pendencia = "aprovacoes" | "transferencias" | "chamados";
 
-const todos: Papel[] = ["atendente", "operador", "gerente", "administrador"];
-const gestao: Papel[] = ["gerente", "administrador"];
+const todos: Papel[] = ["atendente", "operador_estoque", "gerente_loja", "admin"];
+const gestao: Papel[] = ["gerente_loja", "admin"];
 
 export const secoes: Secao[] = [
   {
@@ -49,7 +49,7 @@ export const secoes: Secao[] = [
     rotulo: "Estoque",
     icone: Package,
     to: "/painel/estoque",
-    papeis: ["operador", "gerente", "administrador"],
+    papeis: ["operador_estoque", "gerente_loja", "admin"],
     abas: [
       { to: "/painel/estoque", rotulo: "Saldo" },
       { to: "/painel/estoque/movimentacoes", rotulo: "Movimentações" },
@@ -63,7 +63,7 @@ export const secoes: Secao[] = [
     rotulo: "Atendimento",
     icone: MessagesSquare,
     to: "/painel/atendimento",
-    papeis: ["atendente", "gerente", "administrador"],
+    papeis: ["atendente", "gerente_loja", "admin"],
     abas: [
       { to: "/painel/atendimento", rotulo: "Chamados", pendencia: "chamados" },
       { to: "/painel/atendimento/clientes", rotulo: "Clientes" },
@@ -77,10 +77,10 @@ export const secoes: Secao[] = [
     papeis: gestao,
     abas: [
       { to: "/painel/gestao", rotulo: "Lojas" },
-      { to: "/painel/gestao/catalogo", rotulo: "Catálogo", papeis: ["administrador"] },
-      { to: "/painel/gestao/usuarios", rotulo: "Usuários", papeis: ["administrador"] },
-      { to: "/painel/gestao/auditoria", rotulo: "Auditoria", papeis: ["administrador"] },
-      { to: "/painel/gestao/integracoes", rotulo: "Integrações", papeis: ["administrador"] },
+      { to: "/painel/gestao/catalogo", rotulo: "Catálogo", papeis: ["admin"] },
+      { to: "/painel/gestao/usuarios", rotulo: "Usuários", papeis: ["admin"] },
+      { to: "/painel/gestao/auditoria", rotulo: "Auditoria", papeis: ["admin"] },
+      { to: "/painel/gestao/integracoes", rotulo: "Integrações", papeis: ["admin"] },
     ],
   },
 ];

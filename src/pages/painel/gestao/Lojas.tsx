@@ -10,7 +10,7 @@ const vazio = { nome: "", cidade: "", endereco: "", responsavel: "" };
 export function Lojas() {
   const { produtos, chamados, pedidos, usuarios } = useEstado();
   const lojas = useLojasVisiveis();
-  const admin = usePapel() === "administrador";
+  const admin = usePapel() === "admin";
   const autor = useNomeUsuario();
   const [editando, setEditando] = useState<Loja | "nova" | null>(null);
   const [form, setForm] = useState(vazio);

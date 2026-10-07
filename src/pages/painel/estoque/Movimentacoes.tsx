@@ -33,11 +33,11 @@ export function Movimentacoes() {
   const [de, setDe] = useState("");
   const [ate, setAte] = useState("");
 
-  const somenteMinhas = papel === "operador";
+  const somenteMinhas = papel === "operador_estoque";
   const movimentos = produtos
     .flatMap((p) => p.movimentacoes.map((m) => ({ ...m, sku: p.sku, nomeProduto: p.nome })))
     .filter((m) => !escopo || m.lojaId === escopo)
-    .filter((m) => !somenteMinhas || m.responsavel === equipe.operador.nome)
+    .filter((m) => !somenteMinhas || m.responsavel === equipe.operador_estoque.nome)
     .filter((m) => !tipo || m.tipo === tipo)
     .filter((m) => !produto || m.sku === produto)
     .filter((m) => (!de || m.data >= de) && (!ate || m.data <= ate))

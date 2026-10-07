@@ -1,5 +1,7 @@
 // Dados fictícios em memória. Nenhum backend: tudo vive na store em ./store.ts.
 
+import type { Papel } from "@/api/tipos";
+
 export type Loja = {
   id: string;
   nome: string;
@@ -123,7 +125,8 @@ export type Chamado = {
   mensagens: Mensagem[];
 };
 
-export type PapelUsuario = "operador_estoque" | "atendente" | "gerente_loja" | "admin";
+/** Mesmos papéis do backend (enum do banco), definidos em src/api/tipos.ts. */
+export type PapelUsuario = Papel;
 
 export type Usuario = {
   id: string;

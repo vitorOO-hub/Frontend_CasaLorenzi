@@ -1,20 +1,21 @@
 import { useSyncExternalStore } from "react";
+import type { Papel } from "@/api/tipos";
 import { CLIENTE_DEMO_ID, clientes, lojas, type Loja } from "./dados";
 
-export type Papel = "atendente" | "operador" | "gerente" | "administrador";
+export type { Papel };
 
 export const equipe: Record<Papel, { nome: string; cargo: string; lojaId?: string }> = {
   atendente: { nome: "Rafael Nunes", cargo: "Atendente · SAC" },
-  operador: { nome: "Vinícius Prado", cargo: "Operador de estoque", lojaId: "l1" },
-  gerente: { nome: "Marina Toledo", cargo: "Gerente de unidade", lojaId: "l1" },
-  administrador: { nome: "Cecília Lorenzi", cargo: "Administradora da rede" },
+  operador_estoque: { nome: "Vinícius Prado", cargo: "Operador de estoque", lojaId: "l1" },
+  gerente_loja: { nome: "Marina Toledo", cargo: "Gerente de unidade", lojaId: "l1" },
+  admin: { nome: "Cecília Lorenzi", cargo: "Administradora da rede" },
 };
 
 export const rotuloPapel: Record<Papel, string> = {
   atendente: "Atendente",
-  operador: "Operador de estoque",
-  gerente: "Gerente de unidade",
-  administrador: "Administrador",
+  operador_estoque: "Operador de estoque",
+  gerente_loja: "Gerente de unidade",
+  admin: "Administrador",
 };
 
 export type Sessao =
@@ -26,9 +27,9 @@ type Credencial = { email: string; senha: string };
 /** Credenciais fictícias de demonstração (nenhum dado real é armazenado). */
 export const credenciaisInternas: Record<Papel, Credencial> = {
   atendente: { email: "rafael.nunes@casalorenzi.com.br", senha: "atende123" },
-  operador: { email: "vinicius.prado@casalorenzi.com.br", senha: "estoque123" },
-  gerente: { email: "marina.toledo@casalorenzi.com.br", senha: "gerente123" },
-  administrador: { email: "cecilia.lorenzi@casalorenzi.com.br", senha: "admin123" },
+  operador_estoque: { email: "vinicius.prado@casalorenzi.com.br", senha: "estoque123" },
+  gerente_loja: { email: "marina.toledo@casalorenzi.com.br", senha: "gerente123" },
+  admin: { email: "cecilia.lorenzi@casalorenzi.com.br", senha: "admin123" },
 };
 
 export const credencialCliente: Credencial = {
@@ -38,7 +39,7 @@ export const credencialCliente: Credencial = {
 
 // ---------- Estado da sessão (persistido na aba para sobreviver ao recarregar) ----------
 
-const CHAVE = "casa-lorenzi:sessao";
+const CHAVE = "casa-lorenzi:sessao:v2";
 
 function lerSessao(): Sessao | null {
   try {
@@ -126,7 +127,7 @@ export function useFiltroUnidade(): string {
 export function useLojaEscopo(): string | null {
   const papel = usePapel();
   const filtro = useFiltroUnidade();
-  if (papel === "administrador") return filtro || null;
+  if (papel === "admin") return filtro || null;
   return equipe[papel].lojaId ?? null;
 }
 
@@ -135,7 +136,7 @@ export function useLojasVisiveis(): Loja[] {
   return escopo ? lojas.filter((l) => l.id === escopo) : lojas;
 }
 
-export const podeAprovar = (papel: Papel) => papel === "gerente" || papel === "administrador";
+export const podeAprovar = (papel: Papel) => papel === "gerente_loja" || papel === "admin";
 
 // ---------- Cliente ----------
 

@@ -33,7 +33,7 @@ export function Peca() {
   const status = statusProduto(produto, lojaIds);
   // O operador acompanha só as movimentações que ele mesmo registrou.
   const historico = produto.movimentacoes.filter(
-    (m) => (!escopo || m.lojaId === escopo) && (papel !== "operador" || m.responsavel === equipe.operador.nome),
+    (m) => (!escopo || m.lojaId === escopo) && (papel !== "operador_estoque" || m.responsavel === equipe.operador_estoque.nome),
   );
   const fechar = () => setModal(null);
 
@@ -100,7 +100,7 @@ export function Peca() {
         <Card>
           <CardTitulo
             titulo="Histórico de movimentações"
-            acao={papel === "operador" ? <span className="text-xs text-suave">Somente as que você registrou</span> : null}
+            acao={papel === "operador_estoque" ? <span className="text-xs text-suave">Somente as que você registrou</span> : null}
           />
           <Tabela>
             <thead>
