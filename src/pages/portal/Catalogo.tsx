@@ -2,14 +2,16 @@ import { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { cn } from "@/components/ui";
 import { CartaoProduto } from "@/components/vitrine";
-import { totalProduto } from "@/lib/dados";
+import { produtoTemEstoque } from "@/lib/dados";
+import { useProdutosCatalogo } from "@/lib/catalogoApi";
 import { EDICAO, detalheDe, tipoDe } from "@/lib/loja";
 import { useEstado } from "@/lib/store";
 
 type Ordem = "edicao" | "menor" | "maior";
 
 export function Catalogo() {
-  const { produtos } = useEstado();
+  const estado = useEstado();
+  const { produtos, carregando, erro } = useProdutosCatalogo(estado.produtos);
   const [params, setParams] = useSearchParams();
   const categoria = params.get("categoria") ?? "";
   const tipo = params.get("tipo") ?? "";
@@ -36,7 +38,7 @@ export function Catalogo() {
     .sort((a, b) => {
       if (ordem === "menor") return a.preco - b.preco;
       if (ordem === "maior") return b.preco - a.preco;
-      return Number(totalProduto(b) > 0) - Number(totalProduto(a) > 0);
+      return Number(produtoTemEstoque(b)) - Number(produtoTemEstoque(a));
     });
 
   function alterar(chave: string, valor: string) {
@@ -46,7 +48,7 @@ export function Catalogo() {
     setParams(novo);
   }
 
-  const semFiltro = !categoria && !busca && ordem === "edicao";
+  const semFiltro = !categoria && !tipo && !busca && ordem === "edicao";
   const titulo = busca ? <>“{busca}”</> : tipo || categoria || EDICAO.nome;
 
   return (
@@ -65,6 +67,12 @@ export function Catalogo() {
           {lista.length} {lista.length === 1 ? "peça" : "peças"}. Todas com a barra e as mangas ajustadas na hora, em qualquer uma das três casas.
         </p>
       </div>
+
+      {carregando || erro ? (
+        <p className="border-b border-dashed border-linha py-3 text-sm text-suave">
+          {carregando ? "Carregando peças..." : erro}
+        </p>
+      ) : null}
 
       <div className="flex items-center justify-between gap-6 py-6">
         {tipos.length > 1 ? (

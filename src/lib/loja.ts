@@ -85,10 +85,36 @@ const tipos: Record<string, string> = {
   "CL-0814": "Mocassins",
   "CL-0815": "Botas",
 };
-export const tipoDe = (sku: string) => tipos[sku.slice(0, 7)] ?? "Outros";
+
+const equivalenciasSku: [prefixo: string, editorial: string][] = [
+  ["CL-CAM-LIN", "CL-0101"],
+  ["CL-CAM-OXF", "CL-0102"],
+  ["CL-CAL-ALF", "CL-0203"],
+  ["CL-BLA", "CL-0204"],
+  ["CL-VES-MID", "CL-0305"],
+  ["CL-VES-SLI", "CL-0306"],
+  ["CL-TRI", "CL-0407"],
+  ["CL-SUE", "CL-0408"],
+  ["CL-TRE", "CL-0509"],
+  ["CL-JAQ", "CL-0510"],
+  ["CL-SAI", "CL-0611"],
+  ["CL-BOL", "CL-0712"],
+  ["CL-CIN", "CL-0713"],
+  ["CL-MOC", "CL-0814"],
+  ["CL-BOT", "CL-0815"],
+];
+
+export const skuEditorial = (sku: string) => {
+  const normalizado = sku.toUpperCase();
+  const base = normalizado.slice(0, 7);
+  if (detalhes[base] || tipos[base]) return base;
+  return equivalenciasSku.find(([prefixo]) => normalizado.startsWith(prefixo))?.[1] ?? base;
+};
+
+export const tipoDe = (sku: string) => tipos[skuEditorial(sku)] ?? "Outros";
 
 const padrao: Detalhe = D("", [CORES.noitePaulistana], "", "—", "Bom Retiro, SP", "Peça nova no catálogo.");
-export const detalheDe = (sku: string): Detalhe => detalhes[sku.slice(0, 7)] ?? padrao;
+export const detalheDe = (sku: string): Detalhe => detalhes[skuEditorial(sku)] ?? padrao;
 
 /** Foto vestida da peça (cai na foto de estúdio quando não há). */
 export const fotoVestida = (sku: string, largura = 900) => {
@@ -96,7 +122,10 @@ export const fotoVestida = (sku: string, largura = 900) => {
   return d.foto ? unsplash(d.foto, largura) : undefined;
 };
 
-export const fotoEstudio = (sku: string) => `/img/produtos/${sku.slice(0, 7)}.jpg`;
+export const fotoEstudio = (sku: string) => {
+  const editorial = skuEditorial(sku);
+  return `/img/produtos/${detalhes[editorial] ? editorial : "CL-0101"}.jpg`;
+};
 
 // ===================== Edição atual =====================
 

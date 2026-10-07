@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { moeda, totalProduto, type Produto } from "@/lib/dados";
+import { moeda, produtoTemEstoque, type Produto } from "@/lib/dados";
 import { detalheDe, fotoEstudio, fotoVestida, unsplash } from "@/lib/loja";
 import { cn } from "./ui";
 
@@ -99,7 +99,7 @@ export function CartaoProduto({
   legenda?: string;
 }) {
   const { cores } = detalheDe(produto.sku);
-  const esgotado = totalProduto(produto) === 0;
+  const esgotado = !produtoTemEstoque(produto);
   const vestida = fotoVestida(produto.sku, grande ? 1400 : 800);
   return (
     <Link to={`/loja/${produto.sku}`} className={cn("group block", grande && "lg:row-span-2")}>
