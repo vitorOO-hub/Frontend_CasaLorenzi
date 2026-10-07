@@ -55,9 +55,6 @@ export function Entrar() {
           <Link to="/" className="lg:hidden">
             <Marca className="!text-left" />
           </Link>
-          <Link to="/" className="ml-auto text-xs text-suave hover:text-marinho">
-            ← Voltar para a loja
-          </Link>
         </div>
 
         <div className="mx-auto my-auto w-full max-w-sm py-12">
