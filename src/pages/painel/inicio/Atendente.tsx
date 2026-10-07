@@ -4,22 +4,15 @@ import { Badge, Metrica } from "@/components/ui";
 import { useDashboardAtendimento } from "@/hooks/useDashboardAtendimento";
 import { COR_MARCA, baldes, serie, variacao } from "@/lib/analise";
 import type { DashboardAtendimento, ItemFila } from "@/lib/atendimentoApi";
-import { useSessao } from "@/lib/sessao";
 import { BarraFiltros, Cabecalho, FiltroSelect, useFiltros } from "./comum";
-import { DashboardAtendenteDemo } from "./AtendenteDemo";
 
 const tomPrioridade = { urgente: "perigo", alta: "perigo", media: "alerta", baixa: "neutro" } as const;
 
 const dataHoraBR = (iso: string) =>
   new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
 
-/** Início do atendente: conta real consulta a API; acesso de demonstração mostra dados simulados. */
+/** Início do atendente: indicadores e fila vêm da API (token do Supabase, escopo de loja no servidor). */
 export function DashboardAtendente() {
-  const sessao = useSessao();
-  return sessao?.tipo === "interno" && sessao.real ? <DashboardAtendenteReal /> : <DashboardAtendenteDemo />;
-}
-
-function DashboardAtendenteReal() {
   const f = useFiltros();
   const { inicio, fim } = f.intervalo.atual;
   const { dados, carregando, erro, recarregar } = useDashboardAtendimento({

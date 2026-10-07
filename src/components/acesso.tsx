@@ -2,7 +2,7 @@ import { Lock } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { telaInicial } from "@/lib/navegacao";
-import { rotuloPapel, useSessao, type Papel } from "@/lib/sessao";
+import { rotuloPapel, useSessao, useSessaoPronta, type Papel } from "@/lib/sessao";
 import { classesBotao } from "./ui";
 
 /** Tela exibida quando o cargo tenta abrir uma área que não é dele. */
@@ -27,7 +27,9 @@ export function Bloqueio({ papel }: { papel: Papel }) {
 /** Áreas da loja que exigem conta de cliente (conta, checkout). */
 export function ExigeLogin({ children, texto }: { children: ReactNode; texto?: string }) {
   const sessao = useSessao();
+  const pronta = useSessaoPronta();
   const { pathname } = useLocation();
+  if (!pronta) return null;
   if (sessao?.tipo === "cliente") return <>{children}</>;
 
   return (

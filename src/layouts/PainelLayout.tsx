@@ -15,10 +15,12 @@ import {
   useLojaEscopo,
   usePapel,
   useSessao,
+  useSessaoPronta,
 } from "@/lib/sessao";
 
 export function PainelLayout() {
   const sessao = useSessao();
+  const pronta = useSessaoPronta();
   const papel = usePapel();
   const escopo = useLojaEscopo();
   const filtro = useFiltroUnidade();
@@ -26,10 +28,11 @@ export function PainelLayout() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
 
+  if (!pronta) return null;
   if (sessao?.tipo !== "interno") return <Navigate to="/entrar?time=1" replace />;
 
-  // Sessão real: nome do cadastro e loja do token; a demonstração usa o elenco simulado.
-  const pessoa = sessao.real ? { nome: sessao.nome, lojaId: undefined } : equipe[papel];
+  // Nome do cadastro (lido com RLS); a loja exibida segue o escopo das telas simuladas.
+  const pessoa = { nome: sessao.nome, lojaId: equipe[papel].lojaId };
   const visiveis = secoesDoPapel(papel);
   const contagem = (s: Secao) =>
     abasDoPapel(s, papel).reduce((soma, a) => soma + (a.pendencia ? pendencias[a.pendencia] : 0), 0);
