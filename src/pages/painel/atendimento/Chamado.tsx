@@ -143,6 +143,12 @@ export function Chamado() {
             <p className="text-sm text-suave">
               {chamado.cliente.cidade ? `${chamado.cliente.cidade} · ` : ""}desde {dataBRdoIso(chamado.cliente.cliente_desde)}
             </p>
+            <Link
+              to={`/painel/atendimento/clientes/${chamado.cliente.id_cliente}`}
+              className="mt-3 inline-block text-xs font-semibold text-marinho hover:text-dourado"
+            >
+              Abrir ficha do cliente →
+            </Link>
           </Card>
 
           <Card className="p-5">
