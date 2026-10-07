@@ -1,20 +1,19 @@
 import { useChamadosSemResposta } from "@/hooks/useChamados";
+import { useAjustesPendentes } from "@/hooks/useEstoquePainel";
 import type { Pendencia } from "./navegacao";
-import { podeAprovar, useLojaEscopo, usePapel } from "./sessao";
+import { useLojaEscopo } from "./sessao";
 import { useEstado } from "./store";
 
 /** Quantos itens esperam uma ação do usuário logado, por tipo de pendência. */
 export function usePendencias(): Record<Pendencia, number> {
-  const { ajustes, transferencias, reposicoes } = useEstado();
+  const { transferencias, reposicoes } = useEstado();
   // Chamados vêm da API (contagem do servidor, já no escopo de loja de quem está logado).
   const chamadosSemResposta = useChamadosSemResposta();
-  const papel = usePapel();
   const escopo = useLojaEscopo();
   const minha = (lojaId: string | null) => !escopo || lojaId === escopo;
 
-  const aprovacoes = podeAprovar(papel)
-    ? ajustes.filter((a) => a.status === "Pendente" && minha(a.lojaId)).length
-    : 0;
+  // Ajustes a aprovar vêm da API (contagem do servidor, já no escopo de loja).
+  const aprovacoes = useAjustesPendentes();
 
   const transf =
     transferencias.filter(

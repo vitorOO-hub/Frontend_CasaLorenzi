@@ -4,9 +4,16 @@ const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn() }));
 vi.mock("./api", () => ({ api }));
 
 import {
+  aprovarAjusteEstoque,
   buscarMovimentacoes,
   buscarOpcoesEstoque,
   buscarSaldo,
+  listarAjustes,
+  recusarAjusteEstoque,
+  registrarMovimentacao,
+  solicitarAjusteEstoque,
+  validarAjuste,
+  validarAjustes,
   validarMovimentacoes,
   validarOpcoes,
   validarSaldo,
@@ -59,7 +66,10 @@ export const movimentoDeExemplo = (extra = {}) => ({
   ...extra,
 });
 
-beforeEach(() => api.get.mockReset());
+beforeEach(() => {
+  api.get.mockReset();
+  api.post.mockReset();
+});
 
 describe("validação do estoque do painel", () => {
   it("aceita o saldo e descarta campo extra", () => {
@@ -107,10 +117,13 @@ describe("validação do estoque do painel", () => {
       situacoes: [{ codigo: "ok", nome: "OK" }],
       tipos: [{ codigo: "entrada", nome: "Entrada" }],
       pecas: [{ id_variacao: ID, sku: "CL-X", nome: "Camisa · Branco, M" }],
+      motivos_entrada: ["Recebimento de fornecedor"],
+      motivos_saida: ["Avaria", "Venda em loja"],
       escopo: { papel: "operador_estoque", id_loja: "l1", loja_nome: "Centro", pode_escolher_loja: false, somente_minhas: true },
     });
     expect(o.escopo.somente_minhas).toBe(true);
     expect(o.pecas[0]?.sku).toBe("CL-X");
+    expect(o.motivos_saida).toEqual(["Avaria", "Venda em loja"]);
     expect(() => validarOpcoes({ ...o, escopo: null })).toThrow();
   });
 });
@@ -139,5 +152,93 @@ describe("chamadas do estoque do painel", () => {
   it("busca as opções na rota privada do painel", () => {
     buscarOpcoesEstoque();
     expect(api.get).toHaveBeenCalledWith("/api/v1/painel/estoque/opcoes", validarOpcoes, { id_loja: undefined }, undefined);
+  });
+});
+
+export const ajusteDeExemplo = (extra = {}) => ({
+  id_ajuste: ID,
+  id_loja: "l1",
+  loja_nome: "Casa Lorenzi Centro",
+  id_variacao: ID,
+  sku: "CL-CAM-OXF-BR-M",
+  produto: "Camisa Oxford Bianca",
+  cor: "Branco",
+  tamanho: "M",
+  quantidade: -3,
+  saldo_atual: 5,
+  motivo: "Peças danificadas",
+  status: "pendente",
+  motivo_recusa: null,
+  solicitante: "Operador de Estoque",
+  decisor: null,
+  solicitado_em: "2026-10-07T12:00:00Z",
+  decidido_em: null,
+  ...extra,
+});
+
+describe("ajustes de inventário", () => {
+  it("aceita pendente, aprovado e recusado com o motivo da recusa", () => {
+    expect(validarAjuste(ajusteDeExemplo()).status).toBe("pendente");
+    const recusado = validarAjuste(
+      ajusteDeExemplo({ status: "rejeitado", motivo_recusa: "Não bate", decisor: "Gerente", decidido_em: "2026-10-07T13:00:00Z" }),
+    );
+    expect(recusado.motivo_recusa).toBe("Não bate");
+    expect(recusado.decisor).toBe("Gerente");
+  });
+
+  it.each([
+    ["status desconhecido", { status: "cancelado" }],
+    ["quantidade em texto", { quantidade: "-3" }],
+    ["saldo ausente", { saldo_atual: null }],
+    ["solicitante ausente", { solicitante: undefined }],
+  ])("recusa ajuste com %s", (_nome, extra) => {
+    expect(() => validarAjuste(ajusteDeExemplo(extra))).toThrow();
+  });
+
+  it("valida a lista com o contador de pendentes", () => {
+    const l = validarAjustes({ total: 1, pendentes: 4, itens: [ajusteDeExemplo()] });
+    expect(l.pendentes).toBe(4);
+    expect(() => validarAjustes({ total: 1, itens: [] })).toThrow();
+  });
+
+  it("lista pela rota privada, com a situação escolhida", () => {
+    listarAjustes({ situacao: "decididos", limit: 15, offset: 30 });
+    expect(api.get).toHaveBeenCalledWith(
+      "/api/v1/painel/estoque/ajustes",
+      validarAjustes,
+      { situacao: "decididos", id_loja: undefined, limit: 15, offset: 30 },
+      undefined,
+    );
+  });
+});
+
+describe("escrita no estoque", () => {
+  it("registra a movimentação mandando só o que o servidor aceita", () => {
+    registrarMovimentacao({ sku: "CL-X", tipo: "saida", quantidade: 2, motivo: "Avaria" });
+    const [caminho, , corpo] = api.post.mock.calls[0]!;
+    expect(caminho).toBe("/api/v1/painel/estoque/movimentacoes");
+    expect(corpo).toEqual({ sku: "CL-X", tipo: "saida", quantidade: 2, motivo: "Avaria", id_loja: undefined });
+    expect(Object.keys(corpo)).not.toEqual(expect.arrayContaining(["id_usuario", "responsavel", "saldo"]));
+  });
+
+  it("o admin informa a loja", () => {
+    registrarMovimentacao({ sku: "CL-X", tipo: "entrada", quantidade: 1, motivo: "Recebimento", idLoja: "l2" });
+    expect(api.post.mock.calls[0]![2]).toMatchObject({ id_loja: "l2" });
+  });
+
+  it("pede o ajuste com a quantidade contada, não com o saldo novo", () => {
+    solicitarAjusteEstoque({ sku: "CL-X", quantidadeContada: 4, motivo: "Contagem" });
+    const [caminho, validador, corpo] = api.post.mock.calls[0]!;
+    expect(caminho).toBe("/api/v1/painel/estoque/ajustes");
+    expect(validador).toBe(validarAjuste);
+    expect(corpo).toEqual({ sku: "CL-X", quantidade_contada: 4, motivo: "Contagem", id_loja: undefined });
+  });
+
+  it("aprova e recusa pela rota do ajuste", () => {
+    aprovarAjusteEstoque("a-1");
+    recusarAjusteEstoque("a-2", "Não bate");
+    expect(api.post.mock.calls[0]![0]).toBe("/api/v1/painel/estoque/ajustes/a-1/aprovar");
+    expect(api.post.mock.calls[1]![0]).toBe("/api/v1/painel/estoque/ajustes/a-2/recusar");
+    expect(api.post.mock.calls[1]![2]).toEqual({ motivo: "Não bate" });
   });
 });

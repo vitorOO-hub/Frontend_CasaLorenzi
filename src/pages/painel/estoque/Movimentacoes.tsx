@@ -2,9 +2,11 @@ import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   AvisoErro,
+  Badge,
   Botao,
   Campo,
   Card,
+  CardTitulo,
   Filtros,
   LinhaVazia,
   Select,
@@ -16,9 +18,13 @@ import {
   td,
   th,
 } from "@/components/ui";
-import { useMovimentacoesEstoque, useOpcoesEstoque } from "@/hooks/useEstoquePainel";
-import { dataHoraBRdoIso } from "@/lib/chamadosUi";
+import { ModalAjusteEstoque, ModalMovimentoEstoque } from "@/components/estoqueRegistro";
+import { useAjustesEstoque, useMovimentacoesEstoque, useOpcoesEstoque } from "@/hooks/useEstoquePainel";
+import { dataBRdoIso, dataHoraBRdoIso } from "@/lib/chamadosUi";
 import {
+  ROTULO_AJUSTE,
+  TOM_AJUSTE,
+  saldoAposAjuste,
   detalheDaPeca,
   faixaDaPagina,
   observacaoDaMovimentacao,
@@ -26,7 +32,6 @@ import {
 } from "@/lib/estoquePainelUi";
 
 const POR_PAGINA = 25;
-const AVISO_REGISTRO = "O registro de entradas, saídas e ajustes ainda não está ligado ao servidor.";
 
 /** Histórico de movimentações de estoque, direto do banco (cada linha é um lançamento real). */
 export function Movimentacoes() {
@@ -37,6 +42,7 @@ export function Movimentacoes() {
   const [ate, setAte] = useState("");
   const [loja, setLoja] = useState("");
   const [pagina, setPagina] = useState(0);
+  const [modal, setModal] = useState<"movimento" | "ajuste" | null>(null);
 
   const opcoes = useOpcoesEstoque();
   const escopo = opcoes.dados?.escopo;
@@ -50,6 +56,9 @@ export function Movimentacoes() {
     offset: pagina * POR_PAGINA,
   });
 
+  // Quem não aprova acompanha aqui o andamento dos ajustes que pediu.
+  const acompanha = escopo !== undefined && escopo.papel === "operador_estoque";
+  const meusAjustes = useAjustesEstoque({ limit: 10, offset: 0 }, acompanha);
   const itens = consulta.dados?.itens ?? [];
   const total = consulta.dados?.total ?? 0;
   const mostrarLoja = escopo?.pode_escolher_loja === true && !loja;
@@ -80,15 +89,37 @@ export function Movimentacoes() {
         descricao={descricao}
         acao={
           <>
-            <Botao variante="secundario" disabled title={AVISO_REGISTRO}>
+            <Botao variante="secundario" disabled={!opcoes.dados} onClick={() => setModal("ajuste")}>
               Ajuste de inventário
             </Botao>
-            <Botao disabled title={AVISO_REGISTRO}>
+            <Botao disabled={!opcoes.dados} onClick={() => setModal("movimento")}>
               Registrar entrada / saída
             </Botao>
           </>
         }
       />
+
+      {acompanha && (meusAjustes.dados?.itens.length ?? 0) > 0 ? (
+        <Card className="mb-6">
+          <CardTitulo titulo="Seus pedidos de ajuste" acao={<span className="text-xs text-suave">Aprovação do gerente da unidade</span>} />
+          <ul className="divide-y divide-linha text-sm">
+            {meusAjustes.dados?.itens.map((a) => (
+              <li key={a.id_ajuste} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
+                <span>
+                  {dataBRdoIso(a.solicitado_em)} · <strong className="font-medium">{a.produto}</strong>{" "}
+                  <span className="text-suave">({detalheDaPeca(a)})</span> · {sinal(a.quantidade)} ·{" "}
+                  <span className="text-suave">{a.motivo}</span>
+                  {a.status === "pendente" ? (
+                    <span className="text-xs text-suave"> · saldo {a.saldo_atual} → {saldoAposAjuste(a)} se aprovado</span>
+                  ) : null}
+                  {a.motivo_recusa ? <span className="mt-1 block text-xs text-perigo">Recusa: {a.motivo_recusa}</span> : null}
+                </span>
+                <Badge tom={TOM_AJUSTE[a.status]}>{ROTULO_AJUSTE[a.status]}</Badge>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
 
       <Filtros>
         <Campo label="Tipo" className="flex-1">
@@ -185,6 +216,27 @@ export function Movimentacoes() {
           </div>
         ) : null}
       </Card>
+      {modal === "movimento" && opcoes.dados ? (
+        <ModalMovimentoEstoque
+          aberto
+          opcoes={opcoes.dados}
+          skuInicial={sku || undefined}
+          onFechar={() => setModal(null)}
+          onSucesso={consulta.recarregar}
+        />
+      ) : null}
+      {modal === "ajuste" && opcoes.dados ? (
+        <ModalAjusteEstoque
+          aberto
+          opcoes={opcoes.dados}
+          skuInicial={sku || undefined}
+          onFechar={() => {
+            setModal(null);
+            meusAjustes.recarregar();
+          }}
+          onSucesso={meusAjustes.recarregar}
+        />
+      ) : null}
     </div>
   );
 }

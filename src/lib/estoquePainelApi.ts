@@ -16,6 +16,9 @@ export type OpcoesEstoque = {
   situacoes: { codigo: string; nome: string }[];
   tipos: { codigo: string; nome: string }[];
   pecas: { id_variacao: string; sku: string; nome: string }[];
+  /** Motivos sugeridos para registrar uma entrada ou uma saída. */
+  motivos_entrada: string[];
+  motivos_saida: string[];
   escopo: {
     papel: string;
     id_loja: string | null;
@@ -90,6 +93,54 @@ export type FiltrosMovimentacoes = {
   offset: number;
 };
 
+export type StatusAjuste = "pendente" | "aprovado" | "rejeitado";
+
+export type ItemAjuste = {
+  id_ajuste: string;
+  id_loja: string;
+  loja_nome: string;
+  id_variacao: string;
+  sku: string;
+  produto: string;
+  cor: string;
+  tamanho: string;
+  /** Diferença a aplicar ao saldo: positiva soma, negativa tira. */
+  quantidade: number;
+  saldo_atual: number;
+  motivo: string;
+  status: StatusAjuste;
+  motivo_recusa: string | null;
+  solicitante: string;
+  decisor: string | null;
+  solicitado_em: string;
+  decidido_em: string | null;
+};
+
+export type Ajustes = {
+  total: number;
+  /** Pendentes no escopo de quem chamou, qualquer que seja o filtro da lista. */
+  pendentes: number;
+  itens: ItemAjuste[];
+};
+
+export type FiltrosAjustes = {
+  situacao?: StatusAjuste | "decididos";
+  idLoja?: string;
+  limit: number;
+  offset: number;
+};
+
+export type NovaMovimentacao = {
+  sku: string;
+  tipo: "entrada" | "saida";
+  quantidade: number;
+  motivo: string;
+  /** Só o admin informa a loja; para os demais vale a do login. */
+  idLoja?: string;
+};
+
+export type NovoAjuste = { sku: string; quantidadeContada: number; motivo: string; idLoja?: string };
+
 // ---------- Validação ----------
 
 const SITUACOES: SituacaoSaldo[] = ["ok", "baixo", "esgotado"];
@@ -117,6 +168,8 @@ export function validarOpcoes(dados: unknown): OpcoesEstoque {
       const p = objeto(v, `pecas[${i}]`);
       return { id_variacao: texto(p.id_variacao, "id_variacao"), sku: texto(p.sku, "sku"), nome: texto(p.nome, "nome") };
     }),
+    motivos_entrada: lista(o.motivos_entrada, "motivos_entrada").map((v, i) => texto(v, `motivos_entrada[${i}]`)),
+    motivos_saida: lista(o.motivos_saida, "motivos_saida").map((v, i) => texto(v, `motivos_saida[${i}]`)),
     escopo: {
       papel: texto(escopo.papel, "escopo.papel"),
       id_loja: textoOuNulo(escopo.id_loja, "escopo.id_loja"),
@@ -198,6 +251,43 @@ export function validarMovimentacoes(dados: unknown): Movimentacoes {
   };
 }
 
+const STATUS_AJUSTE: StatusAjuste[] = ["pendente", "aprovado", "rejeitado"];
+
+export function validarAjuste(dados: unknown): ItemAjuste {
+  const x = objeto(dados, "ajuste");
+  const status = STATUS_AJUSTE.find((s) => s === x.status) ?? falha("status");
+  return {
+    id_ajuste: texto(x.id_ajuste, "id_ajuste"),
+    id_loja: texto(x.id_loja, "id_loja"),
+    loja_nome: texto(x.loja_nome, "loja_nome"),
+    id_variacao: texto(x.id_variacao, "id_variacao"),
+    sku: texto(x.sku, "sku"),
+    produto: texto(x.produto, "produto"),
+    cor: texto(x.cor, "cor"),
+    tamanho: texto(x.tamanho, "tamanho"),
+    quantidade: numero(x.quantidade, "quantidade"),
+    saldo_atual: numero(x.saldo_atual, "saldo_atual"),
+    motivo: texto(x.motivo, "motivo"),
+    status,
+    motivo_recusa: textoOuNulo(x.motivo_recusa, "motivo_recusa"),
+    solicitante: texto(x.solicitante, "solicitante"),
+    decisor: textoOuNulo(x.decisor, "decisor"),
+    solicitado_em: texto(x.solicitado_em, "solicitado_em"),
+    decidido_em: textoOuNulo(x.decidido_em, "decidido_em"),
+  };
+}
+
+export function validarAjustes(dados: unknown): Ajustes {
+  const o = objeto(dados, "ajustes");
+  return {
+    total: numero(o.total, "total"),
+    pendentes: numero(o.pendentes, "pendentes"),
+    itens: lista(o.itens, "itens").map(validarAjuste),
+  };
+}
+
+export const validarMovimentacao = (dados: unknown): ItemMovimentacao => validarMovimentacoes({ total: 1, itens: [dados] }).itens[0]!;
+
 // ---------- Chamadas ----------
 
 export const buscarOpcoesEstoque = (idLoja?: string, o?: OpcoesApi) =>
@@ -225,3 +315,30 @@ export const buscarMovimentacoes = (f: FiltrosMovimentacoes, o?: OpcoesApi) =>
     { tipo: f.tipo, sku: f.sku, de: f.de, ate: f.ate, id_loja: f.idLoja, limit: f.limit, offset: f.offset },
     o,
   );
+
+export const listarAjustes = (f: FiltrosAjustes, o?: OpcoesApi) =>
+  api.get(`${BASE}/ajustes`, validarAjustes, { situacao: f.situacao, id_loja: f.idLoja, limit: f.limit, offset: f.offset }, o);
+
+/** Entrada ou saída avulsa. Quem registra é o dono do login: o servidor não aceita outro. */
+export const registrarMovimentacao = (m: NovaMovimentacao, o?: OpcoesApi) =>
+  api.post(
+    `${BASE}/movimentacoes`,
+    validarMovimentacao,
+    { sku: m.sku, tipo: m.tipo, quantidade: m.quantidade, motivo: m.motivo, id_loja: m.idLoja },
+    o,
+  );
+
+/** Pede ajuste de inventário: informa a quantidade contada; o saldo só muda quando a gestão aprova. */
+export const solicitarAjusteEstoque = (a: NovoAjuste, o?: OpcoesApi) =>
+  api.post(
+    `${BASE}/ajustes`,
+    validarAjuste,
+    { sku: a.sku, quantidade_contada: a.quantidadeContada, motivo: a.motivo, id_loja: a.idLoja },
+    o,
+  );
+
+export const aprovarAjusteEstoque = (id: string, o?: OpcoesApi) =>
+  api.post(`${BASE}/ajustes/${id}/aprovar`, validarAjuste, undefined, o);
+
+export const recusarAjusteEstoque = (id: string, motivo: string, o?: OpcoesApi) =>
+  api.post(`${BASE}/ajustes/${id}/recusar`, validarAjuste, { motivo }, o);
