@@ -94,3 +94,16 @@ Atendente e gerente veem a própria loja mais os chamados sem loja; o admin vê 
 por loja. As ações (assumir, responder, resolver) são validadas no servidor, que devolve 409 com a
 explicação em português quando outra pessoa chegou antes. Só gerente e admin veem as compras do
 cliente. Os chamados que o cliente abre na loja ainda são simulados e não aparecem nessa fila.
+
+## Clientes do atendimento
+
+A lista (`/painel/atendimento/clientes`) e a ficha (`/painel/atendimento/clientes/:id`) leem a API em
+`/api/v1/painel/clientes` (código em `src/lib/clientesApi.ts` e `src/hooks/useClientes.ts`).
+
+- **Seções da lista:** Todos, Com chamado em aberto e Meus clientes (os que têm chamado assumido
+  por quem está logado). Há busca por nome, e-mail ou telefone e paginação.
+- **Rotas privadas:** só atendente, gerente e admin abrem essas telas (mapa em `src/lib/navegacao.ts`,
+  testado em `src/lib/rotas.test.ts`); o servidor repete a checagem de papel e de loja.
+- **Privacidade:** compras, total gasto e ticket médio só chegam para gerente e admin. Para o
+  atendente o servidor manda esses campos nulos e a tela nem monta as colunas e tabelas de compras.
+  O documento (CPF) nunca é enviado. Id que não é um UUID nem chega a consultar a API.
