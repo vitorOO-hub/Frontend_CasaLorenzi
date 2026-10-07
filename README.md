@@ -143,3 +143,13 @@ A lista (`/painel/atendimento/clientes`) e a ficha (`/painel/atendimento/cliente
 - **Privacidade:** compras, total gasto e ticket médio só chegam para gerente e admin. Para o
   atendente o servidor manda esses campos nulos e a tela nem monta as colunas e tabelas de compras.
   O documento (CPF) nunca é enviado. Id que não é um UUID nem chega a consultar a API.
+
+## Estoque: transferências, reposições e estoque mínimo
+
+As telas **Transferências** e **Estoque mínimo** e os selos de pendência do menu (Aprovações,
+Transferências, Chamados) leem a API (`/api/v1/painel/estoque/transferencias` e `/minimos`); nada nelas
+vem do estoque simulado. O servidor decide quem pode agir em cada passo (`acoes`): a loja de origem
+aceita (a peça sai do estoque dela) ou recusa, e o destino confirma o recebimento (a peça entra no
+dele). Reposição é um pedido à rede toda; quem atende vira a origem. Estoque mínimo só para gerente e
+admin. Código: `src/lib/transferenciasApi.ts`, `src/lib/transferenciasUi.ts`,
+`src/components/estoqueTransferencia.tsx`.

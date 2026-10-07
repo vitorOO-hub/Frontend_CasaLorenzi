@@ -1,58 +1,66 @@
 import { useState } from "react";
 import { AvisoErro, Badge, Botao, Card, Select, Tabela, Titulo, td, th } from "@/components/ui";
-import * as acoes from "@/lib/acoes";
-import { lojas, nomeLoja } from "@/lib/dados";
-import { useLojaEscopo } from "@/lib/sessao";
-import { useEstado } from "@/lib/store";
+import { useMinimos, useOpcoesEstoque } from "@/hooks/useEstoquePainel";
+import { detalheDaPeca } from "@/lib/estoquePainelUi";
+import { definirMinimos } from "@/lib/transferenciasApi";
+import { minimosAlterados, rascunhoInvalido } from "@/lib/transferenciasUi";
 import { useAcao } from "@/lib/useAcao";
 
+/** Estoque mínimo por peça: abaixo dele a peça aparece como "estoque baixo". Dados e gravação no servidor. */
 export function Minimos() {
-  const { produtos } = useEstado();
-  const escopo = useLojaEscopo();
   const { executar, ocupado, erro, limparErro } = useAcao();
-  const [lojaLivre, setLojaLivre] = useState(lojas[0]!.id);
-  const lojaId = escopo ?? lojaLivre;
-  const [rascunho, setRascunho] = useState<Record<string, number>>({});
+  const opcoes = useOpcoesEstoque();
+  const escopo = opcoes.dados?.escopo;
+  const [lojaEscolhida, setLojaEscolhida] = useState("");
+  const idLoja = escopo?.pode_escolher_loja ? lojaEscolhida || opcoes.dados?.lojas[0]?.id_loja : undefined;
+  const pronto = escopo !== undefined && (!escopo.pode_escolher_loja || idLoja !== undefined);
+  const consulta = useMinimos(idLoja, pronto);
+  const [rascunho, setRascunho] = useState<Record<string, string>>({});
   const [salvo, setSalvo] = useState(false);
-  const alterados = Object.keys(rascunho).length;
+
+  const itens = consulta.dados?.itens ?? [];
+  const alterados = minimosAlterados(itens, rascunho);
+  const invalido = rascunhoInvalido(rascunho);
+  const nomeDaLoja = consulta.dados?.loja_nome ?? escopo?.loja_nome ?? "sua unidade";
 
   return (
     <div>
       <Titulo
         titulo="Estoque mínimo"
-        descricao={`Abaixo deste número a peça aparece como “estoque baixo” em ${nomeLoja(lojaId)}.`}
+        descricao={`No mínimo ou abaixo dele, a peça aparece como “estoque baixo” em ${nomeDaLoja}.`}
         acao={
           <>
-            {!escopo ? (
+            {escopo?.pode_escolher_loja ? (
               <Select
                 aria-label="Unidade"
-                value={lojaLivre}
+                value={idLoja ?? ""}
                 onChange={(e) => {
-                  setLojaLivre(e.target.value);
+                  setLojaEscolhida(e.target.value);
                   setRascunho({});
                 }}
                 className="w-52"
-                opcoes={lojas.map((l) => ({ value: l.id, label: l.nome }))}
+                opcoes={(opcoes.dados?.lojas ?? []).map((l) => ({ value: l.id_loja, label: l.nome }))}
               />
             ) : null}
             <Botao
-              disabled={!alterados || ocupado !== null}
-              onClick={() => {
-                const itens = Object.entries(rascunho).map(([sku, minimo]) => ({ sku, minimo }));
-                void executar("minimos", () => acoes.definirMinimos(lojaId, itens)).then((ok) => {
+              disabled={alterados.length === 0 || invalido || ocupado !== null}
+              onClick={() =>
+                void executar("minimos", () => definirMinimos(alterados, idLoja)).then((ok) => {
                   if (!ok) return;
                   setRascunho({});
                   setSalvo(true);
-                });
-              }}
+                  consulta.recarregar();
+                })
+              }
             >
-              {ocupado ? "Salvando…" : `Salvar ${alterados ? `(${alterados})` : ""}`}
+              {ocupado ? "Salvando…" : `Salvar ${alterados.length ? `(${alterados.length})` : ""}`}
             </Botao>
           </>
         }
       />
-      <AvisoErro erro={erro} onFechar={limparErro} className="mb-4" />
-      {salvo && !alterados ? <p className="mb-4 text-sm text-sucesso">Estoques mínimos atualizados.</p> : null}
+      <AvisoErro erro={erro ?? consulta.erro ?? opcoes.erro} onFechar={limparErro} className="mb-4" />
+      {invalido ? <p className="mb-4 text-sm text-perigo">Use só números inteiros, de 0 em diante.</p> : null}
+      {salvo && alterados.length === 0 && !invalido ? <p className="mb-4 text-sm text-sucesso">Estoques mínimos atualizados.</p> : null}
 
       <Card>
         <Tabela>
@@ -65,26 +73,26 @@ export function Minimos() {
             </tr>
           </thead>
           <tbody>
-            {produtos.map((p) => {
-              const saldo = p.saldos.find((s) => s.lojaId === lojaId);
-              if (!saldo) return null;
-              const minimo = rascunho[p.sku] ?? saldo.minimo;
-              const baixo = saldo.quantidade <= minimo;
+            {itens.map((p) => {
+              const texto = rascunho[p.sku] ?? String(p.minimo);
+              const numero = /^\d+$/.test(texto.trim()) ? Number(texto) : p.minimo;
+              const baixo = p.saldo <= numero;
               return (
-                <tr key={p.sku}>
+                <tr key={p.id_variacao}>
                   <td className={td}>
-                    <span className="font-medium">{p.nome}</span>
+                    <span className="font-medium">{p.produto}</span>
+                    <span className="ml-2 text-xs text-suave">{detalheDaPeca(p)}</span>
                     <span className="ml-2 font-mono text-[11px] text-suave">{p.sku}</span>
                   </td>
-                  <td className={`${td} tabular-nums`}>{saldo.quantidade}</td>
+                  <td className={`${td} tabular-nums`}>{p.saldo}</td>
                   <td className={td}>
                     <input
-                      type="number"
-                      min={0}
-                      value={minimo}
+                      inputMode="numeric"
+                      aria-label={`Mínimo de ${p.sku}`}
+                      value={texto}
                       onChange={(e) => {
                         setSalvo(false);
-                        setRascunho((r) => ({ ...r, [p.sku]: Number(e.target.value) }));
+                        setRascunho((r) => ({ ...r, [p.sku]: e.target.value }));
                       }}
                       className={`w-20 rounded-sm border px-2 py-1 text-sm outline-none focus:border-marinho ${
                         p.sku in rascunho ? "border-dourado bg-dourado-claro/40" : "border-linha bg-papel"
@@ -92,13 +100,20 @@ export function Minimos() {
                     />
                   </td>
                   <td className={td}>
-                    <Badge tom={saldo.quantidade === 0 ? "perigo" : baixo ? "alerta" : "ok"}>
-                      {saldo.quantidade === 0 ? "Esgotado" : baixo ? "Abaixo do mínimo" : "OK"}
+                    <Badge tom={p.saldo === 0 ? "perigo" : baixo ? "alerta" : "ok"}>
+                      {p.saldo === 0 ? "Esgotado" : baixo ? "Abaixo do mínimo" : "OK"}
                     </Badge>
                   </td>
                 </tr>
               );
             })}
+            {itens.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="px-4 py-10 text-center text-sm text-suave">
+                  {consulta.carregando ? "Carregando o estoque…" : "Nenhuma peça em estoque nesta unidade."}
+                </td>
+              </tr>
+            ) : null}
           </tbody>
         </Tabela>
       </Card>

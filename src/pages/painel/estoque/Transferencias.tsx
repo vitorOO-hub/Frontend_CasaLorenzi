@@ -1,7 +1,6 @@
-import { ArrowRight } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { ModalReposicao, ModalTransferencia } from "@/components/estoque";
+import { ArrowRight } from "lucide-react";
+import { ModalReposicaoEstoque, ModalTransferenciaEstoque } from "@/components/estoqueTransferencia";
 import {
   AvisoErro,
   Badge,
@@ -10,134 +9,169 @@ import {
   CardTitulo,
   LinhaVazia,
   Segmentado,
+  Select,
   Tabela,
   Titulo,
   td,
   th,
 } from "@/components/ui";
-import { dataBR, lojas, nomeLoja, tomReposicao, tomTransferencia, type SolicitacaoTransferencia } from "@/lib/dados";
-import * as acoes from "@/lib/acoes";
-import { useLojaEscopo } from "@/lib/sessao";
-import { useEstado } from "@/lib/store";
+import { useOpcoesEstoque, useTransferencias } from "@/hooks/useEstoquePainel";
+import { dataBRdoIso } from "@/lib/chamadosUi";
+import {
+  aceitarTransferencia,
+  receberTransferencia,
+  recusarTransferencia,
+  type ItemTransferencia,
+  type SituacaoLista,
+} from "@/lib/transferenciasApi";
+import { FILTROS_DA_LISTA, TOM_STATUS, rotuloDaAcao, rotuloDoStatus, textoSemAcao } from "@/lib/transferenciasUi";
+import { detalheDaPeca } from "@/lib/estoquePainelUi";
 import { useAcao } from "@/lib/useAcao";
 
-type Filtro = "acao" | "andamento" | "todas";
-
-/** Transferências = enviar, receber e pedidos de reposição (antes 3 telas). */
+/** Transferências e reposições da loja, direto do servidor: quem pode agir e quando vem calculado lá. */
 export function Transferencias() {
-  const { produtos, transferencias, reposicoes } = useEstado();
-  const escopo = useLojaEscopo();
   const { executar, ocupado, erro, limparErro } = useAcao();
-  const [filtro, setFiltro] = useState<Filtro>("acao");
+  const [filtro, setFiltro] = useState<SituacaoLista>("acao");
   const [modal, setModal] = useState<"transferencia" | "reposicao" | null>(null);
+  const [lojaQueAtende, setLojaQueAtende] = useState<Record<string, string>>({});
 
-  const minha = (lojaId: string | null) => !escopo || lojaId === escopo;
-  const nomeDe = (sku: string) => produtos.find((p) => p.sku === sku)?.nome ?? sku;
+  const opcoes = useOpcoesEstoque();
+  const transferencias = useTransferencias({ situacao: filtro, tipo: "transferencia", limit: 50, offset: 0 });
+  const reposicoes = useTransferencias({ situacao: filtro, tipo: "reposicao_rede", limit: 50, offset: 0 });
+  const escopo = opcoes.dados?.escopo;
+  const admin = escopo?.pode_escolher_loja === true;
 
-  const acaoDe = (t: SolicitacaoTransferencia) =>
-    t.status === "Pendente" && minha(t.origemId) ? "enviar" : t.status === "Aceita" && minha(t.destinoId) ? "receber" : null;
+  const recarregar = () => {
+    transferencias.recarregar();
+    reposicoes.recarregar();
+  };
+  const agir = (chave: string, acao: () => Promise<unknown>) =>
+    executar(chave, acao).then((ok) => {
+      recarregar();
+      return ok;
+    });
 
-  const visiveis = transferencias
-    .filter((t) => minha(t.origemId) || minha(t.destinoId))
-    .filter((t) =>
-      filtro === "acao" ? acaoDe(t) !== null : filtro === "andamento" ? t.status === "Pendente" || t.status === "Aceita" : true,
+  const acoesDaLinha = (t: ItemTransferencia) => {
+    if (t.acoes.length === 0) return <span className="text-xs text-suave">{textoSemAcao(t)}</span>;
+    // O admin atende uma reposição aberta por uma loja que ele escolhe; os demais, pela própria.
+    const escolheLoja = admin && t.id_loja_origem === null && t.acoes.includes("aceitar");
+    const candidatas = (opcoes.dados?.rede ?? []).filter((l) => l.id_loja !== t.id_loja_destino);
+    const escolhida = lojaQueAtende[t.id_transferencia] ?? candidatas[0]?.id_loja;
+    return (
+      <div className="flex flex-wrap items-center gap-2">
+        {escolheLoja ? (
+          <Select
+            aria-label="Loja que atende"
+            value={escolhida ?? ""}
+            onChange={(e) => setLojaQueAtende((m) => ({ ...m, [t.id_transferencia]: e.target.value }))}
+            className="w-40"
+            opcoes={candidatas.map((l) => ({ value: l.id_loja, label: l.nome }))}
+          />
+        ) : null}
+        {t.acoes.map((acao) => (
+          <Botao
+            key={acao}
+            pequeno
+            variante={acao === "recusar" ? "secundario" : "primario"}
+            disabled={ocupado === t.id_transferencia}
+            onClick={() =>
+              void agir(t.id_transferencia, () =>
+                acao === "aceitar"
+                  ? aceitarTransferencia(t.id_transferencia, escolheLoja ? escolhida : undefined)
+                  : acao === "recusar"
+                    ? recusarTransferencia(t.id_transferencia, undefined, escolheLoja ? escolhida : undefined)
+                    : receberTransferencia(t.id_transferencia),
+              )
+            }
+          >
+            {rotuloDaAcao(acao, t)}
+          </Botao>
+        ))}
+      </div>
     );
+  };
 
-  const reposVisiveis = reposicoes.filter(
-    (r) => minha(r.solicitanteLojaId) || r.destinatarioLojaId === null || minha(r.destinatarioLojaId),
+  const linha = (t: ItemTransferencia, comPedido: boolean) => (
+    <tr key={t.id_transferencia}>
+      <td className={td}>{dataBRdoIso(t.solicitada_em)}</td>
+      <td className={td}>
+        <p className="font-medium">{t.produto}</p>
+        <p className="text-[11px] text-suave">
+          {detalheDaPeca(t)} · <span className="font-mono">{t.sku}</span>
+        </p>
+      </td>
+      <td className={td}>
+        <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+          {t.origem_nome ?? "Toda a rede"} <ArrowRight className="h-3 w-3 text-dourado" /> {t.destino_nome}
+        </span>
+      </td>
+      <td className={`${td} tabular-nums`}>{t.quantidade}</td>
+      <td className={`${td} text-suave`}>
+        {t.solicitante}
+        {comPedido && t.observacao ? <span className="block text-xs">“{t.observacao}”</span> : null}
+      </td>
+      <td className={td}>
+        <Badge tom={TOM_STATUS[t.status]}>{rotuloDoStatus(t)}</Badge>
+        {t.motivo_recusa ? <span className="mt-1 block text-xs text-perigo">Recusa: {t.motivo_recusa}</span> : null}
+      </td>
+      <td className={td}>{acoesDaLinha(t)}</td>
+    </tr>
   );
+
+  const cabecalho = (
+    <thead>
+      <tr>
+        <th className={th}>Data</th>
+        <th className={th}>Peça</th>
+        <th className={th}>Trajeto</th>
+        <th className={th}>Qtd.</th>
+        <th className={th}>Solicitante</th>
+        <th className={th}>Situação</th>
+        <th className={th}>Ação</th>
+      </tr>
+    </thead>
+  );
+
+  const itensT = transferencias.dados?.itens ?? [];
+  const itensR = reposicoes.dados?.itens ?? [];
 
   return (
     <div>
       <Titulo
         titulo="Transferências"
         descricao={
-          escopo
-            ? `Peças entrando e saindo de ${nomeLoja(escopo)}, e pedidos de reposição entre as casas.`
+          escopo?.id_loja
+            ? `Peças entrando e saindo de ${escopo.loja_nome ?? "sua unidade"}, e pedidos de reposição entre as casas.`
             : "Peças em circulação entre as unidades da rede."
         }
         acao={
           <>
-            <Botao variante="secundario" onClick={() => setModal("reposicao")}>
+            <Botao variante="secundario" disabled={!opcoes.dados} onClick={() => setModal("reposicao")}>
               Pedir reposição à rede
             </Botao>
-            <Botao onClick={() => setModal("transferencia")}>Nova transferência</Botao>
+            <Botao disabled={!opcoes.dados} onClick={() => setModal("transferencia")}>
+              Nova transferência
+            </Botao>
           </>
         }
       />
 
       <div className="mb-4">
-        <Segmentado
-          valor={filtro}
-          onChange={setFiltro}
-          opcoes={[
-            { value: "acao", label: "Aguardando você" },
-            { value: "andamento", label: "Em andamento" },
-            { value: "todas", label: "Todas" },
-          ]}
-        />
+        <Segmentado valor={filtro} onChange={setFiltro} opcoes={[...FILTROS_DA_LISTA]} />
       </div>
 
-      <AvisoErro erro={erro} onFechar={limparErro} className="mb-6" />
+      <AvisoErro erro={erro ?? transferencias.erro ?? reposicoes.erro ?? opcoes.erro} onFechar={limparErro} className="mb-6" />
+
       <Card>
         <Tabela>
-          <thead>
-            <tr>
-              <th className={th}>Data</th>
-              <th className={th}>Peça</th>
-              <th className={th}>Trajeto</th>
-              <th className={th}>Qtd.</th>
-              <th className={th}>Solicitante</th>
-              <th className={th}>Situação</th>
-              <th className={th}>Ação</th>
-            </tr>
-          </thead>
+          {cabecalho}
           <tbody>
-            {visiveis.map((t) => {
-              const acao = acaoDe(t);
-              return (
-                <tr key={t.id}>
-                  <td className={td}>{dataBR(t.data)}</td>
-                  <td className={td}>
-                    <Link to={`/painel/estoque/peca/${t.sku}`} className="font-medium hover:text-marinho">
-                      {nomeDe(t.sku)}
-                    </Link>
-                  </td>
-                  <td className={td}>
-                    <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
-                      {nomeLoja(t.origemId)} <ArrowRight className="h-3 w-3 text-dourado" /> {nomeLoja(t.destinoId)}
-                    </span>
-                  </td>
-                  <td className={`${td} tabular-nums`}>{t.quantidade}</td>
-                  <td className={`${td} text-suave`}>{t.solicitante}</td>
-                  <td className={td}>
-                    <Badge tom={tomTransferencia[t.status]}>{t.status === "Aceita" ? "Em trânsito" : t.status}</Badge>
-                  </td>
-                  <td className={td}>
-                    {acao === "enviar" ? (
-                      <div className="flex gap-2">
-                        <Botao pequeno disabled={ocupado === t.id} onClick={() => void executar(t.id, () => acoes.aceitarTransferencia(t.id))}>
-                          Aceitar envio
-                        </Botao>
-                        <Botao pequeno variante="secundario" disabled={ocupado === t.id} onClick={() => void executar(t.id, () => acoes.recusarTransferencia(t.id))}>
-                          Recusar
-                        </Botao>
-                      </div>
-                    ) : acao === "receber" ? (
-                      <Botao pequeno disabled={ocupado === t.id} onClick={() => void executar(t.id, () => acoes.receberTransferencia(t.id))}>
-                        Confirmar recebimento
-                      </Botao>
-                    ) : (
-                      <span className="text-xs text-suave">
-                        {t.status === "Pendente" ? "Aguardando a origem" : t.status === "Aceita" ? "Aguardando o destino" : "—"}
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-            {visiveis.length === 0 ? (
-              <LinhaVazia colunas={7} texto={filtro === "acao" ? "Nada aguardando você." : "Nenhuma transferência."} />
+            {itensT.map((t) => linha(t, true))}
+            {itensT.length === 0 ? (
+              <LinhaVazia
+                colunas={7}
+                texto={transferencias.carregando ? "Carregando as transferências…" : filtro === "acao" ? "Nada aguardando você." : "Nenhuma transferência."}
+              />
             ) : null}
           </tbody>
         </Tabela>
@@ -146,56 +180,22 @@ export function Transferencias() {
       <Card className="mt-8">
         <CardTitulo titulo="Pedidos de reposição" />
         <Tabela>
-          <thead>
-            <tr>
-              <th className={th}>Data</th>
-              <th className={th}>Peça</th>
-              <th className={th}>Quem pede</th>
-              <th className={th}>Pedido para</th>
-              <th className={th}>Qtd.</th>
-              <th className={th}>Situação</th>
-              <th className={th}>Ação</th>
-            </tr>
-          </thead>
+          {cabecalho}
           <tbody>
-            {reposVisiveis.map((r) => {
-              const paraMim = r.status === "Aberta" && r.solicitanteLojaId !== escopo;
-              const quemAtende =
-                escopo ?? r.destinatarioLojaId ?? lojas.find((l) => l.id !== r.solicitanteLojaId)!.id;
-              return (
-                <tr key={r.id}>
-                  <td className={td}>{dataBR(r.data)}</td>
-                  <td className={`${td} font-medium`}>{nomeDe(r.sku)}</td>
-                  <td className={td}>{nomeLoja(r.solicitanteLojaId)}</td>
-                  <td className={td}>{r.destinatarioLojaId ? nomeLoja(r.destinatarioLojaId) : "Toda a rede"}</td>
-                  <td className={`${td} tabular-nums`}>{r.quantidade}</td>
-                  <td className={td}>
-                    <Badge tom={tomReposicao[r.status]}>{r.status}</Badge>
-                  </td>
-                  <td className={td}>
-                    {paraMim ? (
-                      <div className="flex gap-2">
-                        <Botao pequeno disabled={ocupado === r.id} onClick={() => void executar(r.id, () => acoes.aceitarReposicao(r.id, quemAtende))}>
-                          Atender{escopo ? "" : ` (${nomeLoja(quemAtende)})`}
-                        </Botao>
-                        <Botao pequeno variante="secundario" disabled={ocupado === r.id} onClick={() => void executar(r.id, () => acoes.recusarReposicao(r.id))}>
-                          Recusar
-                        </Botao>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-suave">{r.atendidaPor ? `por ${r.atendidaPor}` : "Aguardando outra loja"}</span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-            {reposVisiveis.length === 0 ? <LinhaVazia colunas={7} texto="Nenhum pedido de reposição." /> : null}
+            {itensR.map((t) => linha(t, true))}
+            {itensR.length === 0 ? (
+              <LinhaVazia colunas={7} texto={reposicoes.carregando ? "Carregando os pedidos…" : "Nenhum pedido de reposição."} />
+            ) : null}
           </tbody>
         </Tabela>
       </Card>
 
-      {modal === "transferencia" ? <ModalTransferencia aberto onFechar={() => setModal(null)} /> : null}
-      {modal === "reposicao" ? <ModalReposicao aberto onFechar={() => setModal(null)} /> : null}
+      {modal === "transferencia" && opcoes.dados ? (
+        <ModalTransferenciaEstoque aberto opcoes={opcoes.dados} onFechar={() => setModal(null)} onSucesso={recarregar} />
+      ) : null}
+      {modal === "reposicao" && opcoes.dados ? (
+        <ModalReposicaoEstoque aberto opcoes={opcoes.dados} onFechar={() => setModal(null)} onSucesso={recarregar} />
+      ) : null}
     </div>
   );
 }

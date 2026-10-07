@@ -48,6 +48,7 @@ const consulta = <T,>(dados: T | null, extra: Partial<Consulta<T>> = {}): Consul
 const opcoes = (escopo = {}): OpcoesEstoque =>
   validarOpcoes({
     lojas: [{ id_loja: "l1", nome: "Casa Lorenzi Centro" }],
+    rede: [{ id_loja: "l1", nome: "Casa Lorenzi Centro" }],
     categorias: ["Camisas", "Calças"],
     situacoes: [
       { codigo: "ok", nome: "OK" },

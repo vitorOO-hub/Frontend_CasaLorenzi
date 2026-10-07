@@ -42,7 +42,7 @@ export type OpcoesApi = {
   timeoutMs?: number;
 };
 
-type Metodo = "GET" | "POST";
+type Metodo = "GET" | "POST" | "PUT";
 type Pedido = { metodo: Metodo; corpo?: unknown };
 
 type Dependencias = {
@@ -200,7 +200,14 @@ export function criarClienteApi(dependencias: Dependencias) {
     opcoes: OpcoesApi = {},
   ) => chamar({ metodo: "POST", corpo: corpo ?? {} }, caminho, validar, undefined, opcoes);
 
-  return { get, post };
+  const put = <T>(
+    caminho: string,
+    validar: (dados: unknown) => T,
+    corpo?: unknown,
+    opcoes: OpcoesApi = {},
+  ) => chamar({ metodo: "PUT", corpo: corpo ?? {} }, caminho, validar, undefined, opcoes);
+
+  return { get, post, put };
 }
 
 const baseUrlPadrao = config.apiUrl || "http://127.0.0.1:8000";

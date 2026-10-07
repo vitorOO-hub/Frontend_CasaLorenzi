@@ -12,6 +12,8 @@ export type Loja = { id_loja: string; nome: string };
 
 export type OpcoesEstoque = {
   lojas: Loja[];
+  /** Todas as lojas ativas da rede, para escolher de onde pedir peças. */
+  rede: Loja[];
   categorias: string[];
   situacoes: { codigo: string; nome: string }[];
   tipos: { codigo: string; nome: string }[];
@@ -161,6 +163,7 @@ export function validarOpcoes(dados: unknown): OpcoesEstoque {
   const escopo = objeto(o.escopo, "escopo");
   return {
     lojas: lista(o.lojas, "lojas").map((v, i) => loja(v, `lojas[${i}]`)),
+    rede: lista(o.rede, "rede").map((v, i) => loja(v, `rede[${i}]`)),
     categorias: lista(o.categorias, "categorias").map((v, i) => texto(v, `categorias[${i}]`)),
     situacoes: lista(o.situacoes, "situacoes").map((v, i) => codigoNome(v, `situacoes[${i}]`)),
     tipos: lista(o.tipos, "tipos").map((v, i) => codigoNome(v, `tipos[${i}]`)),

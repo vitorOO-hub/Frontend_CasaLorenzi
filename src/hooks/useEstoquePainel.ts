@@ -12,6 +12,13 @@ import {
   type OpcoesEstoque,
   type Saldo,
 } from "@/lib/estoquePainelApi";
+import {
+  listarMinimos,
+  listarTransferencias,
+  type FiltrosTransferencias,
+  type Minimos,
+  type Transferencias,
+} from "@/lib/transferenciasApi";
 import { podeAprovar, usePapel, useSessao } from "@/lib/sessao";
 import { useConsulta } from "./useChamados";
 
@@ -38,6 +45,26 @@ export const useAjustesEstoque = (filtros: FiltrosAjustes, ativa = true) =>
     ativa,
     intervaloMs: 60_000,
   });
+
+/** Transferências e reposições da loja; reconsulta a cada 30 s para ver o que a outra loja fez. */
+export const useTransferencias = (filtros: FiltrosTransferencias, ativa = true) =>
+  useConsulta<Transferencias>((sinal) => listarTransferencias(filtros, { sinal }), `transferencias:${JSON.stringify(filtros)}`, {
+    ativa,
+    intervaloMs: 30_000,
+  });
+
+/** Quantas transferências esperam uma ação da loja (selo da aba Transferências). */
+export function useTransferenciasAguardando(): number {
+  const sessao = useSessao();
+  const papel = usePapel();
+  const ativa = sessao?.tipo === "interno" && ["operador_estoque", "gerente_loja", "admin"].includes(papel);
+  const { dados } = useTransferencias({ situacao: "acao", limit: 1, offset: 0 }, ativa);
+  return ativa ? (dados?.aguardando_voce ?? 0) : 0;
+}
+
+/** Estoque mínimo por peça da loja (o admin escolhe a loja). */
+export const useMinimos = (idLoja: string | undefined, ativa = true) =>
+  useConsulta<Minimos>((sinal) => listarMinimos({ idLoja }, { sinal }), `minimos:${idLoja ?? ""}`, { ativa });
 
 /** Quantos ajustes esperam decisão (selo da aba Aprovações). Só consulta quem pode decidir. */
 export function useAjustesPendentes(): number {

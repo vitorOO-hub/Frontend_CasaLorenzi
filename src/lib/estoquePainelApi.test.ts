@@ -113,6 +113,7 @@ describe("validação do estoque do painel", () => {
   it("aceita as opções com o escopo de quem chamou", () => {
     const o = validarOpcoes({
       lojas: [{ id_loja: "l1", nome: "Centro" }],
+      rede: [{ id_loja: "l1", nome: "Centro" }, { id_loja: "l2", nome: "Barra" }],
       categorias: ["Camisas"],
       situacoes: [{ codigo: "ok", nome: "OK" }],
       tipos: [{ codigo: "entrada", nome: "Entrada" }],
@@ -123,6 +124,7 @@ describe("validação do estoque do painel", () => {
     });
     expect(o.escopo.somente_minhas).toBe(true);
     expect(o.pecas[0]?.sku).toBe("CL-X");
+    expect(o.rede.map((l) => l.nome)).toEqual(["Centro", "Barra"]);
     expect(o.motivos_saida).toEqual(["Avaria", "Venda em loja"]);
     expect(() => validarOpcoes({ ...o, escopo: null })).toThrow();
   });
