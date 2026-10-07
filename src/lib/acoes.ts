@@ -9,7 +9,7 @@
 import { ErroApi } from "@/api/erros";
 import { MOTIVOS_CHAMADO, type MotivoChamado, type Papel } from "@/api/tipos";
 import { nomeLoja, type Chamado, type Pedido, type Usuario } from "./dados";
-import { equipe, lojaDoPapel, sessaoAtual } from "./sessao";
+import { lojaDoPapel, sessaoAtual } from "./sessao";
 import * as store from "./store";
 
 // ---------- Quem está executando ----------
@@ -20,7 +20,7 @@ function interno(...papeis: Papel[]): Interno {
   const s = sessaoAtual();
   if (!s) throw new ErroApi("nao_autenticado");
   if (s.tipo !== "interno" || (papeis.length && !papeis.includes(s.papel))) throw new ErroApi("sem_permissao");
-  return { papel: s.papel, nome: equipe[s.papel].nome, loja: lojaDoPapel(s.papel) };
+  return { papel: s.papel, nome: s.nome, loja: lojaDoPapel(s.papel) };
 }
 
 function cliente() {

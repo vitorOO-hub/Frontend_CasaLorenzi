@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { ErroApi, type CodigoErro } from "@/api/erros";
 import * as acoes from "./acoes";
-import { credencialCliente, credenciaisInternas, entrarComoCliente, entrarComoFuncionario, sair, type Papel } from "./sessao";
+import { CLIENTE_DEMO_ID } from "./dados";
+import { equipe, iniciarSessao, sair, type Papel } from "./sessao";
 import { adicionarAoCarrinho, estadoAtual } from "./store";
 
-const como = (papel: Papel) => entrarComoFuncionario(credenciaisInternas[papel].email, credenciaisInternas[papel].senha);
-const comoCliente = () => entrarComoCliente(credencialCliente.email, credencialCliente.senha);
+// As sessões vêm do Supabase em produção; nos testes entram direto, já com o papel que o token traria.
+const como = (papel: Papel) =>
+  iniciarSessao({ tipo: "interno", papel, nome: equipe[papel].nome, email: `${papel}@teste.local` });
+const comoCliente = () =>
+  iniciarSessao({ tipo: "cliente", clienteId: CLIENTE_DEMO_ID, nome: "Cliente de teste", email: "cliente@teste.local" });
 const saldo = (sku: string, lojaId: string) =>
   estadoAtual().produtos.find((p) => p.sku === sku)!.saldos.find((s) => s.lojaId === lojaId)!.quantidade;
 
