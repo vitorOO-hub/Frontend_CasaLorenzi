@@ -9,7 +9,7 @@ export type LinhaVariacaoCatalogo = {
   cor: string | null;
   tamanho: string | null;
   preco_venda: string | number | null;
-  ativo?: boolean | null;
+  ativa?: boolean | null;
 };
 
 export type LinhaProdutoCatalogo = {
@@ -82,7 +82,7 @@ export function produtoCatalogoDeLinha(linha: LinhaProdutoCatalogo): Produto | n
   }
 
   const variacoes = (linha.variacao_produto ?? [])
-    .filter((variacao) => variacao.ativo !== false && variacao.sku)
+    .filter((variacao) => variacao.ativa !== false && variacao.sku)
     .map<VariacaoProdutoCatalogo>((variacao) => ({
       idVariacao: variacao.id_variacao ?? undefined,
       sku: variacao.sku!,
@@ -118,7 +118,7 @@ export async function listarProdutosCatalogo(): Promise<Produto[]> {
   const { data, error } = await supabase()
     .from("produto")
     .select(
-      "id_produto,nome,marca,categoria,descricao,preco_base,ativo,imagem_url,imagem_alt,imagem_vestida_url,tipo,tecido,tecelagem,costurado_em,nota,cores,variacao_produto(id_variacao,sku,cor,tamanho,preco_venda,ativo)",
+      "id_produto,nome,marca,categoria,descricao,preco_base,ativo,imagem_url,imagem_alt,imagem_vestida_url,tipo,tecido,tecelagem,costurado_em,nota,cores,variacao_produto(id_variacao,sku,cor,tamanho,preco_venda,ativa)",
     )
     .eq("ativo", true)
     .not("imagem_url", "is", null)
