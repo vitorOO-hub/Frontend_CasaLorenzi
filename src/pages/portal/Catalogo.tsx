@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { cn } from "@/components/ui";
 import { CartaoProduto } from "@/components/vitrine";
 import { totalProduto } from "@/lib/dados";
-import { EDICAO, detalheDe } from "@/lib/loja";
+import { EDICAO, detalheDe, tipoDe } from "@/lib/loja";
 import { useEstado } from "@/lib/store";
 
 type Ordem = "edicao" | "menor" | "maior";
@@ -12,14 +12,20 @@ export function Catalogo() {
   const { produtos } = useEstado();
   const [params, setParams] = useSearchParams();
   const categoria = params.get("categoria") ?? "";
+  const tipo = params.get("tipo") ?? "";
   const busca = (params.get("busca") ?? "").trim();
   const ordem = (params.get("ordem") as Ordem) || "edicao";
 
-  const categorias = useMemo(() => Array.from(new Set(produtos.map((p) => p.categoria))).sort(), [produtos]);
+  // Dentro de uma categoria, o topo mostra só os subtipos dela; trocar de categoria é pelo menu.
+  const tipos = useMemo(
+    () => Array.from(new Set(produtos.filter((p) => p.categoria === categoria).map((p) => tipoDe(p.sku)))).sort(),
+    [produtos, categoria],
+  );
 
   // A busca também procura no tecido e no nome das cores ("linho", "Areia de Ipanema").
   const lista = produtos
     .filter((p) => !categoria || p.categoria === categoria)
+    .filter((p) => !tipo || tipoDe(p.sku) === tipo)
     .filter((p) => {
       if (!busca) return true;
       const d = detalheDe(p.sku);
@@ -41,16 +47,17 @@ export function Catalogo() {
   }
 
   const semFiltro = !categoria && !busca && ordem === "edicao";
+  const titulo = busca ? <>“{busca}”</> : tipo || categoria || EDICAO.nome;
 
   return (
     <div className="mx-auto max-w-[1360px] px-5 pt-10 md:px-12">
       <div className="grid gap-6 border-b border-dashed border-linha pb-10 md:grid-cols-[1fr_1fr] md:items-end">
         <div>
           <p className="text-[15px] text-caramelo">
-            Pronta-entrega · Edição {EDICAO.numero}
+            Pronta-entrega · {categoria && tipo ? categoria : `Edição ${EDICAO.numero}`}
           </p>
           <h1 className="mt-2 text-[56px] leading-none md:text-[76px]">
-            {busca ? <>“{busca}”</> : categoria || EDICAO.nome}
+            {titulo}
             <i className="text-caramelo">.</i>
           </h1>
         </div>
@@ -59,22 +66,29 @@ export function Catalogo() {
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-4 py-6">
-        <nav className="flex flex-wrap gap-x-6 gap-y-2 text-[15px]" aria-label="Categorias">
-          {["", ...categorias].map((c) => (
-            <button
-              key={c || "todas"}
-              onClick={() => alterar("categoria", c)}
-              className={cn(
-                "border-b-[1.5px] pb-0.5",
-                categoria === c ? "border-dashed border-caramelo text-tinta" : "border-transparent text-suave hover:text-tinta",
-              )}
-            >
-              {c || "Tudo"}
-            </button>
-          ))}
-        </nav>
-        <div className="flex items-center gap-4 text-sm text-suave">
+      <div className="flex items-center justify-between gap-6 py-6">
+        {tipos.length > 1 ? (
+          <nav
+            className="flex min-w-0 gap-6 overflow-x-auto text-[14px] [scrollbar-width:none]"
+            aria-label={`Tipos de ${categoria}`}
+          >
+            {["", ...tipos].map((t) => (
+              <button
+                key={t || "todos"}
+                onClick={() => alterar("tipo", t)}
+                className={cn(
+                  "shrink-0 whitespace-nowrap border-b pb-1 transition-colors",
+                  tipo === t ? "border-tinta text-tinta" : "border-transparent text-suave hover:text-tinta",
+                )}
+              >
+                {t || `Ver tudo em ${categoria}`}
+              </button>
+            ))}
+          </nav>
+        ) : (
+          <span />
+        )}
+        <div className="flex shrink-0 items-center gap-4 text-sm text-suave">
           {busca ? (
             <button onClick={() => alterar("busca", "")} className="link-tracejado text-tinta">
               Limpar busca
