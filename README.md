@@ -40,10 +40,14 @@ A camada de integração fica em `src/api/` e segue o briefing do backend:
 Os modelos de entrada nunca levam `papel`, `id_cliente` nem a loja do próprio usuário: o
 backend tira esses valores do token. A service role key nunca entra no front.
 
-## Acessos de demonstração
+## Login
 
-Na tela `/entrar` há botões que preenchem os acessos de cada perfil: cliente, atendente,
-operador de estoque, gerente de unidade e administrador.
+O login é o do Supabase Auth (`signInWithPassword`). **Não há contas nem senhas no código do
+front**: cada pessoa entra com a conta criada para ela. O tipo de usuário vem do token (claims
+`papel` e `loja_id`, gravadas pelo hook `public.hook_claims_token`) e a aba escolhida em `/entrar`
+precisa combinar com ele: conta da equipe entra em "Time Casa Lorenzi", conta de cliente em "Sou
+cliente". A sessão é lida do Supabase a cada carga da página; nada sobre papel fica guardado no
+navegador. As contas de cada tipo são criadas pelo script `scripts/criar_contas.py` do backend.
 
 ## Onde mexer
 
@@ -59,8 +63,8 @@ operador de estoque, gerente de unidade e administrador.
 
 ## Dados reais (início do atendente)
 
-Quem entra com uma **conta real da equipe** (Supabase Auth) vê o início do atendente com dados
-da API. Os acessos de demonstração continuam mostrando dados simulados, com um aviso na tela.
+O início do atendente mostra dados da API. As demais telas da área interna e a loja do cliente
+ainda usam dados simulados, mas só abrem para quem tem o papel certo (`src/lib/navegacao.ts`).
 
 1. Copie `.env.example` para `.env.local` e preencha `VITE_API_URL`, `VITE_SUPABASE_URL` e
    `VITE_SUPABASE_ANON_KEY` (só a chave pública; a service role nunca entra no front).
@@ -68,6 +72,8 @@ da API. Os acessos de demonstração continuam mostrando dados simulados, com um
    `CORS_ORIGINS=http://localhost:5173`.
 3. A conta precisa ter linha em `usuario` com papel e loja, e o hook de claims precisa estar ativo
    no Supabase; sem ele o token não traz `papel` e o login da equipe é recusado.
+4. Como o `papel` do token só vale para decidir o que mostrar, as leituras diretas ao Supabase (como o
+   nome do perfil) passam pelas policies de RLS e só devolvem a linha da própria pessoa.
 
 O papel e a loja exibidos vêm do token, mas só para decidir o que mostrar: quem autoriza é sempre
 a API (token validado, papel e loja conferidos no servidor).
