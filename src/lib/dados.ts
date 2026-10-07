@@ -23,6 +23,7 @@ export type Movimentacao = {
 };
 
 export type VariacaoProdutoCatalogo = {
+  idVariacao?: string;
   sku: string;
   cor: string;
   tamanho: string;

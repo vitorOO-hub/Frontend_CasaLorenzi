@@ -1,9 +1,12 @@
 import QRCode from "qrcode";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, Navigate } from "react-router-dom";
+import { usandoApi } from "@/api/config";
+import { ErroApi } from "@/api/erros";
 import { cn } from "@/components/ui";
 import { Foto, botaoLoja } from "@/components/vitrine";
 import { lojas, moeda } from "@/lib/dados";
+import { fecharPedidoCliente, listarLojasCliente, type LojaClienteApi } from "@/lib/comprasClienteApi";
 import { casas, fotoEstudio } from "@/lib/loja";
 import { novaChaveIdempotencia } from "@/api/http";
 import * as acoes from "@/lib/acoes";
@@ -28,6 +31,7 @@ export function CampoLoja({ rotulo, children, className }: { rotulo: string; chi
 }
 
 type Pagamento = "cartao" | "pix" | "boleto";
+const metodoPagamentoApi = (pagamento: Pagamento) => (pagamento === "cartao" ? "cartao_credito" : pagamento);
 
 function Etapa({ numero, titulo, children }: { numero: number; titulo: string; children: ReactNode }) {
   return (
@@ -60,8 +64,11 @@ function Opcao({ ativa, onClick, titulo, nota }: { ativa: boolean; onClick: () =
 export function Checkout() {
   const { carrinho } = useEstado();
   const sessao = useSessao();
+  const modoApi = usandoApi();
   const [entrega, setEntrega] = useState<"casa" | "loja">("casa");
   const [lojaRetirada, setLojaRetirada] = useState(lojas[0]!.id);
+  const [lojasApi, setLojasApi] = useState<LojaClienteApi[]>([]);
+  const [erroLojas, setErroLojas] = useState<string | null>(null);
   const [pagamento, setPagamento] = useState<Pagamento>("cartao");
   const [parcelas, setParcelas] = useState("1");
   const [qrPix, setQrPix] = useState<string | null>(null);
@@ -74,6 +81,15 @@ export function Checkout() {
   const frete = entrega === "loja" ? 0 : freteDe(subtotal);
   const total = subtotal + frete;
   const codigoPix = `00020126BR.GOV.BCB.PIX.CASALORENZI520400005303986540${total.toFixed(2)}5802BR5913CASA LORENZI6009SAO PAULO6304LRZI`;
+  const lojasParaEscolher = lojasApi.length
+    ? lojasApi.map((loja) => ({
+        id: loja.id_loja,
+        nome: loja.nome,
+        nota: [loja.cidade, loja.uf].filter(Boolean).join(", ") || loja.endereco || "Retirada na loja",
+      }))
+    : lojas.map((loja) => ({ id: loja.id, nome: loja.nome, nota: casas[loja.id]?.provas ?? loja.cidade }));
+  const idLojaSeparacao = lojasApi[0]?.id_loja ?? lojas[0]!.id;
+  const aguardandoLojas = modoApi && lojasApi.length === 0 && !erroLojas;
 
   useEffect(() => {
     if (pagamento !== "pix") return;
@@ -86,15 +102,34 @@ export function Checkout() {
     };
   }, [pagamento, codigoPix]);
 
+  useEffect(() => {
+    if (!modoApi || sessao?.tipo !== "cliente") return;
+    let ativo = true;
+    listarLojasCliente()
+      .then((lista) => {
+        if (!ativo) return;
+        setLojasApi(lista);
+        if (lista[0]) setLojaRetirada(lista[0].id_loja);
+        else setErroLojas("Nenhuma loja ativa foi encontrada para separar este pedido.");
+      })
+      .catch(() => {
+        if (!ativo) return;
+        setErroLojas("Não foi possível carregar as lojas disponíveis para este pedido.");
+      });
+    return () => {
+      ativo = false;
+    };
+  }, [modoApi, sessao?.tipo]);
+
   if (pedido) {
-    const casa = entrega === "loja" ? lojas.find((l) => l.id === lojaRetirada) : null;
+    const casa = entrega === "loja" ? lojasParaEscolher.find((l) => l.id === lojaRetirada) : null;
     return (
       <div className="mx-auto max-w-xl px-5 py-20 text-center">
         <p className="text-[15px] text-caramelo">Pedido {pedido}</p>
         <h1 className="mt-2 text-[56px] leading-none">Obrigado.</h1>
         <p className="mt-5 font-display text-xl leading-normal">
           {casa
-            ? `Suas peças ficam prontas em dois dias úteis na casa ${casa.nome}. ${casas[casa.id]?.alfaiate.split(",")[0] ?? "O alfaiate"} faz o ajuste na hora da retirada.`
+            ? `Suas peças ficam prontas em dois dias úteis na casa ${casa.nome}. O alfaiate faz o ajuste na hora da retirada.`
             : "Suas peças já estão sendo separadas no ateliê. Mandamos o código de rastreio assim que saírem."}
         </p>
         <p className="mt-6 font-mao text-[14px] leading-relaxed text-caramelo">— com carinho, Casa Lorenzi</p>
@@ -105,7 +140,7 @@ export function Checkout() {
     );
   }
 
-  if (carrinho.length === 0) return <Navigate to="/sacola" replace />;
+  if (!pedido && carrinho.length === 0) return <Navigate to="/sacola" replace />;
 
   return (
     <div className="mx-auto max-w-[1180px] px-5 pt-10 md:px-12">
@@ -117,8 +152,30 @@ export function Checkout() {
           e.preventDefault();
           if (sessao?.tipo !== "cliente") return;
           void executar("pedido", async () => {
-            const novo = await acoes.fecharPedido({ lojaId: entrega === "loja" ? lojaRetirada : lojas[0]!.id, frete }, chave);
-            setPedido(novo.id);
+            const idLoja = entrega === "loja" ? lojaRetirada : idLojaSeparacao;
+            if (modoApi) {
+              const itens = carrinho.map((item) => {
+                if (!item.idVariacao) {
+                  throw new ErroApi("validacao", "Atualize a peça pela loja antes de concluir a compra.");
+                }
+                return { id_variacao: item.idVariacao, quantidade: item.quantidade };
+              });
+              const novo = await fecharPedidoCliente(
+                {
+                  id_loja: idLoja,
+                  entrega,
+                  metodo_pagamento: metodoPagamentoApi(pagamento),
+                  frete: frete.toFixed(2),
+                  itens,
+                },
+                chave,
+              );
+              setPedido(novo.numero_pedido);
+              await acoes.limparCarrinho();
+            } else {
+              const novo = await acoes.fecharPedido({ lojaId: idLoja, frete }, chave);
+              setPedido(novo.id);
+            }
             window.scrollTo(0, 0);
           });
         }}
@@ -163,8 +220,8 @@ export function Checkout() {
               </div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-3">
-                {lojas.map((l) => (
-                  <Opcao key={l.id} ativa={lojaRetirada === l.id} onClick={() => setLojaRetirada(l.id)} titulo={l.nome} nota={casas[l.id]?.provas ?? l.cidade} />
+                {lojasParaEscolher.map((l) => (
+                  <Opcao key={l.id} ativa={lojaRetirada === l.id} onClick={() => setLojaRetirada(l.id)} titulo={l.nome} nota={l.nota} />
                 ))}
               </div>
             )}
@@ -241,9 +298,10 @@ export function Checkout() {
             <span>Total</span>
             <span className="font-display text-[34px]">{moeda(total)}</span>
           </div>
+          {erroLojas ? <p role="alert" className="mt-6 text-sm text-perigo">{erroLojas}</p> : null}
           {erro ? <p role="alert" className="mt-6 text-sm text-perigo">{erro}</p> : null}
-          <button type="submit" disabled={ocupado !== null} className={cn(botaoLoja(), "mt-6 w-full")}>
-            {ocupado ? "Confirmando…" : "Confirmar o pedido"}
+          <button type="submit" disabled={ocupado !== null || aguardandoLojas || Boolean(erroLojas)} className={cn(botaoLoja(), "mt-6 w-full")}>
+            {ocupado || aguardandoLojas ? "Confirmando…" : "Confirmar o pedido"}
           </button>
           <p className="mt-3 text-center text-xs text-suave">Protótipo: nenhum pagamento é processado.</p>
         </aside>

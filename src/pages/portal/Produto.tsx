@@ -69,6 +69,7 @@ function DetalheProduto({ sku }: { sku: string }) {
     }
     const variacao = variacoes.find((item) => item.tamanho === tamanhoSelecionado && item.cor === corSelecionada.nome);
     void acoes.adicionarAoCarrinho({
+      idVariacao: variacao?.idVariacao,
       sku: variacao?.sku ?? skuVariacao(produto!.sku, tamanhoSelecionado, corSelecionada.nome),
       skuBase: produto!.sku,
       nome: produto!.nome,
