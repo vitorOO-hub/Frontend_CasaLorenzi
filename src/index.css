@@ -6,8 +6,9 @@
  * Toda cor da interface sai destes tokens (bg-marinho, text-dourado, border-linha…).
  */
 @theme {
-  --font-display: "Cormorant Garamond", Georgia, serif;
-  --font-sans: "Karla", ui-sans-serif, system-ui, sans-serif;
+  /* Mesma tipografia na loja e na área interna: Instrument Serif nos títulos, Inter Tight no texto. */
+  --font-display: "Instrument Serif", Georgia, serif;
+  --font-sans: "Inter Tight", ui-sans-serif, system-ui, sans-serif;
 
   /* Paleta oficial: marinho, noite, ardósia, azul-aço, terracota e ferrugem. */
   --color-creme: #f6f3ee;
@@ -98,13 +99,10 @@
 }
 
 /*
- * Loja (área do cliente): tipografia e tons próprios, sem afetar o painel interno.
- * As utilidades do Tailwind leem as variáveis em tempo de execução, então
- * redefini-las aqui troca a fonte e as cores só dentro de .loja.
+ * Loja (área do cliente): fundo, cor e acabamento tipográfico próprios (sem itálico,
+ * títulos mais leves). As fontes são as mesmas do painel, definidas no @theme.
  */
 .loja {
-  --font-display: "Instrument Serif", Georgia, serif;
-  --font-sans: "Inter Tight", ui-sans-serif, system-ui, sans-serif;
   font-family: var(--font-sans);
   background: var(--color-creme);
   color: var(--color-tinta);
