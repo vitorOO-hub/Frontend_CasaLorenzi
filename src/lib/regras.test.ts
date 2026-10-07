@@ -11,7 +11,7 @@ describe("permissões da área interna", () => {
     expect(ids("atendente")).toEqual(["inicio", "atendimento"]);
     expect(ids("operador_estoque")).toEqual(["inicio", "estoque"]);
     expect(ids("gerente_loja")).toEqual(["inicio", "estoque", "atendimento", "gestao"]);
-    expect(ids("admin")).toEqual(["inicio", "estoque", "atendimento", "gestao"]);
+    expect(ids("admin")).toEqual(["inicio", "estoque", "gestao"]);
   });
 
   it("aprovações e estoque mínimo ficam restritos à gestão", () => {
@@ -29,6 +29,14 @@ describe("permissões da área interna", () => {
     expect(podeAcessar("gerente_loja", "/painel/gestao")).toBe(true);
   });
 
+  it("o admin (dono) não opera atendimento nem transferências", () => {
+    expect(podeAcessar("admin", "/painel/atendimento")).toBe(false);
+    expect(podeAcessar("admin", "/painel/atendimento/chamado/c1")).toBe(false);
+    expect(podeAcessar("admin", "/painel/estoque/transferencias")).toBe(false);
+    expect(podeAcessar("admin", "/painel/estoque")).toBe(true);
+    expect(podeAcessar("gerente_loja", "/painel/estoque/transferencias")).toBe(true);
+  });
+
   it("atendente não abre o estoque e começa pelos chamados", () => {
     expect(podeAcessar("atendente", "/painel/estoque")).toBe(false);
     expect(telaInicial("atendente")).toBe("/painel/atendimento");
@@ -36,10 +44,11 @@ describe("permissões da área interna", () => {
   });
 
   it("a caixa de conversas é só da equipe de atendimento", () => {
-    for (const papel of ["atendente", "gerente_loja", "admin"] as const) {
+    for (const papel of ["atendente", "gerente_loja"] as const) {
       expect(podeAcessar(papel, "/painel/atendimento/conversas")).toBe(true);
     }
     expect(podeAcessar("operador_estoque", "/painel/atendimento/conversas")).toBe(false);
+    expect(podeAcessar("admin", "/painel/atendimento/conversas")).toBe(false);
     // A conversa aberta é a tela do chamado, na aba-mãe "Chamados".
     const secao = secaoDoCaminho("/painel/atendimento/chamado/c1")!;
     expect(abaDoCaminho(secao, "/painel/atendimento/chamado/c1")?.rotulo).toBe("Chamados");

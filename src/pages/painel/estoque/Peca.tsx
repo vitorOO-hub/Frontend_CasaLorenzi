@@ -64,7 +64,7 @@ export function Peca() {
           <Botao variante="secundario" onClick={() => setModal("ajuste")}>
             Ajuste de inventário
           </Botao>
-          <Botao onClick={() => setModal("transferencia")}>Pedir transferência</Botao>
+          {papel !== "admin" ? <Botao onClick={() => setModal("transferencia")}>Pedir transferência</Botao> : null}
         </div>
       </div>
 

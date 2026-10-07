@@ -85,8 +85,14 @@ describe("estado atual e concorrência", () => {
   it("chamado já assumido por outro atendente dá 409", async () => {
     como("atendente");
     expect(await resultado(() => acoes.assumirChamado("ch1"))).toBe("ok");
-    como("admin");
+    como("gerente_loja");
     expect(await resultado(() => acoes.assumirChamado("ch1"))).toBe("conflito");
+  });
+
+  it("o admin não opera atendimento nem transferências", async () => {
+    como("admin");
+    expect(await resultado(() => acoes.resolverChamado("ch2"))).toBe("sem_permissao");
+    expect(await resultado(() => acoes.solicitarTransferencia({ sku: "CL-0101", origemId: "l2", destinoId: "l1", quantidade: 1 }))).toBe("sem_permissao");
   });
 
   it("peça com estoque não pode ser excluída", async () => {

@@ -34,6 +34,8 @@ export type Pendencia = "aprovacoes" | "transferencias" | "chamados";
 
 const todos: Papel[] = ["atendente", "operador_estoque", "gerente_loja", "admin"];
 const gestao: Papel[] = ["gerente_loja", "admin"];
+// O admin é o dono da rede: acompanha os números, mas não opera transferências nem atendimento.
+const daUnidade: Papel[] = ["operador_estoque", "gerente_loja"];
 
 export const secoes: Secao[] = [
   {
@@ -53,7 +55,7 @@ export const secoes: Secao[] = [
     abas: [
       { to: "/painel/estoque", rotulo: "Saldo" },
       { to: "/painel/estoque/movimentacoes", rotulo: "Movimentações" },
-      { to: "/painel/estoque/transferencias", rotulo: "Transferências", pendencia: "transferencias" },
+      { to: "/painel/estoque/transferencias", rotulo: "Transferências", papeis: daUnidade, pendencia: "transferencias" },
       { to: "/painel/estoque/aprovacoes", rotulo: "Aprovações", papeis: gestao, pendencia: "aprovacoes" },
       { to: "/painel/estoque/minimos", rotulo: "Estoque mínimo", papeis: gestao },
     ],
@@ -63,7 +65,7 @@ export const secoes: Secao[] = [
     rotulo: "Atendimento",
     icone: MessagesSquare,
     to: "/painel/atendimento",
-    papeis: ["atendente", "gerente_loja", "admin"],
+    papeis: ["atendente", "gerente_loja"],
     abas: [
       { to: "/painel/atendimento", rotulo: "Chamados", pendencia: "chamados" },
       { to: "/painel/atendimento/conversas", rotulo: "Conversas" },
