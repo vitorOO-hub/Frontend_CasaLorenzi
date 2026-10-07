@@ -11,7 +11,7 @@ const auth = vi.hoisted(() => ({
 vi.mock("@/api/auth", () => auth);
 vi.mock("@/api/config", () => ({ config: { supabaseUrl: "https://x.supabase.co", supabaseAnonKey: "chave-publica" } }));
 
-const perfil = vi.hoisted(() => ({ nome: "Ana Souza" as string | null, falhar: false }));
+const perfil = vi.hoisted(() => ({ nome: "Ana Souza" as string | null, tipo: null as string | null, falhar: false }));
 vi.mock("@/api/supabase", () => ({
   supabase: () => ({
     from: () => ({
@@ -19,7 +19,8 @@ vi.mock("@/api/supabase", () => ({
         eq: () => ({
           maybeSingle: async () => {
             if (perfil.falhar) throw new Error("rls");
-            return { data: perfil.nome ? { nome: perfil.nome } : null };
+            const embutido = perfil.tipo ? { tipo_usuario: { codigo: perfil.tipo } } : {};
+            return { data: perfil.nome ? { nome: perfil.nome, ...embutido } : null };
           },
         }),
       }),
@@ -41,6 +42,7 @@ const cliente = { tipo: "cliente" as const, id: "u-2", email: "cliente@casaloren
 beforeEach(() => {
   vi.clearAllMocks();
   perfil.nome = "Ana Souza";
+  perfil.tipo = null;
   perfil.falhar = false;
   sair();
   auth.sairDaConta.mockClear();
@@ -125,5 +127,29 @@ describe("motivo da falha no login", () => {
     const r = await entrar("x@y.com", "s");
     expect(r).toMatchObject({ ok: false, motivo: "indisponivel" });
     expect(r.ok === false && r.detalhe).toContain("desligado");
+  });
+});
+
+describe("conta da equipe sem cargo no token", () => {
+  it("é recusada com a causa, em vez de cair na loja como cliente", async () => {
+    auth.entrar.mockResolvedValue(cliente); // o token veio sem papel
+    perfil.tipo = "gerente_loja"; // mas o cadastro diz que é da equipe
+    const r = await entrar("g@y.com", "s");
+    expect(r).toMatchObject({ ok: false, motivo: "sem_cargo" });
+    expect(r.ok === false && r.detalhe).toContain("cargo");
+    expect(auth.sairDaConta).toHaveBeenCalled();
+    expect(sessaoAtual()).toBeNull();
+  });
+
+  it("cliente de verdade continua entrando normalmente", async () => {
+    auth.entrar.mockResolvedValue(cliente);
+    perfil.tipo = "cliente";
+    expect(await entrar("c@y.com", "s")).toMatchObject({ ok: true, sessao: { tipo: "cliente" } });
+  });
+
+  it("cliente sem linha de cadastro também entra", async () => {
+    auth.entrar.mockResolvedValue(cliente);
+    perfil.nome = null;
+    expect(await entrar("c@y.com", "s")).toMatchObject({ ok: true, sessao: { tipo: "cliente" } });
   });
 });

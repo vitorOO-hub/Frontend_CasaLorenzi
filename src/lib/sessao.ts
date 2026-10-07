@@ -75,16 +75,31 @@ export function iniciarSessao(nova: Sessao) {
 
 const nomePeloEmail = (email: string) => email.split("@")[0] || email;
 
-/** Nome do cadastro, lido direto do Supabase: a policy do RLS só devolve a linha do próprio usuário. */
-async function nomeDoPerfil(idAuth: string, email: string): Promise<string> {
+type Perfil = { nome: string; tipo: string | null };
+
+/**
+ * Nome e tipo do cadastro, lidos direto do Supabase: a policy do RLS só devolve a linha do próprio
+ * usuário. O tipo serve para flagrar conta da equipe cujo token veio sem cargo.
+ */
+async function perfilDoUsuario(idAuth: string, email: string): Promise<Perfil> {
   try {
-    const { data } = await supabase().from("usuario").select("nome").eq("auth_user_id", idAuth).maybeSingle();
-    if (typeof data?.nome === "string" && data.nome) return data.nome;
+    const { data } = await supabase()
+      .from("usuario")
+      .select("nome, tipo_usuario(codigo)")
+      .eq("auth_user_id", idAuth)
+      .maybeSingle();
+    const tipo = Array.isArray(data?.tipo_usuario) ? data.tipo_usuario[0] : data?.tipo_usuario;
+    return {
+      nome: typeof data?.nome === "string" && data.nome ? data.nome : nomePeloEmail(email),
+      tipo: typeof tipo?.codigo === "string" ? tipo.codigo : null,
+    };
   } catch {
-    // Sem perfil legível: cai para o e-mail.
+    // Sem perfil legível: cai para o e-mail e para o tipo do token.
+    return { nome: nomePeloEmail(email), tipo: null };
   }
-  return nomePeloEmail(email);
 }
+
+const nomeDoPerfil = async (idAuth: string, email: string) => (await perfilDoUsuario(idAuth, email)).nome;
 
 function daConta(conta: SessaoApi, nome: string): Sessao {
   if (conta.tipo === "interno") {
@@ -102,7 +117,7 @@ function daConta(conta: SessaoApi, nome: string): Sessao {
 
 export type ResultadoLogin =
   | { ok: true; sessao: Sessao }
-  | { ok: false; motivo: "credenciais" | "indisponivel"; detalhe?: string };
+  | { ok: false; motivo: "credenciais" | "indisponivel" | "sem_cargo"; detalhe?: string };
 
 /**
  * Login pelo Supabase Auth (a função pronta `signInWithPassword`). O front não guarda senha nem
@@ -117,7 +132,19 @@ export async function entrar(email: string, senha: string): Promise<ResultadoLog
     if (credenciais) return { ok: false, motivo: "credenciais" };
     return { ok: false, motivo: "indisponivel", detalhe: erro instanceof ErroApi ? erro.message : undefined };
   }
-  const nova = daConta(conta, await nomeDoPerfil(conta.id, conta.email));
+  const perfil = await perfilDoUsuario(conta.id, conta.email);
+  // Conta da equipe cujo token não trouxe o cargo (hook de claims desligado ou conta não ligada ao
+  // cadastro): sem isto a pessoa seria tratada como cliente e cairia na loja sem nenhum aviso.
+  if (conta.tipo === "cliente" && perfil.tipo && perfil.tipo !== "cliente") {
+    await sairDaConta().catch(() => undefined);
+    return {
+      ok: false,
+      motivo: "sem_cargo",
+      detalhe:
+        "Sua conta é da equipe, mas o login não trouxe o seu cargo. Peça ao administrador para conferir a ligação da conta e o hook de claims do Supabase.",
+    };
+  }
+  const nova = daConta(conta, perfil.nome);
   iniciarSessao(nova);
   return { ok: true, sessao: nova };
 }
