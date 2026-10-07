@@ -8,6 +8,7 @@ import { SecaoLayout } from "./layouts/SecaoLayout";
 import { Entrar } from "./pages/Entrar";
 import { Dashboard } from "./pages/painel/Dashboard";
 import { Chamado } from "./pages/painel/atendimento/Chamado";
+import { Conversas } from "./pages/painel/atendimento/Conversas";
 import { Chamados } from "./pages/painel/atendimento/Chamados";
 import { Cliente } from "./pages/painel/atendimento/Cliente";
 import { Clientes } from "./pages/painel/atendimento/Clientes";
@@ -93,6 +94,7 @@ export default function App() {
           <Route path="atendimento" element={<SecaoLayout />}>
             <Route index element={<Chamados />} />
             <Route path="chamado/:id" element={<Chamado />} />
+            <Route path="conversas" element={<Conversas />} />
             <Route path="clientes" element={<Clientes />} />
             <Route path="clientes/:id" element={<Cliente />} />
           </Route>

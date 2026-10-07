@@ -94,3 +94,19 @@ Atendente e gerente veem a própria loja mais os chamados sem loja; o admin vê 
 por loja. As ações (assumir, responder, resolver) são validadas no servidor, que devolve 409 com a
 explicação em português quando outra pessoa chegou antes. Só gerente e admin veem as compras do
 cliente. Os chamados que o cliente abre na loja ainda são simulados e não aparecem nessa fila.
+
+## Chat ao vivo do atendimento
+
+A conversa do chamado (`/painel/atendimento/chamado/:id`) e a caixa de conversas
+(`/painel/atendimento/conversas`) funcionam em tempo real sobre o **Supabase Realtime**:
+
+- `GET /api/v1/painel/chat/conversas/{id}/sessao` devolve o canal privado `chamado:<uuid>`, o filtro
+  das mensagens e se a pessoa pode responder.
+- Mensagens novas chegam por Postgres Changes (`mensagem`). O evento só avisa; o conteúdo vem de
+  `GET .../mensagens?apos=<ultima>`, então nada depende do payload do Realtime.
+- "Digitando" e "quem está na conversa" usam Broadcast e Presence no canal privado (liberado pelo RLS só
+  a quem enxerga o chamado).
+- Se o Realtime cair, uma conferência a cada 15 s recupera as mensagens pelo cursor.
+
+Código: `src/lib/chatAoVivo.ts` (lógica, testada com canais falsos), `src/lib/chatApi.ts` (chamadas e
+validação) e `src/hooks/useChat.ts` (ligação com o React). Exige a migration do chat no backend.

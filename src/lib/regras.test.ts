@@ -35,6 +35,16 @@ describe("permissões da área interna", () => {
     expect(telaInicial("operador_estoque")).toBe("/painel");
   });
 
+  it("a caixa de conversas é só da equipe de atendimento", () => {
+    for (const papel of ["atendente", "gerente_loja", "admin"] as const) {
+      expect(podeAcessar(papel, "/painel/atendimento/conversas")).toBe(true);
+    }
+    expect(podeAcessar("operador_estoque", "/painel/atendimento/conversas")).toBe(false);
+    // A conversa aberta é a tela do chamado, na aba-mãe "Chamados".
+    const secao = secaoDoCaminho("/painel/atendimento/chamado/c1")!;
+    expect(abaDoCaminho(secao, "/painel/atendimento/chamado/c1")?.rotulo).toBe("Chamados");
+  });
+
   it("telas de detalhe herdam a seção e a aba da tela-mãe", () => {
     const secao = secaoDoCaminho("/painel/atendimento/clientes/c1")!;
     expect(secao.id).toBe("atendimento");

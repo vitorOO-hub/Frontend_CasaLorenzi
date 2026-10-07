@@ -1,8 +1,10 @@
+import { useEffect, useRef } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Conversa } from "@/components/Conversa";
 import { AvisoErro, Badge, Botao, Card, Voltar } from "@/components/ui";
-import { useChamado } from "@/hooks/useChamados";
-import { assumirChamado, enviarMensagem, resolverChamado } from "@/lib/chamadosApi";
+import { useDetalheChamado } from "@/hooks/useChamados";
+import { useChatAoVivo } from "@/hooks/useChat";
+import { assumirChamado, resolverChamado } from "@/lib/chamadosApi";
 import { chamadoFinalizado, dataBRdoIso, dataHoraBRdoIso, moedaBR, tomPrioridade, tomStatus } from "@/lib/chamadosUi";
 import { podeAprovar, usePapel } from "@/lib/sessao";
 import { useAcao } from "@/lib/useAcao";
@@ -11,9 +13,20 @@ import { useAcao } from "@/lib/useAcao";
 export function Chamado() {
   const { id = "" } = useParams();
   const papel = usePapel();
-  const { detalhe, conversa, recarregar } = useChamado(id);
+  const detalhe = useDetalheChamado(id);
+  const chat = useChatAoVivo(id);
+  const { recarregar: recarregarDetalhe } = detalhe;
+  const { sessao } = chat;
   const { executar, ocupado, erro, limparErro } = useAcao();
   const chamado = detalhe.dados;
+
+  // Outra pessoa assumiu ou encerrou o chamado: a ficha se atualiza sozinha (via Realtime).
+  const assinatura = sessao ? `${sessao.status.codigo}|${sessao.id_usuario_responsavel ?? ""}` : null;
+  const anterior = useRef<string | null>(null);
+  useEffect(() => {
+    if (assinatura && anterior.current && anterior.current !== assinatura) recarregarDetalhe();
+    anterior.current = assinatura;
+  }, [assinatura, recarregarDetalhe]);
 
   if (!chamado) {
     return (
@@ -44,7 +57,7 @@ export function Chamado() {
   if (chamado.pedido) dados.push(["Pedido", `${chamado.pedido.numero_pedido} · ${chamado.pedido.status}`]);
   for (const p of chamado.pecas) dados.push(["Peça", `${p.nome} · ${p.cor}, ${p.tamanho}`]);
 
-  const mensagens = (conversa.dados ?? []).map((m) => ({
+  const mensagens = chat.mensagens.map((m) => ({
     id: m.id_mensagem,
     autor: m.autor,
     nome: m.nome,
@@ -55,12 +68,15 @@ export function Chamado() {
   const agir = (chave: string, acao: () => Promise<unknown>) =>
     executar(chave, acao).then((ok) => {
       // Qualquer ação muda o chamado (responsável, status, conversa): relê tudo do servidor.
-      recarregar();
+      recarregarDetalhe();
+      void chat.recarregar();
       return ok;
     });
 
+  // Com a sessão aberta, quem decide se pode responder é o servidor; antes dela vale a regra local.
   let aviso: string | undefined;
-  if (finalizado) aviso = "Este chamado foi encerrado. Não é possível enviar novas mensagens.";
+  if (sessao) aviso = sessao.pode_responder ? undefined : (sessao.motivo_bloqueio ?? undefined);
+  else if (finalizado) aviso = "Este chamado foi encerrado. Não é possível enviar novas mensagens.";
   else if (comOutraPessoa) aviso = `Este chamado está com ${chamado.responsavel_nome}. Só ele ou a gestão pode responder.`;
 
   return (
@@ -87,7 +103,17 @@ export function Chamado() {
           </Botao>
         ) : null}
       </div>
-      <AvisoErro erro={erro ?? conversa.erro} onFechar={limparErro} className="mb-6" />
+      <AvisoErro erro={erro ?? chat.erro} onFechar={limparErro} className="mb-6" />
+      <div className="-mt-3 mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-suave">
+        <span className="inline-flex items-center gap-1.5">
+          <span
+            aria-hidden="true"
+            className={chat.conexao === "ao_vivo" ? "h-2 w-2 rounded-full bg-emerald-500" : "h-2 w-2 rounded-full bg-amber-500"}
+          />
+          {chat.conexao === "ao_vivo" ? "Ao vivo" : chat.conexao === "conectando" ? "Conectando…" : "Reconectando…"}
+        </span>
+        {chat.presentes.length ? <span>Também nesta conversa: {chat.presentes.join(", ")}</span> : null}
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
         <Conversa
@@ -96,7 +122,9 @@ export function Chamado() {
           anexos={chamado.anexos.map((a) => ({ id: a.id_anexo, nome: a.nome }))}
           encerrado={finalizado}
           bloqueioAviso={aviso}
-          onEnviar={(t) => agir("mensagem", () => enviarMensagem(id, t))}
+          digitando={chat.digitando}
+          onDigitando={chat.avisarDigitando}
+          onEnviar={(t) => agir("mensagem", () => chat.enviar(t))}
           acoesExtras={
             !finalizado && (chamado.sou_responsavel || gestor) ? (
               <Botao variante="secundario" disabled={ocupado !== null} onClick={() => void agir("resolver", () => resolverChamado(id))}>

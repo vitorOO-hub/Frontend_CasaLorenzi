@@ -66,6 +66,7 @@ export const secoes: Secao[] = [
     papeis: ["atendente", "gerente_loja", "admin"],
     abas: [
       { to: "/painel/atendimento", rotulo: "Chamados", pendencia: "chamados" },
+      { to: "/painel/atendimento/conversas", rotulo: "Conversas" },
       { to: "/painel/atendimento/clientes", rotulo: "Clientes" },
     ],
   },

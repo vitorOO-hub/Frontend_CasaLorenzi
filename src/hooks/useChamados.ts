@@ -2,14 +2,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ErroApi } from "@/api/erros";
 import {
   buscarChamado,
-  buscarMensagens,
   buscarOpcoes,
   buscarResumo,
   listarChamados,
   type DetalheChamado,
   type FiltrosChamados,
   type ListaChamados,
-  type MensagemChamado,
   type OpcoesChamados,
   type ResumoChamados,
 } from "@/lib/chamadosApi";
@@ -96,18 +94,9 @@ export const useResumoChamados = (idLoja?: string) =>
 export const useListaChamados = (filtros: FiltrosChamados) =>
   useConsulta<ListaChamados>((sinal) => listarChamados(filtros, { sinal }), JSON.stringify(filtros));
 
-/** Detalhe e conversa do chamado; a conversa se atualiza sozinha a cada 20 s. */
-export function useChamado(id: string) {
-  const detalhe = useConsulta<DetalheChamado>((sinal) => buscarChamado(id, { sinal }), `detalhe:${id}`);
-  const conversa = useConsulta<MensagemChamado[]>((sinal) => buscarMensagens(id, { sinal }), `conversa:${id}`, {
-    intervaloMs: 20_000,
-  });
-  const recarregar = useCallback(() => {
-    detalhe.recarregar();
-    conversa.recarregar();
-  }, [detalhe, conversa]);
-  return { detalhe, conversa, recarregar };
-}
+/** Ficha do chamado. A conversa é do chat ao vivo (`useChatAoVivo`). */
+export const useDetalheChamado = (id: string) =>
+  useConsulta<DetalheChamado>((sinal) => buscarChamado(id, { sinal }), `detalhe:${id}`);
 
 /**
  * Quantos chamados estão sem resposta, para o selo da barra lateral. Só consulta quem tem acesso à

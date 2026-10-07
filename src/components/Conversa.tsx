@@ -14,6 +14,8 @@ export function Conversa({
   onEnviar,
   acoesExtras,
   bloqueioAviso,
+  digitando = [],
+  onDigitando,
 }: {
   mensagens: MensagemConversa[];
   /** Mostrados junto da primeira mensagem (os arquivos que o cliente mandou ao abrir o chamado). */
@@ -24,6 +26,10 @@ export function Conversa({
   acoesExtras?: ReactNode;
   /** Se informado, substitui o formulário (ex.: chamado resolvido que o cliente não pode reabrir). */
   bloqueioAviso?: string;
+  /** Nomes de quem está digitando agora (chat ao vivo). */
+  digitando?: string[];
+  /** Chamado a cada tecla no campo, para avisar os outros que há alguém digitando. */
+  onDigitando?: () => void;
 }) {
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -54,6 +60,11 @@ export function Conversa({
           );
         })}
         {mensagens.length === 0 ? <p className="py-6 text-center text-sm text-suave">Nenhuma mensagem ainda.</p> : null}
+        {digitando.length ? (
+          <p className="text-xs italic text-suave" role="status" aria-live="polite">
+            {digitando.join(", ")} {digitando.length > 1 ? "estão digitando…" : "está digitando…"}
+          </p>
+        ) : null}
       </div>
 
       {bloqueioAviso || (encerrado && lado === "cliente") ? (
@@ -77,7 +88,10 @@ export function Conversa({
             rows={3}
             maxLength={4000}
             value={texto}
-            onChange={(e) => setTexto(e.target.value)}
+            onChange={(e) => {
+              setTexto(e.target.value);
+              onDigitando?.();
+            }}
             placeholder={lado === "cliente" ? "Escreva uma mensagem…" : "Responder ao cliente…"}
             className={inputClasses}
           />
