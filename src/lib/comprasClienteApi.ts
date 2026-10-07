@@ -51,6 +51,13 @@ export type CheckoutClienteCriar = {
   entrega: "casa" | "loja";
   metodo_pagamento: MetodoPagamentoCheckout;
   frete: string;
+  endereco_entrega?: {
+    cep: string;
+    rua: string;
+    numero: string;
+    complemento?: string | null;
+    uf: string;
+  } | null;
   itens: { id_variacao: string; quantidade: number }[];
 };
 

@@ -78,7 +78,7 @@ export async function listarProdutosCatalogo(): Promise<Produto[]> {
 export function useProdutosCatalogo(produtosSimulados: Produto[]): EstadoCatalogo {
   const modoApi = usandoApi();
   const [estado, setEstado] = useState<EstadoCatalogo>({
-    produtos: produtosSimulados,
+    produtos: modoApi ? [] : produtosSimulados,
     carregando: modoApi,
     erro: null,
     origem: modoApi ? "api" : "simulado",
@@ -93,10 +93,10 @@ export function useProdutosCatalogo(produtosSimulados: Produto[]): EstadoCatalog
         if (!ativo) return;
         if (produtos.length === 0) {
           setEstado({
-            produtos: produtosSimulados,
+            produtos: [],
             carregando: false,
             erro: "Nenhuma peça ativa encontrada no banco.",
-            origem: "simulado",
+            origem: "api",
           });
           return;
         }
@@ -105,10 +105,10 @@ export function useProdutosCatalogo(produtosSimulados: Produto[]): EstadoCatalog
       .catch(() => {
         if (!ativo) return;
         setEstado({
-          produtos: produtosSimulados,
+          produtos: [],
           carregando: false,
           erro: "Não foi possível carregar o catálogo agora.",
-          origem: "simulado",
+          origem: "api",
         });
       });
 

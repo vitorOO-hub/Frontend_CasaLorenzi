@@ -111,7 +111,7 @@ function daConta(conta: SessaoApi, nome: string): Sessao {
       lojaId: conta.idLoja == null ? undefined : String(conta.idLoja),
     };
   }
-  // A loja virtual ainda lê pedidos e chamados simulados: o cliente real vê o acervo de demonstração.
+  // Telas antigas ainda precisam de um cliente local para funcionar quando o modo API esta desligado.
   return { tipo: "cliente", clienteId: CLIENTE_DEMO_ID, nome, email: conta.email };
 }
 
