@@ -29,7 +29,7 @@ export function PainelLayout() {
   const navigate = useNavigate();
 
   if (!pronta) return null;
-  if (sessao?.tipo !== "interno") return <Navigate to="/entrar?time=1" replace />;
+  if (sessao?.tipo !== "interno") return <Navigate to={`/entrar?voltar=${encodeURIComponent(pathname)}`} replace />;
 
   // Nome do cadastro (lido com RLS); a loja exibida segue o escopo das telas simuladas.
   const pessoa = { nome: sessao.nome, lojaId: equipe[papel].lojaId };

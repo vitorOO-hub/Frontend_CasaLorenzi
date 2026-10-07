@@ -1,46 +1,31 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Campo, Segmentado, inputClasses } from "@/components/ui";
+import { Campo, inputClasses } from "@/components/ui";
 import { FotoCampanha } from "@/components/vitrine";
 import { Marca } from "@/layouts/PortalLayout";
 import { CAMPANHA } from "@/lib/loja";
-import { telaInicial } from "@/lib/navegacao";
-import { entrar, type Lado } from "@/lib/sessao";
+import { destinoAposLogin } from "@/lib/destino";
+import { entrar } from "@/lib/sessao";
 
 export function Entrar() {
-  const [params, setParams] = useSearchParams();
+  const [params] = useSearchParams();
   const navigate = useNavigate();
-  const lado: Lado = params.get("time") ? "interno" : "cliente";
   const voltar = params.get("voltar");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
-  function trocarLado(novo: Lado) {
-    setParams(novo === "interno" ? { time: "1" } : {});
-    setEmail("");
-    setSenha("");
-    setErro(null);
-  }
-
   async function enviar(ev: FormEvent) {
     ev.preventDefault();
     setEnviando(true);
     setErro(null);
     try {
-      const r = await entrar(email, senha, lado);
-      if (r.ok) {
-        return navigate(r.sessao.tipo === "interno" ? telaInicial(r.sessao.papel) : (voltar ?? "/conta/pedidos"));
-      }
+      const r = await entrar(email, senha);
+      // Cliente ou equipe: o tipo de conta vem do token e decide para onde ir.
+      if (r.ok) return navigate(destinoAposLogin(r.sessao, voltar), { replace: true });
       setSenha("");
       if (r.motivo === "credenciais") return setErro("E-mail ou senha inválidos.");
-      if (r.motivo === "lado_errado")
-        return setErro(
-          lado === "cliente"
-            ? "Esta conta é da equipe. Use a aba “Time Casa Lorenzi”."
-            : "Esta conta não tem acesso à área interna. Se você é da equipe, peça ao administrador para conferir seu cadastro.",
-        );
       setErro(r.detalhe ?? "Não foi possível entrar agora. Tente de novo em instantes.");
     } finally {
       setEnviando(false);
@@ -58,9 +43,7 @@ export function Entrar() {
           </Link>
           <div className="max-w-md">
             <p className="font-display text-4xl leading-tight">
-              {lado === "cliente"
-                ? "Seus pedidos, ajustes e conversas com a casa em um só lugar."
-                : "Estoque, atendimento e gestão das três casas, numa operação só."}
+              Seus pedidos, ajustes e conversas com a casa — e a operação das três casas — num só lugar.
             </p>
           </div>
           <p className="text-xs text-white/40">São Paulo · Rio de Janeiro · Belo Horizonte</p>
@@ -78,21 +61,9 @@ export function Entrar() {
         </div>
 
         <div className="mx-auto my-auto w-full max-w-sm py-12">
-          <Segmentado
-            valor={lado}
-            onChange={trocarLado}
-            opcoes={[
-              { value: "cliente", label: "Sou cliente" },
-              { value: "interno", label: "Time Casa Lorenzi" },
-            ]}
-          />
-          <h1 className="mt-8 text-[44px] leading-none">
-            {lado === "cliente" ? "Entre na sua conta" : "Área interna"}
-          </h1>
+          <h1 className="text-[44px] leading-none">Entre na sua conta</h1>
           <p className="mt-2 text-sm text-suave">
-            {lado === "cliente"
-              ? "Navegar pela coleção não exige login."
-              : "Entre com a conta que a administração criou para você."}
+            Clientes e equipe Casa Lorenzi entram por aqui. Navegar pela coleção não exige login.
           </p>
 
           <form onSubmit={enviar} className="mt-8 space-y-4">
@@ -102,7 +73,8 @@ export function Entrar() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className={inputClasses}
-                placeholder={lado === "cliente" ? "seu@email.com" : "nome@casalorenzi.com.br"}
+                placeholder="seu@email.com"
+                autoComplete="username"
                 required
               />
             </Campo>
@@ -113,6 +85,7 @@ export function Entrar() {
                 onChange={(e) => setSenha(e.target.value)}
                 className={inputClasses}
                 placeholder="••••••••"
+                autoComplete="current-password"
                 required
               />
             </Campo>

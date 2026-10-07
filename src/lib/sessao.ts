@@ -100,17 +100,15 @@ function daConta(conta: SessaoApi, nome: string): Sessao {
   return { tipo: "cliente", clienteId: CLIENTE_DEMO_ID, nome, email: conta.email };
 }
 
-export type Lado = "cliente" | "interno";
-
 export type ResultadoLogin =
   | { ok: true; sessao: Sessao }
-  | { ok: false; motivo: "credenciais" | "lado_errado" | "indisponivel"; detalhe?: string };
+  | { ok: false; motivo: "credenciais" | "indisponivel"; detalhe?: string };
 
 /**
  * Login pelo Supabase Auth (a função pronta `signInWithPassword`). O front não guarda senha nem
- * conhece nenhuma conta: o tipo de usuário vem do token, e a aba escolhida precisa combinar com ele.
+ * conhece nenhuma conta: o tipo de usuário (cliente ou cargo da equipe) vem do token.
  */
-export async function entrar(email: string, senha: string, lado: Lado): Promise<ResultadoLogin> {
+export async function entrar(email: string, senha: string): Promise<ResultadoLogin> {
   let conta: SessaoApi;
   try {
     conta = await entrarNoSupabase(email, senha);
@@ -118,10 +116,6 @@ export async function entrar(email: string, senha: string, lado: Lado): Promise<
     const credenciais = erro instanceof ErroApi && erro.codigo === "nao_autenticado";
     if (credenciais) return { ok: false, motivo: "credenciais" };
     return { ok: false, motivo: "indisponivel", detalhe: erro instanceof ErroApi ? erro.message : undefined };
-  }
-  if ((conta.tipo === "interno") !== (lado === "interno")) {
-    await sairDaConta().catch(() => undefined);
-    return { ok: false, motivo: "lado_errado" };
   }
   const nova = daConta(conta, await nomeDoPerfil(conta.id, conta.email));
   iniciarSessao(nova);

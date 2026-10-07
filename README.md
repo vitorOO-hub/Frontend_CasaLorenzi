@@ -42,11 +42,12 @@ backend tira esses valores do token. A service role key nunca entra no front.
 
 ## Login
 
-O login é o do Supabase Auth (`signInWithPassword`). **Não há contas nem senhas no código do
-front**: cada pessoa entra com a conta criada para ela. O tipo de usuário vem do token (claims
-`papel` e `loja_id`, gravadas pelo hook `public.hook_claims_token`) e a aba escolhida em `/entrar`
-precisa combinar com ele: conta da equipe entra em "Time Casa Lorenzi", conta de cliente em "Sou
-cliente". A sessão é lida do Supabase a cada carga da página; nada sobre papel fica guardado no
+O login é o do Supabase Auth (`signInWithPassword`) e há **uma tela só**, `/entrar`, para clientes e
+equipe. **Não há contas nem senhas no código do front**: cada pessoa entra com a conta criada para
+ela. O tipo de usuário vem do token (claims `papel` e `loja_id`, gravadas pelo hook
+`public.hook_claims_token`) e decide o destino: cada cargo cai na própria tela inicial do painel e o
+cliente cai em `/conta/pedidos`. O parâmetro `?voltar=` leva de volta à tela de origem, mas só se for
+uma rota do próprio site e que o cargo possa abrir (`src/lib/destino.ts`). A sessão é lida do Supabase a cada carga da página; nada sobre papel fica guardado no
 navegador. As contas de cada tipo são criadas pelo script `scripts/criar_contas.py` do backend.
 
 ## Onde mexer

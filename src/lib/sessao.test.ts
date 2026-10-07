@@ -49,61 +49,56 @@ beforeEach(() => {
 describe("login pelo Supabase", () => {
   it("equipe entra com o papel e a loja que vieram do token", async () => {
     auth.entrar.mockResolvedValue(interno("gerente_loja"));
-    const r = await entrar("gerente@casalorenzi.com.br", "senha", "interno");
+    const r = await entrar("gerente@casalorenzi.com.br", "senha");
     expect(r).toMatchObject({ ok: true, sessao: { tipo: "interno", papel: "gerente_loja", lojaId: "loja-1", nome: "Ana Souza" } });
     expect(sessaoAtual()).toMatchObject({ papel: "gerente_loja" });
   });
 
   it("cliente entra pela aba de cliente", async () => {
     auth.entrar.mockResolvedValue(cliente);
-    const r = await entrar("cliente@casalorenzi.com.br", "senha", "cliente");
+    const r = await entrar("cliente@casalorenzi.com.br", "senha");
     expect(r).toMatchObject({ ok: true, sessao: { tipo: "cliente", email: "cliente@casalorenzi.com.br" } });
   });
 
   it("senha errada não cria sessão e não diz qual campo falhou", async () => {
     auth.entrar.mockRejectedValue(new ErroApi("nao_autenticado"));
-    const r = await entrar("x@y.com", "errada", "interno");
+    const r = await entrar("x@y.com", "errada");
     expect(r).toEqual({ ok: false, motivo: "credenciais" });
     expect(sessaoAtual()).toBeNull();
   });
 
   it("falha de rede ou de configuração vira 'indisponível', não 'senha inválida'", async () => {
     auth.entrar.mockRejectedValue(new ErroApi("rede"));
-    expect(await entrar("x@y.com", "s", "interno")).toMatchObject({ ok: false, motivo: "indisponivel" });
+    expect(await entrar("x@y.com", "s")).toMatchObject({ ok: false, motivo: "indisponivel" });
     auth.entrar.mockRejectedValue(new ErroApi("configuracao"));
-    expect(await entrar("x@y.com", "s", "interno")).toMatchObject({ ok: false, motivo: "indisponivel" });
+    expect(await entrar("x@y.com", "s")).toMatchObject({ ok: false, motivo: "indisponivel" });
   });
 
-  it("conta de cliente na aba da equipe é recusada e a sessão do Supabase é encerrada", async () => {
+  it("a mesma tela serve cliente e equipe: o tipo da conta decide o resultado", async () => {
     auth.entrar.mockResolvedValue(cliente);
-    expect(await entrar("c@y.com", "s", "interno")).toEqual({ ok: false, motivo: "lado_errado" });
-    expect(auth.sairDaConta).toHaveBeenCalledTimes(1);
-    expect(sessaoAtual()).toBeNull();
-  });
-
-  it("conta da equipe na aba de cliente também é recusada", async () => {
+    expect(await entrar("c@y.com", "s")).toMatchObject({ ok: true, sessao: { tipo: "cliente" } });
+    sair();
     auth.entrar.mockResolvedValue(interno("atendente"));
-    expect(await entrar("e@y.com", "s", "cliente")).toEqual({ ok: false, motivo: "lado_errado" });
-    expect(sessaoAtual()).toBeNull();
+    expect(await entrar("e@y.com", "s")).toMatchObject({ ok: true, sessao: { tipo: "interno", papel: "atendente" } });
   });
 
   it("sem linha legível em usuario, o nome vem do e-mail", async () => {
     auth.entrar.mockResolvedValue(interno("atendente"));
     perfil.nome = null;
-    const r = await entrar("e@y.com", "s", "interno");
+    const r = await entrar("e@y.com", "s");
     expect(r).toMatchObject({ ok: true, sessao: { nome: "gerente" } });
   });
 
   it("falha ao ler o perfil (RLS) não derruba o login", async () => {
     auth.entrar.mockResolvedValue(interno("atendente"));
     perfil.falhar = true;
-    const r = await entrar("e@y.com", "s", "interno");
+    const r = await entrar("e@y.com", "s");
     expect(r.ok).toBe(true);
   });
 
   it("sair limpa a sessão local e encerra a do Supabase", async () => {
     auth.entrar.mockResolvedValue(interno("admin", null));
-    await entrar("a@y.com", "s", "interno");
+    await entrar("a@y.com", "s");
     sair();
     expect(sessaoAtual()).toBeNull();
     expect(auth.sairDaConta).toHaveBeenCalled();
@@ -127,7 +122,7 @@ describe("sessão ao abrir a página", () => {
 describe("motivo da falha no login", () => {
   it("login por e-mail desligado mostra o motivo real, não 'senha inválida'", async () => {
     auth.entrar.mockRejectedValue(new ErroApi("configuracao", "O login por e-mail e senha está desligado neste projeto do Supabase."));
-    const r = await entrar("x@y.com", "s", "interno");
+    const r = await entrar("x@y.com", "s");
     expect(r).toMatchObject({ ok: false, motivo: "indisponivel" });
     expect(r.ok === false && r.detalhe).toContain("desligado");
   });
