@@ -1,10 +1,13 @@
+import { useChamadosSemResposta } from "@/hooks/useChamados";
 import type { Pendencia } from "./navegacao";
 import { podeAprovar, useLojaEscopo, usePapel } from "./sessao";
 import { useEstado } from "./store";
 
 /** Quantos itens esperam uma ação do usuário logado, por tipo de pendência. */
 export function usePendencias(): Record<Pendencia, number> {
-  const { ajustes, transferencias, reposicoes, chamados } = useEstado();
+  const { ajustes, transferencias, reposicoes } = useEstado();
+  // Chamados vêm da API (contagem do servidor, já no escopo de loja de quem está logado).
+  const chamadosSemResposta = useChamadosSemResposta();
   const papel = usePapel();
   const escopo = useLojaEscopo();
   const minha = (lojaId: string | null) => !escopo || lojaId === escopo;
@@ -26,7 +29,5 @@ export function usePendencias(): Record<Pendencia, number> {
         (r.destinatarioLojaId === null || minha(r.destinatarioLojaId)),
     ).length;
 
-  const abertos = chamados.filter((c) => c.status === "Aberto" && minha(c.lojaId)).length;
-
-  return { aprovacoes, transferencias: transf, chamados: abertos };
+  return { aprovacoes, transferencias: transf, chamados: chamadosSemResposta };
 }
