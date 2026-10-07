@@ -110,3 +110,13 @@ A conversa do chamado (`/painel/atendimento/chamado/:id`) e a caixa de conversas
 
 Código: `src/lib/chatAoVivo.ts` (lógica, testada com canais falsos), `src/lib/chatApi.ts` (chamadas e
 validação) e `src/hooks/useChat.ts` (ligação com o React). Exige a migration do chat no backend.
+
+## Início do gerente
+
+O dashboard do gerente (`/painel`) vem da API, com o escopo de loja decidido no servidor
+(`/api/v1/painel/gerencia/dashboard`, `/reposicao` e `/pendencias`, mais `/dashboard/atendimento`
+para os chamados da unidade). Mostra faturamento, pedidos e ticket médio contra o período anterior,
+faturamento ao longo do tempo, movimento por dia da semana, peças mais vendidas, reposição
+prioritária (saldo contra o ritmo de venda), chamados por motivo e mix loja × online. Os filtros de
+período, categoria e canal de venda ficam na URL. Código: `src/lib/gerenciaApi.ts`,
+`src/lib/gerenciaUi.ts` e `src/hooks/useDashboardGerente.ts`.

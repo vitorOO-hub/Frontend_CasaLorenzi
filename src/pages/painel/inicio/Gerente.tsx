@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   CartaoGrafico,
@@ -11,130 +10,129 @@ import {
   pct,
 } from "@/components/graficos";
 import { Badge, Metrica } from "@/components/ui";
+import { useDashboardGerente, type DadosGerente } from "@/hooks/useDashboardGerente";
+import { COR_MARCA, baldes, serie, variacao, type Periodo } from "@/lib/analise";
+import { moeda } from "@/lib/dados";
 import {
-  COR_MARCA,
-  baldes,
-  filtrarAtendimentos,
-  filtrarVendas,
-  giroDiario,
-  resumoAtendimentos,
-  resumoVendas,
-  serie,
-  todasAsVendas,
-  todosOsAtendimentos,
-  todosOsMovimentos,
-  totalVenda,
-  variacao,
-} from "@/lib/analise";
-import { moeda, nomeLoja } from "@/lib/dados";
-import { usePendencias } from "@/lib/pendencias";
-import { useLojaEscopo } from "@/lib/sessao";
-import { useEstado } from "@/lib/store";
+  DIAS_DA_SEMANA,
+  descricaoDaPeca,
+  pedidosPorDiaDaSemana,
+  pendenciasDoGerente,
+  selosDaReposicao,
+} from "@/lib/gerenciaUi";
 import { BarraFiltros, Cabecalho, FiltroSelect, Pendencias, useFiltros } from "./comum";
 
-const DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-const MOTIVOS = ["Dúvida", "Troca", "Entrega", "Defeito"];
+const CANAIS_DE_VENDA = ["loja", "online"];
 
-/** Gerente: os números da própria unidade, com período, categoria e canal. */
+/** Gerente: vendas, estoque e atendimento da própria unidade, tudo vindo da API (escopo no servidor). */
 export function DashboardGerente() {
-  const estado = useEstado();
-  const pend = usePendencias();
   const f = useFiltros();
-  const lojaId = useLojaEscopo() ?? "l1";
-
-  const vendas = useMemo(() => todasAsVendas(estado.pedidos, estado.produtos), [estado.pedidos, estado.produtos]);
-  const atendimentos = useMemo(() => todosOsAtendimentos(estado.chamados), [estado.chamados]);
-  const movimentos = useMemo(() => todosOsMovimentos(vendas, estado.produtos), [vendas, estado.produtos]);
-  const categorias = useMemo(() => Array.from(new Set(estado.produtos.map((p) => p.categoria))).sort(), [estado.produtos]);
-
-  const recorte = (r: { inicio: string; fim: string }) => ({ ...r, lojaIds: [lojaId], categoria: f.categoria, canal: f.canal });
-  const atual = filtrarVendas(vendas, recorte(f.intervalo.atual));
-  const rv = resumoVendas(atual);
-  const rvAnt = resumoVendas(filtrarVendas(vendas, recorte(f.intervalo.anterior)));
-  const atendAtual = filtrarAtendimentos(atendimentos, { ...f.intervalo.atual, lojaIds: [lojaId] });
-  const ra = resumoAtendimentos(atendAtual);
-  const raAnt = resumoAtendimentos(filtrarAtendimentos(atendimentos, { ...f.intervalo.anterior, lojaIds: [lojaId] }));
-
-  const bs = baldes(f.periodo);
-  const fatTempo = serie(atual, bs, (vs) => vs.reduce((s, v) => s + totalVenda(v), 0));
-
-  // Movimento por dia da semana (média de pedidos), útil para a escala da equipe.
-  const contagemDias = DIAS.map((_, d) => {
-    const dias = new Set<string>();
-    for (let x = f.intervalo.atual.inicio; x <= f.intervalo.atual.fim; ) {
-      if (new Date(`${x}T00:00:00Z`).getUTCDay() === d) dias.add(x);
-      const prox = new Date(`${x}T00:00:00Z`);
-      prox.setUTCDate(prox.getUTCDate() + 1);
-      x = prox.toISOString().slice(0, 10);
-    }
-    const pedidos = atual.filter((v) => dias.has(v.data)).length;
-    return dias.size ? pedidos / dias.size : 0;
+  const { inicio, fim } = f.intervalo.atual;
+  // O filtro de canal compartilha a URL com o dashboard do atendente; aqui só valem os canais de venda.
+  const canal = CANAIS_DE_VENDA.includes(f.canal) ? f.canal : undefined;
+  const { dados, carregando, erro, recarregar } = useDashboardGerente({
+    inicio,
+    fim,
+    categoria: f.categoria || undefined,
+    canal,
   });
-
-  // Peças mais vendidas
-  const porSku = new Map<string, number>();
-  atual.forEach((v) => v.itens.forEach((i) => porSku.set(i.sku, (porSku.get(i.sku) ?? 0) + i.quantidade)));
-  const top = [...porSku.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
-  const nome = (sku: string) => estado.produtos.find((p) => p.sku === sku)?.nome ?? sku;
-
-  // Reposição: dias de cobertura = saldo ÷ venda média diária.
-  const giro = giroDiario(movimentos, lojaId);
-  const cobertura = estado.produtos
-    .filter((p) => !f.categoria || p.categoria === f.categoria)
-    .map((p) => {
-      const s = p.saldos.find((x) => x.lojaId === lojaId)!;
-      const media = giro.get(p.sku) ?? 0;
-      return { p, saldo: s.quantidade, minimo: s.minimo, dias: media > 0 ? s.quantidade / media : Infinity };
-    })
-    .filter((x) => x.saldo <= x.minimo || x.dias < 21)
-    .sort((a, b) => a.dias - b.dias)
-    .slice(0, 6);
-
-  const motivos = MOTIVOS.map((m) => atendAtual.filter((a) => a.motivo === m).length);
+  const opcoes = dados?.vendas.opcoes;
 
   return (
     <div>
-      <Cabecalho descricao={`Gestão da unidade · ${nomeLoja(lojaId)}`} />
-      <Pendencias
-        itens={[
-          { texto: "ajustes para aprovar", valor: pend.aprovacoes, to: "/painel/estoque/aprovacoes" },
-          { texto: "transferências aguardando", valor: pend.transferencias, to: "/painel/estoque/transferencias" },
-          { texto: "chamados sem resposta", valor: pend.chamados, to: "/painel/atendimento" },
-        ]}
+      <Cabecalho
+        descricao={`Gestão da unidade · ${dados?.vendas.escopo.loja_nome ?? "carregando…"}`}
       />
+      {dados ? <Pendencias itens={pendenciasDoGerente(dados.pendencias)} /> : null}
 
       <BarraFiltros filtros={f}>
-        <FiltroSelect rotulo="Categoria" valor={f.categoria} onChange={(v) => f.definir("categoria", v)} opcoes={categorias} todos="Todas" />
-        <FiltroSelect rotulo="Canal de venda" valor={f.canal} onChange={(v) => f.definir("canal", v)} opcoes={["Loja", "Online"]} />
+        <FiltroSelect
+          rotulo="Categoria"
+          valor={f.categoria}
+          onChange={(v) => f.definir("categoria", v)}
+          opcoes={opcoes?.categorias ?? []}
+          todos="Todas"
+        />
+        <FiltroSelect
+          rotulo="Canal de venda"
+          valor={canal ?? ""}
+          onChange={(v) => f.definir("canal", v)}
+          opcoes={(opcoes?.canais ?? []).map((c) => ({ value: c.codigo, label: c.nome }))}
+        />
       </BarraFiltros>
 
+      {erro ? (
+        <div role="alert" className="mb-6 flex items-center justify-between gap-4 rounded-sm border border-perigo/40 bg-papel p-4 text-sm">
+          <span>{erro}</span>
+          <button onClick={recarregar} className="shrink-0 text-xs font-semibold text-marinho">
+            Tentar de novo
+          </button>
+        </div>
+      ) : null}
+
+      {!dados ? (
+        erro ? null : <p className="py-16 text-center text-sm text-suave">Carregando os dados da unidade…</p>
+      ) : (
+        <div aria-busy={carregando} className={carregando ? "opacity-60 transition-opacity" : "transition-opacity"}>
+          <Painel dados={dados} periodo={f.periodo} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Painel({ dados, periodo }: { dados: DadosGerente; periodo: Periodo }) {
+  const { vendas, reposicao, chamados } = dados;
+  const { atual, anterior } = vendas;
+  const bs = baldes(periodo);
+  const faturamento = serie(vendas.serie_diaria, bs, (xs) => xs.reduce((soma, x) => soma + x.faturamento, 0));
+  const porDia = pedidosPorDiaDaSemana(vendas.movimento_semana);
+  const top = vendas.pecas_mais_vendidas;
+  const motivos = chamados.por_categoria;
+  const respostaAtual = chamados.atual.resposta_media_horas;
+  const respostaAnterior = chamados.anterior.resposta_media_horas;
+
+  return (
+    <>
       <div className="mb-6 grid grid-cols-2 gap-4 xl:grid-cols-4">
-        <Metrica rotulo="Faturamento" valor={moedaCompacta(rv.faturamento)} extra={<Variacao valor={variacao(rv.faturamento, rvAnt.faturamento)} />} />
-        <Metrica rotulo="Pedidos" valor={rv.pedidos} extra={<Variacao valor={variacao(rv.pedidos, rvAnt.pedidos)} />} />
-        <Metrica rotulo="Ticket médio" valor={moeda(rv.ticket)} extra={<Variacao valor={variacao(rv.ticket, rvAnt.ticket)} />} />
+        <Metrica
+          rotulo="Faturamento"
+          valor={moedaCompacta(atual.faturamento)}
+          extra={<Variacao valor={variacao(atual.faturamento, anterior.faturamento)} />}
+        />
+        <Metrica rotulo="Pedidos" valor={atual.pedidos} extra={<Variacao valor={variacao(atual.pedidos, anterior.pedidos)} />} />
+        <Metrica
+          rotulo="Ticket médio"
+          valor={moeda(atual.ticket_medio)}
+          extra={<Variacao valor={variacao(atual.ticket_medio, anterior.ticket_medio)} />}
+        />
         <Metrica
           rotulo="Primeira resposta"
-          valor={ra.respostaMedia === null ? "—" : horasFmt(ra.respostaMedia)}
-          extra={<Variacao valor={ra.respostaMedia && raAnt.respostaMedia ? variacao(ra.respostaMedia, raAnt.respostaMedia) : null} inverter />}
+          valor={respostaAtual === null ? "—" : horasFmt(respostaAtual)}
+          extra={<Variacao valor={respostaAtual && respostaAnterior ? variacao(respostaAtual, respostaAnterior) : null} inverter />}
         />
       </div>
 
       <div className="mb-6 grid gap-6 lg:grid-cols-[2fr_1fr]">
         <CartaoGrafico
           titulo="Faturamento ao longo do tempo"
-          subtitulo={`Venda online: ${pct(rv.online)} do total`}
-          tabela={{ cabecalho: ["Período", "Faturamento"], linhas: bs.map((b, i) => [b.rotulo, moeda(fatTempo[i]!)]) }}
+          subtitulo={`Venda online: ${pct(atual.participacao_online)} do total`}
+          tabela={{ cabecalho: ["Período", "Faturamento"], linhas: bs.map((b, i) => [b.rotulo, moeda(faturamento[i]!)]) }}
         >
-          <GraficoLinhas rotulos={bs.map((b) => b.rotulo)} series={[{ id: "fat", nome: "Faturamento", cor: COR_MARCA, valores: fatTempo }]} formatar={moedaCompacta} />
+          <GraficoLinhas
+            rotulos={bs.map((b) => b.rotulo)}
+            series={[{ id: "fat", nome: "Faturamento", cor: COR_MARCA, valores: faturamento }]}
+            formatar={moedaCompacta}
+          />
         </CartaoGrafico>
         <CartaoGrafico
           titulo="Movimento por dia da semana"
           subtitulo="Média de pedidos por dia — apoio à escala da equipe"
-          tabela={{ cabecalho: ["Dia", "Pedidos/dia"], linhas: DIAS.map((d, i) => [d, contagemDias[i]!.toFixed(1)]) }}
+          tabela={{ cabecalho: ["Dia", "Pedidos/dia"], linhas: DIAS_DA_SEMANA.map((d, i) => [d, porDia[i]!.toFixed(1)]) }}
         >
           <GraficoColunas
-            rotulos={DIAS}
-            series={[{ id: "ped", nome: "Pedidos por dia", cor: COR_MARCA, valores: contagemDias }]}
+            rotulos={DIAS_DA_SEMANA}
+            series={[{ id: "ped", nome: "Pedidos por dia", cor: COR_MARCA, valores: porDia }]}
             formatar={(n) => n.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
             altura={200}
           />
@@ -144,11 +142,11 @@ export function DashboardGerente() {
       <div className="grid gap-6 lg:grid-cols-2">
         <CartaoGrafico
           titulo="Peças mais vendidas"
-          tabela={{ cabecalho: ["Peça", "Unidades"], linhas: top.map(([sku, q]) => [nome(sku), q]) }}
+          tabela={{ cabecalho: ["Peça", "Unidades"], linhas: top.map((p) => [p.nome, p.unidades]) }}
         >
           <GraficoBarras
-            categorias={top.map(([sku]) => nome(sku))}
-            series={[{ id: "un", nome: "Unidades", cor: COR_MARCA, valores: top.map(([, q]) => q) }]}
+            categorias={top.map((p) => p.nome)}
+            series={[{ id: "un", nome: "Unidades", cor: COR_MARCA, valores: top.map((p) => p.unidades) }]}
             formatar={(n) => `${n} un.`}
           />
         </CartaoGrafico>
@@ -164,31 +162,38 @@ export function DashboardGerente() {
             </Link>
           </header>
           <ul className="divide-y divide-linha px-5 pb-2 pt-2">
-            {cobertura.map((c) => (
-              <li key={c.p.sku}>
-                <Link to={`/painel/estoque/peca/${c.p.sku}`} className="flex items-center gap-3 py-3 text-sm hover:text-marinho">
-                  <span className="flex-1 truncate">{c.p.nome}</span>
-                  <span className="text-xs tabular-nums text-suave">
-                    {c.saldo} un. · mín. {c.minimo}
+            {reposicao.itens.map((item) => {
+              const selo = selosDaReposicao(item);
+              return (
+                <li key={item.id_variacao} className="flex items-center gap-3 py-3 text-sm">
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate">{descricaoDaPeca(item)}</span>
+                    <span className="font-mono text-[11px] text-suave">{item.sku}</span>
                   </span>
-                  <Badge tom={c.saldo === 0 ? "perigo" : c.dias < 7 ? "alerta" : "neutro"}>
-                    {c.saldo === 0 ? "Esgotada" : c.dias === Infinity ? "Sem giro" : `~${Math.max(1, Math.round(c.dias))} dias`}
-                  </Badge>
-                </Link>
-              </li>
-            ))}
-            {cobertura.length === 0 ? <li className="py-6 text-center text-sm text-suave">Estoque confortável.</li> : null}
+                  <span className="text-xs tabular-nums text-suave">
+                    {item.saldo} un. · mín. {item.minimo}
+                  </span>
+                  <Badge tom={selo.tom}>{selo.texto}</Badge>
+                </li>
+              );
+            })}
+            {reposicao.itens.length === 0 ? <li className="py-6 text-center text-sm text-suave">Estoque confortável.</li> : null}
           </ul>
+          {reposicao.total > reposicao.itens.length ? (
+            <p className="border-t border-linha px-5 py-2 text-xs text-suave">
+              Mostrando {reposicao.itens.length} de {reposicao.total} peças que precisam de atenção.
+            </p>
+          ) : null}
         </section>
 
         <CartaoGrafico
           titulo="Chamados da unidade por motivo"
-          subtitulo={`${ra.total} no período · ${pct(ra.taxaResolucao)} resolvidos`}
-          tabela={{ cabecalho: ["Motivo", "Chamados"], linhas: MOTIVOS.map((m, i) => [m, motivos[i]!]) }}
+          subtitulo={`${chamados.atual.total} no período · ${pct(chamados.atual.taxa_resolucao)} resolvidos`}
+          tabela={{ cabecalho: ["Motivo", "Chamados"], linhas: motivos.map((m) => [m.nome, m.total]) }}
         >
           <GraficoBarras
-            categorias={MOTIVOS}
-            series={[{ id: "ch", nome: "Chamados", cor: COR_MARCA, valores: motivos }]}
+            categorias={motivos.map((m) => m.nome)}
+            series={[{ id: "ch", nome: "Chamados", cor: COR_MARCA, valores: motivos.map((m) => m.total) }]}
             formatar={(n) => String(n)}
           />
         </CartaoGrafico>
@@ -197,8 +202,8 @@ export function DashboardGerente() {
           <div className="space-y-4 pt-2">
             {(
               [
-                ["Loja física", 1 - rv.online, "#4a7ba0"],
-                ["Online", rv.online, "#b46746"],
+                ["Loja física", 1 - atual.participacao_online, "#4a7ba0"],
+                ["Online", atual.participacao_online, "#b46746"],
               ] as const
             ).map(([rotulo, v, cor]) => (
               <div key={rotulo}>
@@ -208,7 +213,7 @@ export function DashboardGerente() {
                     {rotulo}
                   </span>
                   <span className="tabular-nums">
-                    {pct(v)} · <span className="text-suave">{moeda(rv.faturamento * v)}</span>
+                    {pct(v)} · <span className="text-suave">{moeda(atual.faturamento * v)}</span>
                   </span>
                 </div>
                 <div className="h-2.5 overflow-hidden rounded-full bg-areia">
@@ -216,10 +221,12 @@ export function DashboardGerente() {
                 </div>
               </div>
             ))}
-            <p className="text-xs text-suave">{rv.pecas} peças vendidas em {rv.pedidos} pedidos.</p>
+            <p className="text-xs text-suave">
+              {atual.pecas} peças vendidas em {atual.pedidos} pedidos.
+            </p>
           </div>
         </CartaoGrafico>
       </div>
-    </div>
+    </>
   );
 }
