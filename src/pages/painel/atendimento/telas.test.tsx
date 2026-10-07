@@ -66,8 +66,47 @@ vi.mock("@/hooks/useChamados", () => {
         },
         null,
       ),
-    useChamado: () => ({ detalhe: resposta(detalhe, null), conversa: resposta(mensagens, []), recarregar: () => undefined }),
+    useDetalheChamado: () => resposta(detalhe, null),
     useChamadosSemResposta: () => 3,
+    mensagensDeExemplo: mensagens,
+  };
+});
+
+// A conversa ao vivo (Realtime) também é trocada por dados fixos.
+vi.mock("@/hooks/useChat", async () => {
+  const { mensagensDeExemplo } = (await import("@/hooks/useChamados")) as unknown as {
+    mensagensDeExemplo: unknown[];
+  };
+  const sessao = {
+    id_atendimento: "a-1",
+    topico: "chamado:00000000-0000-4000-8000-000000000001",
+    canal_privado: true,
+    filtro_mensagens: "id_atendimento=eq.a-1",
+    eu: { id_usuario: "u-1", nome: "Marina", papel: "gerente_loja" },
+    status: { codigo: "aberto", nome: "Aberto" },
+    id_usuario_responsavel: null,
+    responsavel_nome: null,
+    sou_responsavel: false,
+    pode_responder: true,
+    motivo_bloqueio: null,
+    ultimo_id_mensagem: null,
+    nao_lidas: 0,
+  };
+  const base = {
+    digitando: [],
+    presentes: [],
+    conexao: "ao_vivo",
+    erro: null,
+    enviar: () => Promise.resolve(),
+    avisarDigitando: () => undefined,
+    recarregar: () => Promise.resolve(),
+  };
+  return {
+    useChatAoVivo: () => {
+      if (hooks.modo === "carregando") return { ...base, sessao: null, mensagens: [], carregando: true, conexao: "conectando" };
+      if (hooks.modo === "erro") return { ...base, sessao: null, mensagens: [], carregando: false, erro: "Sem conexão com o servidor." };
+      return { ...base, sessao, mensagens: hooks.modo === "vazio" ? [] : mensagensDeExemplo, carregando: false };
+    },
   };
 });
 

@@ -28,9 +28,9 @@ describe("rotas privadas da área de atendimento", () => {
     expect(secoesDoPapel("atendente").map((s) => s.id)).toEqual(["inicio", "atendimento"]);
   });
 
-  it("as abas de atendimento do atendente são Chamados e Clientes", () => {
+  it("as abas de atendimento do atendente são Chamados, Conversas e Clientes", () => {
     const secao = secaoDoCaminho("/painel/atendimento")!;
-    expect(abasDoPapel(secao, "atendente").map((a) => a.rotulo)).toEqual(["Chamados", "Clientes"]);
+    expect(abasDoPapel(secao, "atendente").map((a) => a.rotulo)).toEqual(["Chamados", "Conversas", "Clientes"]);
   });
 
   it("variações do caminho não furam a proteção", () => {
