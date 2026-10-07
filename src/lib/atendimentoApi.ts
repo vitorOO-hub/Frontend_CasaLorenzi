@@ -1,4 +1,7 @@
 import { api, type OpcoesApi } from "./api";
+import { lista, numero, numeroOuNulo, objeto, opcao, texto, textoOuNulo, type Opcao } from "./validacao";
+
+export type { Opcao };
 
 /** Tipos e chamadas do dashboard de atendimento (espelham app/dashboard/schemas.py do backend). */
 
@@ -8,8 +11,6 @@ export type Resumo = {
   taxa_resolucao: number;
   resposta_media_horas: number | null;
 };
-
-export type Opcao = { codigo: string; nome: string };
 
 export type DashboardAtendimento = {
   periodo: { inicio: string; fim: string };
@@ -58,25 +59,6 @@ export type FiltrosDashboard = {
 
 // ---------- Validação do formato da resposta (nada de dado cru direto na tela) ----------
 
-const falha = (campo: string): never => {
-  throw new Error(`campo inválido: ${campo}`);
-};
-
-function objeto(valor: unknown, campo: string): Record<string, unknown> {
-  return valor && typeof valor === "object" && !Array.isArray(valor)
-    ? (valor as Record<string, unknown>)
-    : falha(campo);
-}
-
-const lista = (valor: unknown, campo: string): unknown[] => (Array.isArray(valor) ? valor : falha(campo));
-const texto = (valor: unknown, campo: string): string => (typeof valor === "string" ? valor : falha(campo));
-const numero = (valor: unknown, campo: string): number =>
-  typeof valor === "number" && Number.isFinite(valor) ? valor : falha(campo);
-const numeroOuNulo = (valor: unknown, campo: string): number | null =>
-  valor === null ? null : numero(valor, campo);
-const textoOuNulo = (valor: unknown, campo: string): string | null =>
-  valor === null ? null : texto(valor, campo);
-
 function resumo(valor: unknown, campo: string): Resumo {
   const o = objeto(valor, campo);
   return {
@@ -85,11 +67,6 @@ function resumo(valor: unknown, campo: string): Resumo {
     taxa_resolucao: numero(o.taxa_resolucao, `${campo}.taxa_resolucao`),
     resposta_media_horas: numeroOuNulo(o.resposta_media_horas, `${campo}.resposta_media_horas`),
   };
-}
-
-function opcao(valor: unknown, campo: string): Opcao {
-  const o = objeto(valor, campo);
-  return { codigo: texto(o.codigo, `${campo}.codigo`), nome: texto(o.nome, `${campo}.nome`) };
 }
 
 function periodo(valor: unknown, campo: string) {

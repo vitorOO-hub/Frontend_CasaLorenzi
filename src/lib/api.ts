@@ -42,6 +42,9 @@ export type OpcoesApi = {
   timeoutMs?: number;
 };
 
+type Metodo = "GET" | "POST";
+type Pedido = { metodo: Metodo; corpo?: unknown };
+
 type Dependencias = {
   baseUrl: string;
   obterToken: () => Promise<string | null>;
@@ -62,9 +65,12 @@ function validarBaseUrl(baseUrl: string): string {
 
 function mensagemDoStatus(status: number, detalhe: unknown): string {
   if (status === 401) return "Sua sessão expirou. Entre novamente.";
+  // O backend responde 403, 404, 409 e 422 com a explicação em português ("X já assumiu este chamado").
+  if ([403, 404, 409, 422].includes(status) && typeof detalhe === "string" && detalhe) return detalhe;
   if (status === 403) return "Você não tem permissão para ver estes dados.";
+  if (status === 404) return "Não encontramos este registro.";
+  if (status === 409) return "Este registro mudou enquanto você olhava. Atualize e tente de novo.";
   if (status === 429) return "Muitas requisições. Aguarde um instante e tente de novo.";
-  if (status === 422 && typeof detalhe === "string") return detalhe;
   if (status >= 500) return "O servidor está indisponível no momento. Tente de novo em instantes.";
   return "Não foi possível carregar os dados.";
 }
@@ -112,12 +118,16 @@ export function criarClienteApi(dependencias: Dependencias) {
     parametros: Parametros | undefined,
     token: string,
     opcoes: OpcoesApi,
+    pedido: Pedido,
   ): Promise<Response> {
     const tempo = sinalComTimeout(opcoes.sinal, opcoes.timeoutMs ?? TIMEOUT_PADRAO_MS);
+    const cabecalhos: Record<string, string> = { Authorization: `Bearer ${token}`, Accept: "application/json" };
+    if (pedido.corpo !== undefined) cabecalhos["Content-Type"] = "application/json";
     try {
       return await buscar(montarUrl(baseUrl, caminho, parametros), {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+        method: pedido.metodo,
+        headers: cabecalhos,
+        body: pedido.corpo === undefined ? undefined : JSON.stringify(pedido.corpo),
         signal: tempo.sinal,
       });
     } catch (erro) {
@@ -131,23 +141,25 @@ export function criarClienteApi(dependencias: Dependencias) {
   }
 
   /**
-   * GET autenticado. Em 401 renova o token uma vez e repete; se ainda falhar, a sessão acabou.
-   * `validar` confere o formato da resposta antes de qualquer tela usá-la.
+   * Chamada autenticada. Em 401 renova o token uma vez e repete (seguro também para POST: 401 quer
+   * dizer que nada foi executado); se ainda falhar, a sessão acabou. `validar` confere o formato da
+   * resposta antes de qualquer tela usá-la.
    */
-  async function get<T>(
+  async function chamar<T>(
+    pedido: Pedido,
     caminho: string,
     validar: (dados: unknown) => T,
-    parametros?: Parametros,
-    opcoes: OpcoesApi = {},
+    parametros: Parametros | undefined,
+    opcoes: OpcoesApi,
   ): Promise<T> {
     let token = await dependencias.obterToken();
     if (!token) throw erroApi(401, mensagemDoStatus(401, undefined));
 
-    let resposta = await requisitar(caminho, parametros, token, opcoes);
+    let resposta = await requisitar(caminho, parametros, token, opcoes, pedido);
     if (resposta.status === 401) {
       token = await dependencias.renovarToken();
       if (!token) throw erroApi(401, mensagemDoStatus(401, undefined));
-      resposta = await requisitar(caminho, parametros, token, opcoes);
+      resposta = await requisitar(caminho, parametros, token, opcoes, pedido);
     }
 
     if (!resposta.ok) {
@@ -168,7 +180,21 @@ export function criarClienteApi(dependencias: Dependencias) {
     }
   }
 
-  return { get };
+  const get = <T>(
+    caminho: string,
+    validar: (dados: unknown) => T,
+    parametros?: Parametros,
+    opcoes: OpcoesApi = {},
+  ) => chamar({ metodo: "GET" }, caminho, validar, parametros, opcoes);
+
+  const post = <T>(
+    caminho: string,
+    validar: (dados: unknown) => T,
+    corpo?: unknown,
+    opcoes: OpcoesApi = {},
+  ) => chamar({ metodo: "POST", corpo: corpo ?? {} }, caminho, validar, undefined, opcoes);
+
+  return { get, post };
 }
 
 const baseUrlPadrao = config.apiUrl || "http://127.0.0.1:8000";

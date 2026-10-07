@@ -67,12 +67,27 @@ describe("cliente da API", () => {
     expect(buscar).toHaveBeenCalledTimes(2);
   });
 
-  it("403 vira mensagem de permissão", async () => {
-    const { cliente } = montar([json({ detail: "x" }, { status: 403 })]);
+  it("403 sem explicação do servidor vira mensagem de permissão", async () => {
+    const { cliente } = montar([json({}, { status: 403 })]);
     await expect(cliente.get("/x", aceita)).rejects.toMatchObject({
       status: 403,
       message: "Você não tem permissão para ver estes dados.",
     });
+  });
+
+  it("403, 404 e 409 mostram a explicação em português que o servidor mandou", async () => {
+    for (const status of [403, 404, 409]) {
+      const { cliente } = montar([json({ detail: "Rafael já assumiu este chamado" }, { status })]);
+      await expect(cliente.get("/x", aceita)).rejects.toMatchObject({
+        status,
+        message: "Rafael já assumiu este chamado",
+      });
+    }
+  });
+
+  it("409 sem explicação cai numa mensagem genérica de conflito", async () => {
+    const { cliente } = montar([json({}, { status: 409 })]);
+    await expect(cliente.get("/x", aceita)).rejects.toMatchObject({ status: 409, codigo: "conflito" });
   });
 
   it("429 vira o código de limite da interface", async () => {
@@ -170,5 +185,49 @@ describe("endereço da API", () => {
 
   it("recusa HTTP em endereço público", () => {
     expect(() => criar("http://api.casalorenzi.com.br")).toThrow(/HTTPS/);
+  });
+});
+
+describe("POST", () => {
+  it("manda o corpo em JSON e o token", async () => {
+    const { cliente, buscar } = montar([json({ ok: true }, { status: 201 })]);
+    await expect(cliente.post("/x", aceita, { texto: "Ola" })).resolves.toEqual({ ok: true });
+    const init = buscar.mock.calls[0]![1]!;
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(String(init.body))).toEqual({ texto: "Ola" });
+    const cabecalhos = init.headers as Record<string, string>;
+    expect(cabecalhos["Content-Type"]).toBe("application/json");
+    expect(cabecalhos.Authorization).toBe("Bearer token-velho");
+  });
+
+  it("sem corpo ainda manda um objeto vazio (rotas de ação como assumir)", async () => {
+    const { cliente, buscar } = montar([json({ ok: true })]);
+    await cliente.post("/x/assumir", aceita);
+    expect(String(buscar.mock.calls[0]![1]!.body)).toBe("{}");
+  });
+
+  it("em 401 renova o token e repete o POST com o mesmo corpo", async () => {
+    const { cliente, buscar, renovarToken } = montar([json({}, { status: 401 }), json({ ok: true })]);
+    await cliente.post("/x", aceita, { texto: "Ola" });
+    expect(renovarToken).toHaveBeenCalledTimes(1);
+    expect(buscar).toHaveBeenCalledTimes(2);
+    expect(String(buscar.mock.calls[1]![1]!.body)).toBe(JSON.stringify({ texto: "Ola" }));
+  });
+
+  it("conflito do servidor (409) chega com a mensagem dele", async () => {
+    const { cliente } = montar([json({ detail: "Este chamado já foi resolvido" }, { status: 409 })]);
+    await expect(cliente.post("/x/resolver", aceita)).rejects.toMatchObject({
+      status: 409,
+      codigo: "conflito",
+      message: "Este chamado já foi resolvido",
+    });
+  });
+
+  it("um GET não leva corpo nem Content-Type", async () => {
+    const { cliente, buscar } = montar([json({ ok: true })]);
+    await cliente.get("/x", aceita);
+    const init = buscar.mock.calls[0]![1]!;
+    expect(init.body).toBeUndefined();
+    expect((init.headers as Record<string, string>)["Content-Type"]).toBeUndefined();
   });
 });
