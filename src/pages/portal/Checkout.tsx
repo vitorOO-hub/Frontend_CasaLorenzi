@@ -104,6 +104,11 @@ export function Checkout() {
   }, [pagamento, codigoPix]);
 
   useEffect(() => {
+    if (sessao?.tipo !== "cliente") return;
+    void acoes.sincronizarCarrinho().catch(() => undefined);
+  }, [sessao?.tipo]);
+
+  useEffect(() => {
     if (!modoApi || sessao?.tipo !== "cliente") return;
     let ativo = true;
     listarLojasCliente()
