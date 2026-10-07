@@ -233,9 +233,6 @@ export function PortalLayout() {
             <Link to="/agendar" className="py-1.5 hover:text-terracota">
               Agendar uma prova
             </Link>
-            <Link to="/entrar" className="py-1.5 text-[11px] text-suave hover:text-tinta">
-              Área interna
-            </Link>
           </div>
         </aside>
       </div>
@@ -347,7 +344,6 @@ function Rodape() {
         ["Caderno do Ateliê", "/caderno"],
         ["As três casas", "/casas"],
         ["1962: a primeira tesoura", "/caderno/1962"],
-        ["Área interna", "/entrar"],
       ],
     ],
   ];

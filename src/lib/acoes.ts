@@ -48,7 +48,9 @@ function exigirLoja(quem: Interno, ...lojas: (string | null)[]) {
 
 const ESTOQUE: Papel[] = ["operador_estoque", "gerente_loja", "admin"];
 const GESTAO: Papel[] = ["gerente_loja", "admin"];
-const ATENDIMENTO: Papel[] = ["atendente", "gerente_loja", "admin"];
+/** Transferências e reposição são operação da unidade: o admin (dono da rede) não opera. */
+const TRANSFERENCIA: Papel[] = ["operador_estoque", "gerente_loja"];
+const ATENDIMENTO: Papel[] = ["atendente", "gerente_loja"];
 
 const estado = () => store.estadoAtual();
 
@@ -93,7 +95,7 @@ export async function movimentar(dados: { sku: string; lojaId: string; tipo: "En
 /** POST /transferencias — operador/gerente precisam ser da origem ou do destino. */
 export async function solicitarTransferencia(dados: { sku: string; origemId: string; destinoId: string; quantidade: number }) {
   await rede();
-  const quem = interno(...ESTOQUE);
+  const quem = interno(...TRANSFERENCIA);
   if (dados.origemId === dados.destinoId) throw new ErroApi("validacao", "A loja de origem precisa ser diferente da de destino.");
   exigirLoja(quem, dados.origemId, dados.destinoId);
   inteiroPositivo(dados.quantidade);
@@ -110,7 +112,7 @@ function transferencia(id: string) {
 /** POST /transferencias/{id}/aceitar — a origem aceita e o saldo dela é debitado. */
 export async function aceitarTransferencia(id: string) {
   await rede();
-  const quem = interno(...ESTOQUE);
+  const quem = interno(...TRANSFERENCIA);
   const t = transferencia(id);
   exigirLoja(quem, t.origemId);
   if (t.status !== "Pendente") throw new ErroApi("conflito", `Esta transferência já está ${t.status.toLowerCase()}.`);
@@ -122,7 +124,7 @@ export async function aceitarTransferencia(id: string) {
 /** POST /transferencias/{id}/recusar */
 export async function recusarTransferencia(id: string) {
   await rede();
-  const quem = interno(...ESTOQUE);
+  const quem = interno(...TRANSFERENCIA);
   const t = transferencia(id);
   exigirLoja(quem, t.origemId);
   if (t.status !== "Pendente") throw new ErroApi("conflito", `Esta transferência já está ${t.status.toLowerCase()}.`);
@@ -132,7 +134,7 @@ export async function recusarTransferencia(id: string) {
 /** POST /transferencias/{id}/receber — o destino confirma a chegada e é creditado. */
 export async function receberTransferencia(id: string) {
   await rede();
-  const quem = interno(...ESTOQUE);
+  const quem = interno(...TRANSFERENCIA);
   const t = transferencia(id);
   exigirLoja(quem, t.destinoId);
   if (t.status !== "Aceita") throw new ErroApi("conflito", "Só dá para receber uma transferência já aceita pela origem.");
@@ -142,7 +144,7 @@ export async function receberTransferencia(id: string) {
 /** POST /reposicoes — destinatário nulo = qualquer loja da rede pode aceitar. */
 export async function pedirReposicao(dados: { sku: string; lojaId: string; destinatarioId: string | null; quantidade: number }) {
   await rede();
-  const quem = interno(...ESTOQUE);
+  const quem = interno(...TRANSFERENCIA);
   exigirLoja(quem, dados.lojaId);
   inteiroPositivo(dados.quantidade);
   produto(dados.sku);
@@ -160,7 +162,7 @@ function reposicao(id: string) {
 /** POST /reposicoes/{id}/aceitar — gera a transferência da loja que atende para a solicitante. */
 export async function aceitarReposicao(id: string, lojaQueAtende: string) {
   await rede();
-  const quem = interno(...ESTOQUE);
+  const quem = interno(...TRANSFERENCIA);
   const r = reposicao(id);
   exigirLoja(quem, lojaQueAtende);
   if (lojaQueAtende === r.solicitanteLojaId) throw new ErroApi("validacao", "A loja que pediu não pode atender o próprio pedido.");
@@ -171,7 +173,7 @@ export async function aceitarReposicao(id: string, lojaQueAtende: string) {
 /** POST /reposicoes/{id}/recusar */
 export async function recusarReposicao(id: string) {
   await rede();
-  const quem = interno(...ESTOQUE);
+  const quem = interno(...TRANSFERENCIA);
   const r = reposicao(id);
   if (r.destinatarioLojaId) exigirLoja(quem, r.destinatarioLojaId);
   store.recusarReposicao(id, quem.nome);

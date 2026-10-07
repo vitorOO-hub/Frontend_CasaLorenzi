@@ -131,8 +131,6 @@ export function DashboardAdmin() {
       <Pendencias
         itens={[
           { texto: "ajustes para aprovar", valor: pend.aprovacoes, to: "/painel/estoque/aprovacoes" },
-          { texto: "transferências aguardando", valor: pend.transferencias, to: "/painel/estoque/transferencias" },
-          { texto: "chamados sem resposta", valor: pend.chamados, to: "/painel/atendimento" },
         ]}
       />
 
