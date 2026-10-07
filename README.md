@@ -120,3 +120,13 @@ faturamento ao longo do tempo, movimento por dia da semana, peças mais vendidas
 prioritária (saldo contra o ritmo de venda), chamados por motivo e mix loja × online. Os filtros de
 período, categoria e canal de venda ficam na URL. Código: `src/lib/gerenciaApi.ts`,
 `src/lib/gerenciaUi.ts` e `src/hooks/useDashboardGerente.ts`.
+
+## Estoque: saldo e movimentações
+
+As telas **Saldo** e **Movimentações** (`/painel/estoque`) leem a API (`/api/v1/painel/estoque/opcoes`,
+`/saldo` e `/movimentacoes`); nada nelas vem do estoque simulado. O escopo de loja é decidido no
+servidor: operador e gerente veem a própria unidade, o admin vê a rede (colunas por loja). O operador
+vê só as movimentações que ele mesmo registrou. Clicar numa peça do saldo abre o histórico dela.
+Os botões de registrar entrada/saída e ajuste ficam desativados até existirem os endpoints de
+escrita. Código: `src/lib/estoquePainelApi.ts`, `src/lib/estoquePainelUi.ts` e
+`src/hooks/useEstoquePainel.ts`.
