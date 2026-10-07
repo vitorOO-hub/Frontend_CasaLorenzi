@@ -5,8 +5,11 @@ import { cn } from "@/components/ui";
 import { Foto, botaoLoja } from "@/components/vitrine";
 import { lojas, moeda } from "@/lib/dados";
 import { casas, fotoEstudio } from "@/lib/loja";
+import { novaChaveIdempotencia } from "@/api/http";
+import * as acoes from "@/lib/acoes";
 import { useSessao } from "@/lib/sessao";
-import { finalizarCompra, useEstado } from "@/lib/store";
+import { useEstado } from "@/lib/store";
+import { useAcao } from "@/lib/useAcao";
 import { freteDe } from "./Sacola";
 
 const estados = "AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO".split(" ");
@@ -63,6 +66,9 @@ export function Checkout() {
   const [parcelas, setParcelas] = useState("1");
   const [qrPix, setQrPix] = useState<string | null>(null);
   const [pedido, setPedido] = useState<string | null>(null);
+  // Uma chave por tentativa de compra: duplo clique ou reenvio não criam dois pedidos.
+  const [chave] = useState(novaChaveIdempotencia);
+  const { executar, ocupado, erro } = useAcao();
 
   const subtotal = carrinho.reduce((s, i) => s + i.valor * i.quantidade, 0);
   const frete = entrega === "loja" ? 0 : freteDe(subtotal);
@@ -110,11 +116,11 @@ export function Checkout() {
         onSubmit={(e) => {
           e.preventDefault();
           if (sessao?.tipo !== "cliente") return;
-          const novo = finalizarCompra(sessao.clienteId, entrega === "loja" ? lojaRetirada : lojas[0]!.id, frete);
-          if (novo) {
+          void executar("pedido", async () => {
+            const novo = await acoes.fecharPedido({ lojaId: entrega === "loja" ? lojaRetirada : lojas[0]!.id, frete }, chave);
             setPedido(novo.id);
             window.scrollTo(0, 0);
-          }
+          });
         }}
       >
         <div>
@@ -235,8 +241,9 @@ export function Checkout() {
             <span>Total</span>
             <span className="font-display text-[34px]">{moeda(total)}</span>
           </div>
-          <button type="submit" className={cn(botaoLoja(), "mt-6 w-full")}>
-            Confirmar o pedido
+          {erro ? <p role="alert" className="mt-6 text-sm text-perigo">{erro}</p> : null}
+          <button type="submit" disabled={ocupado !== null} className={cn(botaoLoja(), "mt-6 w-full")}>
+            {ocupado ? "Confirmando…" : "Confirmar o pedido"}
           </button>
           <p className="mt-3 text-center text-xs text-suave">Protótipo: nenhum pagamento é processado.</p>
         </aside>

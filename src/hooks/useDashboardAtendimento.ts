@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ErroApi } from "@/lib/api";
+import { ErroApi } from "@/api/erros";
 import {
   buscarDashboard,
   buscarFila,

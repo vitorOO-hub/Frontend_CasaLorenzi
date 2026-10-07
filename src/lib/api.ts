@@ -1,15 +1,37 @@
-import { obterToken, renovarToken } from "./supabase";
+import { config } from "@/api/config";
+import { ErroApi, type CodigoErro } from "@/api/erros";
+import { supabase, tokenAtual } from "@/api/supabase";
 
-/** Erro de uma chamada à API, já com mensagem pronta para mostrar ao usuário. */
-export class ErroApi extends Error {
-  readonly status: number;
-  readonly retryApos?: number;
+/** Mesmo ErroApi do resto do front: o status HTTP vira o código estável da interface. */
+function codigoDoStatus(status: number): CodigoErro {
+  if (status === 0) return "rede";
+  if (status === 401) return "nao_autenticado";
+  if (status === 403) return "sem_permissao";
+  if (status === 404) return "nao_encontrado";
+  if (status === 409) return "conflito";
+  if (status === 422) return "validacao";
+  if (status === 429) return "limite";
+  return "servidor";
+}
 
-  constructor(status: number, mensagem: string, retryApos?: number) {
-    super(mensagem);
-    this.name = "ErroApi";
-    this.status = status;
-    this.retryApos = retryApos;
+const erroApi = (status: number, mensagem: string) => new ErroApi(codigoDoStatus(status), mensagem, status);
+
+/** Token da sessão atual; sem Supabase configurado ou sem login, null. */
+async function obterToken(): Promise<string | null> {
+  try {
+    return await tokenAtual();
+  } catch {
+    return null;
+  }
+}
+
+/** Força a renovação do token; null se a sessão não pode mais ser renovada. */
+async function renovarToken(): Promise<string | null> {
+  try {
+    const { data, error } = await supabase().auth.refreshSession();
+    return error ? null : (data.session?.access_token ?? null);
+  } catch {
+    return null;
   }
 }
 
@@ -101,8 +123,8 @@ export function criarClienteApi(dependencias: Dependencias) {
     } catch (erro) {
       // Quem cancelou (troca de filtro, desmontagem) não quer mensagem de erro.
       if (opcoes.sinal?.aborted) throw erro;
-      if (tempo.sinal.aborted) throw new ErroApi(0, "O servidor demorou demais para responder.");
-      throw new ErroApi(0, "Sem conexão com o servidor. Verifique sua internet.");
+      if (tempo.sinal.aborted) throw erroApi(0, "O servidor demorou demais para responder.");
+      throw erroApi(0, "Sem conexão com o servidor. Verifique sua internet.");
     } finally {
       tempo.limpar();
     }
@@ -119,41 +141,36 @@ export function criarClienteApi(dependencias: Dependencias) {
     opcoes: OpcoesApi = {},
   ): Promise<T> {
     let token = await dependencias.obterToken();
-    if (!token) throw new ErroApi(401, mensagemDoStatus(401, undefined));
+    if (!token) throw erroApi(401, mensagemDoStatus(401, undefined));
 
     let resposta = await requisitar(caminho, parametros, token, opcoes);
     if (resposta.status === 401) {
       token = await dependencias.renovarToken();
-      if (!token) throw new ErroApi(401, mensagemDoStatus(401, undefined));
+      if (!token) throw erroApi(401, mensagemDoStatus(401, undefined));
       resposta = await requisitar(caminho, parametros, token, opcoes);
     }
 
     if (!resposta.ok) {
       const detalhe = await detalheDoCorpo(resposta);
-      const espera = Number(resposta.headers.get("Retry-After"));
-      throw new ErroApi(
-        resposta.status,
-        mensagemDoStatus(resposta.status, detalhe),
-        Number.isFinite(espera) && espera > 0 ? espera : undefined,
-      );
+      throw erroApi(resposta.status, mensagemDoStatus(resposta.status, detalhe));
     }
 
     let corpo: unknown;
     try {
       corpo = await resposta.json();
     } catch {
-      throw new ErroApi(502, "Resposta inesperada do servidor.");
+      throw erroApi(502, "Resposta inesperada do servidor.");
     }
     try {
       return validar(corpo);
     } catch {
-      throw new ErroApi(502, "Resposta inesperada do servidor.");
+      throw erroApi(502, "Resposta inesperada do servidor.");
     }
   }
 
   return { get };
 }
 
-const baseUrlPadrao = (import.meta.env.VITE_API_URL as string | undefined) ?? "http://127.0.0.1:8000";
+const baseUrlPadrao = config.apiUrl || "http://127.0.0.1:8000";
 
 export const api = criarClienteApi({ baseUrl: baseUrlPadrao, obterToken, renovarToken });

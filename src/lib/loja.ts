@@ -64,6 +64,29 @@ export const detalhes: Record<string, Detalhe> = {
   "CL-0815": D("em camurça", [CORES.cafe, CORES.carvao], "1777987601423-f350ac29b3e9", "Curtume em Franca, SP", "Franca, SP", "Elástico lateral e sola que aguenta calçada molhada."),
 };
 
+/**
+ * Subtipo da peça dentro da categoria (ex.: Outerwear → Trench coats, Jaquetas). É o que
+ * aparece no topo da página de uma categoria; trocar de categoria é pelo menu.
+ */
+const tipos: Record<string, string> = {
+  "CL-0101": "Camisas de linho",
+  "CL-0102": "Camisas oxford",
+  "CL-0203": "Calças de alfaiataria",
+  "CL-0204": "Blazers",
+  "CL-0305": "Vestidos midi",
+  "CL-0306": "Slip dresses",
+  "CL-0407": "Tricôs",
+  "CL-0408": "Suéteres",
+  "CL-0509": "Trench coats",
+  "CL-0510": "Jaquetas",
+  "CL-0611": "Saias plissadas",
+  "CL-0712": "Bolsas",
+  "CL-0713": "Cintos",
+  "CL-0814": "Mocassins",
+  "CL-0815": "Botas",
+};
+export const tipoDe = (sku: string) => tipos[sku.slice(0, 7)] ?? "Outros";
+
 const padrao: Detalhe = D("", [CORES.noitePaulistana], "", "—", "Bom Retiro, SP", "Peça nova no catálogo.");
 export const detalheDe = (sku: string): Detalhe => detalhes[sku.slice(0, 7)] ?? padrao;
 

@@ -7,8 +7,8 @@ import { DashboardOperador } from "./inicio/Operador";
 /** Início: cada cargo tem o seu dashboard, com filtros próprios. */
 export function Dashboard() {
   const papel = usePapel();
-  if (papel === "administrador") return <DashboardAdmin />;
-  if (papel === "gerente") return <DashboardGerente />;
-  if (papel === "operador") return <DashboardOperador />;
+  if (papel === "admin") return <DashboardAdmin />;
+  if (papel === "gerente_loja") return <DashboardGerente />;
+  if (papel === "operador_estoque") return <DashboardOperador />;
   return <DashboardAtendente />;
 }

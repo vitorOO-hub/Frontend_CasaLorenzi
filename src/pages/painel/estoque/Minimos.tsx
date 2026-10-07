@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { Badge, Botao, Card, Select, Tabela, Titulo, td, th } from "@/components/ui";
+import { AvisoErro, Badge, Botao, Card, Select, Tabela, Titulo, td, th } from "@/components/ui";
+import * as acoes from "@/lib/acoes";
 import { lojas, nomeLoja } from "@/lib/dados";
-import { useLojaEscopo, useNomeUsuario } from "@/lib/sessao";
-import { definirMinimo, useEstado } from "@/lib/store";
+import { useLojaEscopo } from "@/lib/sessao";
+import { useEstado } from "@/lib/store";
+import { useAcao } from "@/lib/useAcao";
 
 export function Minimos() {
   const { produtos } = useEstado();
   const escopo = useLojaEscopo();
-  const autor = useNomeUsuario();
+  const { executar, ocupado, erro, limparErro } = useAcao();
   const [lojaLivre, setLojaLivre] = useState(lojas[0]!.id);
   const lojaId = escopo ?? lojaLivre;
   const [rascunho, setRascunho] = useState<Record<string, number>>({});
@@ -34,18 +36,22 @@ export function Minimos() {
               />
             ) : null}
             <Botao
-              disabled={!alterados}
+              disabled={!alterados || ocupado !== null}
               onClick={() => {
-                Object.entries(rascunho).forEach(([sku, v]) => definirMinimo(sku, lojaId, v, autor));
-                setRascunho({});
-                setSalvo(true);
+                const itens = Object.entries(rascunho).map(([sku, minimo]) => ({ sku, minimo }));
+                void executar("minimos", () => acoes.definirMinimos(lojaId, itens)).then((ok) => {
+                  if (!ok) return;
+                  setRascunho({});
+                  setSalvo(true);
+                });
               }}
             >
-              Salvar {alterados ? `(${alterados})` : ""}
+              {ocupado ? "Salvando…" : `Salvar ${alterados ? `(${alterados})` : ""}`}
             </Botao>
           </>
         }
       />
+      <AvisoErro erro={erro} onFechar={limparErro} className="mb-4" />
       {salvo && !alterados ? <p className="mb-4 text-sm text-sucesso">Estoques mínimos atualizados.</p> : null}
 
       <Card>

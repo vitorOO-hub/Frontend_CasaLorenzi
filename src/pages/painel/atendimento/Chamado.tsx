@@ -1,6 +1,7 @@
 import { Link, Navigate, useParams } from "react-router-dom";
 import { Conversa } from "@/components/Conversa";
-import { Badge, Botao, Card, Select, Voltar } from "@/components/ui";
+import { AvisoErro, Badge, Botao, Card, Voltar } from "@/components/ui";
+import * as acoes from "@/lib/acoes";
 import {
   clientes,
   dataBR,
@@ -9,16 +10,17 @@ import {
   prioridadeChamado,
   tomChamado,
   tomPrioridade,
-  type StatusChamado,
 } from "@/lib/dados";
 import { podeAprovar, useNomeUsuario, usePapel } from "@/lib/sessao";
-import { mudarStatus, responderChamado, useEstado } from "@/lib/store";
+import { useEstado } from "@/lib/store";
+import { useAcao } from "@/lib/useAcao";
 
 export function Chamado() {
   const { id } = useParams();
   const { chamados, produtos, pedidos } = useEstado();
   const usuario = useNomeUsuario();
   const papel = usePapel();
+  const { executar, ocupado, erro, limparErro } = useAcao();
   const chamado = chamados.find((c) => c.id === id);
   if (!chamado) return <Navigate to="/painel/atendimento" replace />;
 
@@ -55,24 +57,27 @@ export function Chamado() {
             {cliente.nome} · {chamado.protocolo}
           </p>
         </div>
-        <Select
-          aria-label="Situação do chamado"
-          value={chamado.status}
-          onChange={(e) => mudarStatus(chamado.id, e.target.value as StatusChamado)}
-          className="w-48"
-          opcoes={["Aberto", "Em andamento", "Resolvido"].map((s) => ({ value: s, label: s }))}
-        />
+        {chamado.atendente ? (
+          <p className="text-sm text-suave">
+            Com <strong className="text-tinta">{chamado.atendente === usuario ? "você" : chamado.atendente}</strong>
+          </p>
+        ) : chamado.status !== "Resolvido" ? (
+          <Botao disabled={ocupado !== null} onClick={() => void executar("assumir", () => acoes.assumirChamado(chamado.id))}>
+            {ocupado === "assumir" ? "Assumindo…" : "Assumir chamado"}
+          </Botao>
+        ) : null}
       </div>
+      <AvisoErro erro={erro} onFechar={limparErro} className="mb-6" />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
         <Conversa
           chamado={chamado}
           lado="atendente"
-          onEnviar={(t) => responderChamado(chamado.id, t, "atendente", usuario)}
+          onEnviar={(t) => executar("mensagem", () => acoes.enviarMensagem(chamado.id, t))}
           acoesExtras={
             chamado.status !== "Resolvido" ? (
-              <Botao variante="secundario" onClick={() => mudarStatus(chamado.id, "Resolvido")}>
-                Marcar como resolvido
+              <Botao variante="secundario" disabled={ocupado !== null} onClick={() => void executar("resolver", () => acoes.resolverChamado(chamado.id))}>
+                {ocupado === "resolver" ? "Resolvendo…" : "Marcar como resolvido"}
               </Botao>
             ) : null
           }

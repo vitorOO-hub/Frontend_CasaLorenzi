@@ -102,7 +102,7 @@ export function PainelLayout() {
             </div>
             <div className="flex items-center gap-3">
               {/* No Início o admin compara unidades pelos filtros do próprio dashboard. */}
-              {papel === "administrador" && pathname !== "/painel" ? (
+              {papel === "admin" && pathname !== "/painel" ? (
                 <Select
                   aria-label="Filtrar por unidade"
                   value={filtro}

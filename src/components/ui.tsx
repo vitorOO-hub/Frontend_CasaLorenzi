@@ -316,3 +316,18 @@ export function Metrica({
 }
 
 export const sinal = (n: number) => (n > 0 ? `+${n}` : String(n));
+
+/** Mensagem de erro de uma ação (403, 409, 422…), com botão para dispensar. */
+export function AvisoErro({ erro, onFechar, className }: { erro: string | null; onFechar?: () => void; className?: string }) {
+  if (!erro) return null;
+  return (
+    <div role="alert" className={cn("flex items-start justify-between gap-3 rounded-sm border border-perigo/30 bg-perigo/5 px-4 py-3 text-sm text-perigo", className)}>
+      <span>{erro}</span>
+      {onFechar ? (
+        <button type="button" onClick={onFechar} className="shrink-0 opacity-70 hover:opacity-100" aria-label="Dispensar">
+          <X className="h-4 w-4" />
+        </button>
+      ) : null}
+    </div>
+  );
+}

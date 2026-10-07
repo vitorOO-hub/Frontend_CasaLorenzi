@@ -1,7 +1,6 @@
 import { Menu, Plus, Search, ShoppingBag, X } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { SeletorFontes } from "@/components/SeletorFontes";
 import { cn } from "@/components/ui";
 import { CAMPANHA, EDICAO, unsplash } from "@/lib/loja";
 import { sair, useSessao } from "@/lib/sessao";
@@ -76,13 +75,6 @@ export function PortalLayout() {
       to: "/loja",
       itens: [["Ver tudo", "/loja"], ...categorias.map((c): [string, string] => [c, `/loja?categoria=${c}`])],
       destaque: { foto: unsplash(CAMPANHA.prontaEntrega, 700), legenda: "Casacos da estação", to: "/loja?categoria=Outerwear" },
-    },
-    {
-      id: "sob",
-      rotulo: "Sob medida",
-      to: "/sob-medida",
-      itens: [["Como funciona", "/sob-medida"], ["Tecidos da estação", "/sob-medida"], ["Agendar uma conversa", "/agendar?tipo=sob-medida"]],
-      destaque: { foto: unsplash(CAMPANHA.sobMedida, 700), legenda: "Três provas, ajustes para sempre", to: "/sob-medida" },
     },
     {
       id: "casa",
@@ -253,7 +245,6 @@ export function PortalLayout() {
 
       <CartaMensal />
       <Rodape />
-      <SeletorFontes />
     </div>
   );
 }
@@ -337,7 +328,6 @@ function Rodape() {
       [
         ["Edição 64 · Garoa", "/loja"],
         ["Pronta-entrega", "/loja"],
-        ["Sob medida", "/sob-medida"],
         ["Agendar uma prova", "/agendar"],
       ],
     ],

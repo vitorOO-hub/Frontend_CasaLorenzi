@@ -9,30 +9,30 @@ describe("permissões da área interna", () => {
   it("cada cargo vê só as seções da barra lateral que lhe cabem", () => {
     const ids = (papel: Parameters<typeof secoesDoPapel>[0]) => secoesDoPapel(papel).map((s) => s.id);
     expect(ids("atendente")).toEqual(["inicio", "atendimento"]);
-    expect(ids("operador")).toEqual(["inicio", "estoque"]);
-    expect(ids("gerente")).toEqual(["inicio", "estoque", "atendimento", "gestao"]);
-    expect(ids("administrador")).toEqual(["inicio", "estoque", "atendimento", "gestao"]);
+    expect(ids("operador_estoque")).toEqual(["inicio", "estoque"]);
+    expect(ids("gerente_loja")).toEqual(["inicio", "estoque", "atendimento", "gestao"]);
+    expect(ids("admin")).toEqual(["inicio", "estoque", "atendimento", "gestao"]);
   });
 
   it("aprovações e estoque mínimo ficam restritos à gestão", () => {
-    expect(podeAcessar("operador", "/painel/estoque")).toBe(true);
-    expect(podeAcessar("operador", "/painel/estoque/aprovacoes")).toBe(false);
-    expect(podeAcessar("operador", "/painel/estoque/minimos")).toBe(false);
-    expect(podeAcessar("gerente", "/painel/estoque/aprovacoes")).toBe(true);
+    expect(podeAcessar("operador_estoque", "/painel/estoque")).toBe(true);
+    expect(podeAcessar("operador_estoque", "/painel/estoque/aprovacoes")).toBe(false);
+    expect(podeAcessar("operador_estoque", "/painel/estoque/minimos")).toBe(false);
+    expect(podeAcessar("gerente_loja", "/painel/estoque/aprovacoes")).toBe(true);
   });
 
   it("catálogo, usuários e auditoria são exclusivos do administrador", () => {
     for (const tela of ["catalogo", "usuarios", "auditoria", "integracoes"]) {
-      expect(podeAcessar("gerente", `/painel/gestao/${tela}`)).toBe(false);
-      expect(podeAcessar("administrador", `/painel/gestao/${tela}`)).toBe(true);
+      expect(podeAcessar("gerente_loja", `/painel/gestao/${tela}`)).toBe(false);
+      expect(podeAcessar("admin", `/painel/gestao/${tela}`)).toBe(true);
     }
-    expect(podeAcessar("gerente", "/painel/gestao")).toBe(true);
+    expect(podeAcessar("gerente_loja", "/painel/gestao")).toBe(true);
   });
 
   it("atendente não abre o estoque e começa pelos chamados", () => {
     expect(podeAcessar("atendente", "/painel/estoque")).toBe(false);
     expect(telaInicial("atendente")).toBe("/painel/atendimento");
-    expect(telaInicial("operador")).toBe("/painel");
+    expect(telaInicial("operador_estoque")).toBe("/painel");
   });
 
   it("telas de detalhe herdam a seção e a aba da tela-mãe", () => {

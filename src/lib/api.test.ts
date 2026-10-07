@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { ErroApi, criarClienteApi } from "./api";
+import { ErroApi } from "@/api/erros";
+import { criarClienteApi } from "./api";
 
 const json = (corpo: unknown, init?: ResponseInit) =>
   new Response(JSON.stringify(corpo), { status: 200, headers: { "Content-Type": "application/json" }, ...init });
@@ -74,11 +75,11 @@ describe("cliente da API", () => {
     });
   });
 
-  it("429 traz o Retry-After", async () => {
-    const { cliente } = montar([json({}, { status: 429, headers: { "Retry-After": "12" } })]);
+  it("429 vira o código de limite da interface", async () => {
+    const { cliente } = montar([json({}, { status: 429 })]);
     const erro = await cliente.get("/x", aceita).catch((e: unknown) => e);
     expect(erro).toBeInstanceOf(ErroApi);
-    expect(erro).toMatchObject({ status: 429, retryApos: 12 });
+    expect(erro).toMatchObject({ status: 429, codigo: "limite" });
   });
 
   it("422 mostra o motivo que o servidor explicou", async () => {

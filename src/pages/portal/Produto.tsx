@@ -5,7 +5,8 @@ import { cn } from "@/components/ui";
 import { CartaoProduto, FichaTecnica, Foto, Legenda, NomePeca, Preco, botaoLoja, parcela } from "@/components/vitrine";
 import { skuVariacao, tamanhosPorCategoria, totalProduto } from "@/lib/dados";
 import { detalheDe, fotoEstudio, fotoVestida } from "@/lib/loja";
-import { adicionarAoCarrinho, useEstado } from "@/lib/store";
+import * as acoes from "@/lib/acoes";
+import { useEstado } from "@/lib/store";
 
 export function Produto() {
   const { sku = "" } = useParams();
@@ -44,7 +45,7 @@ function DetalheProduto({ sku }: { sku: string }) {
       setAviso(true);
       return;
     }
-    adicionarAoCarrinho({
+    void acoes.adicionarAoCarrinho({
       sku: skuVariacao(produto!.sku, tamanho, cor.nome),
       skuBase: produto!.sku,
       nome: produto!.nome,

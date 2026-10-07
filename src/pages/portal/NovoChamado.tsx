@@ -2,9 +2,11 @@ import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { cn } from "@/components/ui";
 import { botaoLoja } from "@/components/vitrine";
+import * as acoes from "@/lib/acoes";
 import { clientes, dataBR, type Chamado } from "@/lib/dados";
 import { useClienteId } from "@/lib/sessao";
-import { abrirChamado, useEstado } from "@/lib/store";
+import { useEstado } from "@/lib/store";
+import { useAcao } from "@/lib/useAcao";
 import { CampoLoja, campoLoja } from "./Checkout";
 
 const motivos: { valor: Chamado["motivo"]; rotulo: string }[] = [
@@ -29,6 +31,7 @@ export function NovoChamado() {
   const [descricao, setDescricao] = useState("");
   const [anexos, setAnexos] = useState<string[]>([]);
   const [criado, setCriado] = useState<{ id: string; protocolo: string } | null>(null);
+  const { executar, ocupado, erro } = useAcao();
 
   if (criado) {
     return (
@@ -52,19 +55,10 @@ export function NovoChamado() {
       className="max-w-2xl space-y-5"
       onSubmit={(e) => {
         e.preventDefault();
-        const relacionado = meusPedidos.find((p) => p.id === pedidoId);
-        const novo = abrirChamado({
-          clienteId: cliente.id,
-          nomeCliente: cliente.nome,
-          assunto,
-          motivo,
-          descricao,
-          lojaId: relacionado?.lojaId ?? "l1",
-          pedidoId: pedidoId || undefined,
-          sku,
-          anexos,
+        void executar("chamado", async () => {
+          const novo = await acoes.abrirChamado({ assunto, motivo, descricao, pedidoId: pedidoId || undefined, sku, anexos });
+          setCriado({ id: novo.id, protocolo: novo.protocolo });
         });
-        setCriado({ id: novo.id, protocolo: novo.protocolo });
       }}
     >
       <Link to="/conta/atendimento" className="link-tracejado text-sm">
@@ -114,8 +108,9 @@ export function NovoChamado() {
           className={cn(campoLoja, "file:mr-3 file:border-0 file:bg-palha file:px-3 file:py-1 file:text-xs")}
         />
       </CampoLoja>
-      <button type="submit" className={botaoLoja()}>
-        Enviar
+      {erro ? <p role="alert" className="text-sm text-perigo">{erro}</p> : null}
+      <button type="submit" disabled={ocupado !== null} className={botaoLoja()}>
+        {ocupado ? "Enviando…" : "Enviar"}
       </button>
     </form>
   );

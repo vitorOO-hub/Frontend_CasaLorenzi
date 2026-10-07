@@ -1,22 +1,23 @@
 import { useSyncExternalStore } from "react";
-import { decodificarClaims, lojaDoToken, papelDoToken } from "./claims";
+import { entrar as entrarNoSupabase, sairDaConta } from "@/api/auth";
+import { ErroApi } from "@/api/erros";
+import type { Papel } from "@/api/tipos";
 import { CLIENTE_DEMO_ID, clientes, lojas, type Loja } from "./dados";
-import { supabase } from "./supabase";
 
-export type Papel = "atendente" | "operador" | "gerente" | "administrador";
+export type { Papel };
 
 export const equipe: Record<Papel, { nome: string; cargo: string; lojaId?: string }> = {
   atendente: { nome: "Rafael Nunes", cargo: "Atendente · SAC" },
-  operador: { nome: "Vinícius Prado", cargo: "Operador de estoque", lojaId: "l1" },
-  gerente: { nome: "Marina Toledo", cargo: "Gerente de unidade", lojaId: "l1" },
-  administrador: { nome: "Cecília Lorenzi", cargo: "Administradora da rede" },
+  operador_estoque: { nome: "Vinícius Prado", cargo: "Operador de estoque", lojaId: "l1" },
+  gerente_loja: { nome: "Marina Toledo", cargo: "Gerente de unidade", lojaId: "l1" },
+  admin: { nome: "Cecília Lorenzi", cargo: "Administradora da rede" },
 };
 
 export const rotuloPapel: Record<Papel, string> = {
   atendente: "Atendente",
-  operador: "Operador de estoque",
-  gerente: "Gerente de unidade",
-  administrador: "Administrador",
+  operador_estoque: "Operador de estoque",
+  gerente_loja: "Gerente de unidade",
+  admin: "Administrador",
 };
 
 export type Sessao =
@@ -36,9 +37,9 @@ type Credencial = { email: string; senha: string };
 /** Credenciais fictícias de demonstração (nenhum dado real é armazenado). */
 export const credenciaisInternas: Record<Papel, Credencial> = {
   atendente: { email: "rafael.nunes@casalorenzi.com.br", senha: "atende123" },
-  operador: { email: "vinicius.prado@casalorenzi.com.br", senha: "estoque123" },
-  gerente: { email: "marina.toledo@casalorenzi.com.br", senha: "gerente123" },
-  administrador: { email: "cecilia.lorenzi@casalorenzi.com.br", senha: "admin123" },
+  operador_estoque: { email: "vinicius.prado@casalorenzi.com.br", senha: "estoque123" },
+  gerente_loja: { email: "marina.toledo@casalorenzi.com.br", senha: "gerente123" },
+  admin: { email: "cecilia.lorenzi@casalorenzi.com.br", senha: "admin123" },
 };
 
 export const credencialCliente: Credencial = {
@@ -48,7 +49,7 @@ export const credencialCliente: Credencial = {
 
 // ---------- Estado da sessão (persistido na aba para sobreviver ao recarregar) ----------
 
-const CHAVE = "casa-lorenzi:sessao";
+const CHAVE = "casa-lorenzi:sessao:v2";
 
 function lerSessao(): Sessao | null {
   try {
@@ -100,32 +101,29 @@ export async function entrarComoFuncionarioReal(
   email: string,
   senha: string,
 ): Promise<ResultadoLogin> {
-  if (!supabase) return { ok: false, motivo: "indisponivel" };
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: email.trim().toLowerCase(),
-    password: senha,
-  });
-  if (error || !data.session) {
-    return { ok: false, motivo: error?.status && error.status >= 500 ? "indisponivel" : "credenciais" };
+  let conta;
+  try {
+    conta = await entrarNoSupabase(email, senha);
+  } catch (erro) {
+    // Sem variáveis do Supabase ou sem rede: quem chama cai nos acessos de demonstração.
+    return { ok: false, motivo: erro instanceof ErroApi && erro.codigo === "nao_autenticado" ? "credenciais" : "indisponivel" };
   }
-  const claims = decodificarClaims(data.session.access_token) ?? {};
-  const papel = papelDoToken(claims.papel);
-  if (!papel) {
-    await supabase.auth.signOut();
+  if (conta.tipo !== "interno") {
+    await sairDaConta().catch(() => undefined);
     return { ok: false, motivo: "sem_acesso" };
   }
-  const nome = data.user.user_metadata?.nome;
-  sessao = {
+  const nova: Sessao = {
     tipo: "interno",
-    papel,
-    nome: typeof nome === "string" && nome ? nome : (data.user.email ?? email).split("@")[0]!,
-    email: data.user.email ?? email,
+    papel: conta.papel,
+    nome: conta.email.split("@")[0] || conta.email,
+    email: conta.email,
     real: true,
-    lojaId: lojaDoToken(claims),
+    lojaId: conta.idLoja == null ? undefined : String(conta.idLoja),
   };
+  sessao = nova;
   filtroUnidade = "";
   avisar();
-  return { ok: true, sessao };
+  return { ok: true, sessao: nova };
 }
 
 export function entrarComoFuncionario(email: string, senha: string): Sessao | null {
@@ -141,8 +139,14 @@ export function entrarComoFuncionario(email: string, senha: string): Sessao | nu
   return sessao;
 }
 
+/** Sessão atual fora de componentes (as ações leem quem executa daqui, como o backend lê do token). */
+export const sessaoAtual = () => sessao;
+
+/** Loja fixa do cargo; null para quem enxerga a rede inteira (admin, atendente). */
+export const lojaDoPapel = (papel: Papel): string | null => equipe[papel].lojaId ?? null;
+
 export function sair() {
-  if (sessao?.tipo === "interno" && sessao.real) void supabase?.auth.signOut();
+  if (sessao?.tipo === "interno" && sessao.real) void sairDaConta().catch(() => undefined);
   sessao = null;
   filtroUnidade = "";
   avisar();
@@ -179,7 +183,7 @@ export function useLojaEscopo(): string | null {
   const filtro = useFiltroUnidade();
   // Sessão real: a loja é um UUID do banco, que não existe nos dados simulados das outras telas.
   if (s?.tipo === "interno" && s.real) return null;
-  if (papel === "administrador") return filtro || null;
+  if (papel === "admin") return filtro || null;
   return equipe[papel].lojaId ?? null;
 }
 
@@ -188,7 +192,7 @@ export function useLojasVisiveis(): Loja[] {
   return escopo ? lojas.filter((l) => l.id === escopo) : lojas;
 }
 
-export const podeAprovar = (papel: Papel) => papel === "gerente" || papel === "administrador";
+export const podeAprovar = (papel: Papel) => papel === "gerente_loja" || papel === "admin";
 
 // ---------- Cliente ----------
 

@@ -103,8 +103,8 @@
  * redefini-las aqui troca a fonte e as cores só dentro de .loja.
  */
 .loja {
-  --font-display: "Fraunces", Georgia, serif;
-  --font-sans: "Jost", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Instrument Serif", Georgia, serif;
+  --font-sans: "Inter Tight", ui-sans-serif, system-ui, sans-serif;
   font-family: var(--font-sans);
   background: var(--color-creme);
   color: var(--color-tinta);
