@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRef } from "react";
 import { Link } from "react-router-dom";
-import { CarrosselCampanha, PainelMidia, filme, foto } from "@/components/campanha";
+import { CarrosselCampanha, filme, foto } from "@/components/campanha";
 import { CabecalhoSecao, CartaoProduto, FotoCampanha, FichaTecnica } from "@/components/vitrine";
 import { useProdutosCatalogo } from "@/lib/catalogoApi";
 import { lojas, type Produto } from "@/lib/dados";
@@ -67,26 +67,6 @@ export function Inicio() {
       ) : (
         <FileiraProdutos titulo={`Novidades da Edição ${EDICAO.numero}`} produtos={novidades} para="/loja" />
       )}
-
-      {/* Dois caminhos, em foto parada */}
-      <div className="grid gap-[3px] md:grid-cols-2">
-        <PainelMidia
-          className="h-[72svh] min-h-[460px]"
-          midias={[foto(CAMPANHA.amostras)]}
-          sobre="Caderno do Ateliê"
-          titulo="Por que a lã fria não esquenta"
-          acao="Ler a nota"
-          to="/caderno/la-fria"
-        />
-        <PainelMidia
-          className="h-[72svh] min-h-[460px]"
-          midias={[foto("1593030103066-0093718efeb9")]}
-          sobre="Alfaiataria"
-          titulo="Lã fria para o ano todo"
-          acao="Ver alfaiataria"
-          to="/loja?categoria=Alfaiataria"
-        />
-      </div>
 
       {/* Por dentro de uma peça */}
       <div className="bg-marinho text-creme">
