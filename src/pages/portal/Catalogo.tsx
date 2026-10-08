@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { cn } from "@/components/ui";
+import { Select, cn } from "@/components/ui";
 import { CartaoProduto } from "@/components/vitrine";
 import { produtoTemEstoque } from "@/lib/dados";
 import { useProdutosCatalogo } from "@/lib/catalogoApi";
@@ -101,18 +101,20 @@ export function Catalogo() {
               Limpar busca
             </button>
           ) : null}
-          <label className="flex items-center gap-2">
+          <span className="flex items-center gap-2">
             Ordem
-            <select
+            <Select
+              variante="loja"
+              aria-label="Ordem"
               value={ordem}
               onChange={(e) => alterar("ordem", e.target.value === "edicao" ? "" : e.target.value)}
-              className="cursor-pointer border-b border-dashed border-caramelo bg-transparent py-1 text-tinta outline-none"
-            >
-              <option value="edicao">da edição</option>
-              <option value="menor">menor preço</option>
-              <option value="maior">maior preço</option>
-            </select>
-          </label>
+              opcoes={[
+                { value: "edicao", label: "da edição" },
+                { value: "menor", label: "menor preço" },
+                { value: "maior", label: "maior preço" },
+              ]}
+            />
+          </span>
         </div>
       </div>
 

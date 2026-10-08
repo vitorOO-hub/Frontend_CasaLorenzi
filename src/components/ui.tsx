@@ -1,6 +1,16 @@
 import { clsx, type ClassValue } from "clsx";
-import { ChevronDown, ChevronLeft, X } from "lucide-react";
-import { useEffect, type ButtonHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from "react";
+import { Check, ChevronDown, ChevronLeft, X } from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ButtonHTMLAttributes,
+  type CSSProperties,
+  type KeyboardEvent as EventoTeclado,
+  type ReactNode,
+} from "react";
 import { Link } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 
@@ -131,24 +141,196 @@ export function Campo({
 export const inputClasses =
   "w-full rounded-sm border border-linha bg-papel px-3 py-2 text-sm text-tinta outline-none transition-colors placeholder:text-suave/70 hover:border-marinho/40 focus:border-marinho focus:ring-2 focus:ring-marinho/10 [&[readonly]]:bg-areia/50 [&[readonly]]:text-suave";
 
+export type OpcaoSelect = { value: string; label: string };
+
+/** Mesmo formato do evento do <select> nativo, para as telas lerem `e.target.value`. */
+export type MudancaSelect = { target: { value: string } };
+
+// A lista aberta segue a paleta de cada área: o painel em papel e marinho, a loja em creme e terracota.
+const visualSelect = {
+  painel: {
+    botao: cn(inputClasses, "flex items-center justify-between gap-2 text-left disabled:cursor-not-allowed disabled:opacity-60"),
+    seta: "h-4 w-4 text-suave",
+    lista: "rounded-sm border border-linha bg-papel py-1 shadow-[0_14px_34px_-14px_rgba(22,32,58,.38)]",
+    opcao: "px-3 py-2 text-sm text-tinta",
+    ativa: "bg-areia",
+    escolhida: "font-medium text-marinho",
+    marca: "text-dourado",
+  },
+  loja: {
+    botao:
+      "flex cursor-pointer items-center gap-1.5 border-b border-dashed border-caramelo bg-transparent py-1 text-left text-tinta outline-none focus-visible:border-solid disabled:cursor-not-allowed disabled:opacity-60",
+    seta: "h-3.5 w-3.5 text-caramelo",
+    lista: "border border-linha bg-creme py-2 shadow-[0_14px_34px_-14px_rgba(22,32,58,.3)]",
+    opcao: "px-4 py-2 text-[14px] text-tinta",
+    ativa: "text-terracota",
+    escolhida: "text-terracota",
+    marca: "text-terracota",
+  },
+};
+
+/**
+ * Seletor com a lista desenhada pelo site (o <select> nativo abre com a fonte e as cores do sistema).
+ * Abre com clique, setas, Enter ou Espaço; fecha com Esc, Tab, clique fora ou rolagem. A lista fica em
+ * posição fixa para não ser cortada por modais e barras com rolagem própria.
+ */
 export function Select({
   opcoes,
+  value,
+  onChange,
   className,
-  ...props
-}: SelectHTMLAttributes<HTMLSelectElement> & { opcoes: { value: string; label: string }[] }) {
+  disabled,
+  id,
+  variante = "painel",
+  "aria-label": rotulo,
+}: {
+  opcoes: OpcaoSelect[];
+  value?: string | number;
+  onChange?: (e: MudancaSelect) => void;
+  className?: string;
+  disabled?: boolean;
+  id?: string;
+  variante?: keyof typeof visualSelect;
+  "aria-label"?: string;
+}) {
+  const v = visualSelect[variante];
+  const botao = useRef<HTMLButtonElement>(null);
+  const lista = useRef<HTMLUListElement>(null);
+  const base = useId();
+  const [posicao, setPosicao] = useState<CSSProperties | null>(null);
+  const [ativa, setAtiva] = useState(0);
+  const aberto = posicao !== null;
+  const indiceAtual = Math.max(0, opcoes.findIndex((o) => o.value === String(value ?? "")));
+  const atual = opcoes[indiceAtual];
+
+  const fechar = useCallback(() => setPosicao(null), []);
+
+  function abrir() {
+    const r = botao.current?.getBoundingClientRect();
+    if (!r || disabled) return;
+    // Abre para cima quando falta espaço embaixo; na loja, alinha pela direita do campo.
+    const vertical = window.innerHeight - r.bottom < 260 ? { bottom: window.innerHeight - r.top + 4 } : { top: r.bottom + 4 };
+    const horizontal = variante === "loja" ? { right: window.innerWidth - r.right } : { left: r.left };
+    setPosicao({ position: "fixed", minWidth: r.width, ...vertical, ...horizontal });
+    setAtiva(indiceAtual);
+  }
+
+  function escolher(i: number) {
+    const o = opcoes[i];
+    fechar();
+    botao.current?.focus();
+    if (o && o.value !== String(value ?? "")) onChange?.({ target: { value: o.value } });
+  }
+
+  useEffect(() => {
+    if (!aberto) return;
+    const fora = (e: PointerEvent) => {
+      const alvo = e.target as Node;
+      if (!botao.current?.contains(alvo) && !lista.current?.contains(alvo)) fechar();
+    };
+    const rolou = (e: Event) => {
+      if (!lista.current?.contains(e.target as Node)) fechar();
+    };
+    document.addEventListener("pointerdown", fora);
+    window.addEventListener("scroll", rolou, true);
+    window.addEventListener("resize", fechar);
+    return () => {
+      document.removeEventListener("pointerdown", fora);
+      window.removeEventListener("scroll", rolou, true);
+      window.removeEventListener("resize", fechar);
+    };
+  }, [aberto, fechar]);
+
+  useEffect(() => {
+    if (aberto) lista.current?.children[ativa]?.scrollIntoView({ block: "nearest" });
+  }, [aberto, ativa]);
+
+  function teclas(e: EventoTeclado<HTMLButtonElement>) {
+    const ultimo = opcoes.length - 1;
+    if (!aberto) {
+      if (["ArrowDown", "ArrowUp", "Enter", " "].includes(e.key)) {
+        e.preventDefault();
+        abrir();
+      }
+      return;
+    }
+    if (e.key === "ArrowDown") setAtiva((a) => Math.min(ultimo, a + 1));
+    else if (e.key === "ArrowUp") setAtiva((a) => Math.max(0, a - 1));
+    else if (e.key === "Home") setAtiva(0);
+    else if (e.key === "End") setAtiva(ultimo);
+    else if (e.key === "Enter" || e.key === " ") escolher(ativa);
+    else if (e.key === "Escape") {
+      // Fecha só a lista, sem fechar junto o modal em que ela estiver.
+      e.stopPropagation();
+      fechar();
+    } else if (e.key === "Tab") {
+      fechar();
+      return;
+    } else if (e.key.length === 1) {
+      // Digitar uma letra pula para a próxima opção que começa com ela.
+      const letra = e.key.toLocaleLowerCase("pt-BR");
+      const proxima = opcoes.findIndex((o, i) => i > ativa && o.label.toLocaleLowerCase("pt-BR").startsWith(letra));
+      const primeira = opcoes.findIndex((o) => o.label.toLocaleLowerCase("pt-BR").startsWith(letra));
+      const alvo = proxima >= 0 ? proxima : primeira;
+      if (alvo >= 0) setAtiva(alvo);
+    } else return;
+    e.preventDefault();
+  }
+
   return (
     <div className={cn("relative", className)}>
-      <select
-        {...props}
-        className={cn(inputClasses, "cursor-pointer appearance-none pr-9 disabled:opacity-60")}
+      <button
+        ref={botao}
+        id={id}
+        type="button"
+        role="combobox"
+        aria-label={rotulo}
+        aria-haspopup="listbox"
+        aria-expanded={aberto}
+        aria-controls={`${base}-lista`}
+        aria-activedescendant={aberto ? `${base}-${ativa}` : undefined}
+        disabled={disabled}
+        onClick={() => (aberto ? fechar() : abrir())}
+        onKeyDown={teclas}
+        className={v.botao}
       >
-        {opcoes.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-suave" />
+        <span className="truncate">{atual?.label ?? ""}</span>
+        <ChevronDown className={cn("shrink-0 transition-transform", v.seta, aberto && "rotate-180")} />
+      </button>
+      {/* A lista fica sempre na página (escondida quando fechada), com as opções legíveis. */}
+      <ul
+        ref={lista}
+        id={`${base}-lista`}
+        role="listbox"
+        aria-label={rotulo}
+        hidden={!aberto}
+        style={posicao ?? undefined}
+        className={cn("z-[60] max-h-64 max-w-[min(22rem,calc(100vw-2rem))] overflow-y-auto", v.lista)}
+      >
+        {opcoes.map((o, i) => {
+          const escolhida = i === indiceAtual;
+          return (
+            <li
+              key={o.value}
+              id={`${base}-${i}`}
+              role="option"
+              aria-selected={escolhida}
+              onPointerEnter={() => setAtiva(i)}
+              onPointerDown={(e) => e.preventDefault()}
+              onClick={() => escolher(i)}
+              className={cn(
+                "flex cursor-pointer items-center justify-between gap-4 whitespace-nowrap transition-colors",
+                v.opcao,
+                i === ativa && v.ativa,
+                escolhida && v.escolhida,
+              )}
+            >
+              {o.label}
+              {escolhida ? <Check className={cn("h-3.5 w-3.5 shrink-0", v.marca)} strokeWidth={2} /> : null}
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
