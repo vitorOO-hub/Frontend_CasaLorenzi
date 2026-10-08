@@ -40,6 +40,8 @@ export function PortalLayout() {
   const [menuEm, setMenuEm] = useState<string | null>(null);
   const [buscaEm, setBuscaEm] = useState<string | null>(null);
   const [painel, setPainel] = useState<{ id: string; rota: string } | null>(null);
+  // Várias abas levam à mesma página (Destaques e Pronta-entrega abrem /loja): a barra marca a aba em que a pessoa clicou.
+  const [escolhida, setEscolhida] = useState<{ id: string; rota: string } | null>(null);
   const [termo, setTermo] = useState("");
   const [rolou, setRolou] = useState(false);
   const menuAberto = menuEm === rota;
@@ -91,6 +93,7 @@ export function PortalLayout() {
 
   const secaoDaRota = secoesMenu.find((m) => m.itens.some(([, to]) => to.split("?")[0] === pathname && pathname !== "/loja"))?.id ?? (pathname === "/loja" ? "pronta" : null);
   const secaoPainel = secoesMenu.find((m) => m.id === painelAberto);
+  const secaoMarcada = escolhida?.rota === rota ? escolhida.id : secaoDaRota;
   // Quem entra pela loja volta para a página onde estava, já logado (ver destinoAposLogin).
   const contaLink = cliente ? "/conta/pedidos" : `/entrar?voltar=${encodeURIComponent(rota)}`;
   const abrir = (id: string) => setPainel({ id, rota });
@@ -116,11 +119,12 @@ export function PortalLayout() {
 
           <nav className="hidden h-full items-stretch gap-7 lg:flex" aria-label="Principal">
             {secoesMenu.map((m) => {
-              const marcada = painelAberto ? painelAberto === m.id : secaoDaRota === m.id;
+              const marcada = painelAberto ? painelAberto === m.id : secaoMarcada === m.id;
               return (
                 <Link
                   key={m.id}
                   to={m.to}
+                  onClick={() => setEscolhida({ id: m.id, rota: m.to })}
                   onMouseEnter={() => abrir(m.id)}
                   onFocus={() => abrir(m.id)}
                   aria-expanded={painelAberto === m.id}
@@ -170,7 +174,7 @@ export function PortalLayout() {
                 <ul className="grid max-w-3xl grid-flow-col grid-rows-5 gap-x-12 gap-y-2.5">
                   {secaoPainel.itens.map(([rotulo, to]) => (
                     <li key={rotulo}>
-                      <Link to={to} className={cn("text-[15px] [font-family:var(--font-sans)] hover:text-terracota", rota === to && "text-terracota")}>
+                      <Link to={to} onClick={() => setEscolhida({ id: secaoPainel.id, rota: to })} className={cn("text-[15px] [font-family:var(--font-sans)] hover:text-terracota", rota === to && "text-terracota")}>
                         {rotulo}
                       </Link>
                     </li>
