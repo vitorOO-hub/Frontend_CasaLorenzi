@@ -1,6 +1,7 @@
 import { Minus, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
+import { mensagemDeErro } from "@/api/erros";
 import { cn } from "@/components/ui";
 import { CartaoProduto, FichaTecnica, Foto, Legenda, NomePeca, Preco, botaoLoja, parcela } from "@/components/vitrine";
 import { produtoTemEstoque, skuVariacao, tamanhosPorCategoria, totalProduto, totalVariacao } from "@/lib/dados";
@@ -38,6 +39,7 @@ function DetalheProduto({ sku }: { sku: string }) {
   const [quantidade, setQuantidade] = useState(1);
   const [adicionado, setAdicionado] = useState(false);
   const [aviso, setAviso] = useState(false);
+  const [erroSacola, setErroSacola] = useState<string | null>(null);
   const tamanhoSelecionado = tamanhos.includes(tamanho) ? tamanho : tamanhos.length === 1 ? tamanhos[0]! : "";
   const corSelecionada = cores.find((item) => item.nome === cor.nome) ?? cores[0]!;
 
@@ -78,7 +80,10 @@ function DetalheProduto({ sku }: { sku: string }) {
       setAviso(true);
       return;
     }
-    void acoes.adicionarAoCarrinho({
+    setErroSacola(null);
+    setAdicionado(false);
+    acoes
+      .adicionarAoCarrinho({
       idVariacao: variacaoSelecionada?.idVariacao,
       sku: variacaoSelecionada?.sku ?? skuVariacao(produto!.sku, tamanhoSelecionado, corSelecionada.nome),
       skuBase: produto!.sku,
@@ -90,8 +95,10 @@ function DetalheProduto({ sku }: { sku: string }) {
       imagemUrl: produto!.imagemUrl,
       imagemAlt: produto!.imagemAlt ?? produto!.nome,
       tecido: produto!.tecido,
-    });
-    setAdicionado(true);
+    })
+      // Só confirma depois que a sacola de verdade (a do servidor) aceitou; senão mostra o motivo.
+      .then(() => setAdicionado(true))
+      .catch((erro: unknown) => setErroSacola(mensagemDeErro(erro)));
   }
 
   return (
@@ -216,6 +223,12 @@ function DetalheProduto({ sku }: { sku: string }) {
               {disponivel === 0 ? "Esgotada — volta na próxima edição" : "Levar para a sacola"}
             </button>
           </div>
+
+          {erroSacola ? (
+            <p role="alert" className="mt-4 text-sm text-perigo">
+              {erroSacola}
+            </p>
+          ) : null}
 
           {adicionado ? (
             <div className="mt-4 flex items-center justify-between gap-4 bg-pergaminho px-4 py-3 text-sm">
