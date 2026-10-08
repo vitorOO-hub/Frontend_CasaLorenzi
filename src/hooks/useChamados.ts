@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ErroApi } from "@/api/erros";
+import { supabase } from "@/api/supabase";
+import { assinarMudancasDaCaixa, type ClienteRealtime } from "@/lib/chatAoVivo";
 import {
   buscarChamado,
   buscarOpcoes,
@@ -82,16 +84,40 @@ export function useConsulta<T>(
   return { dados, carregando, erro, recarregar };
 }
 
+/**
+ * Recarrega assim que o Realtime avisa que chegou chamado ou mensagem, ou que um chamado mudou. O RLS
+ * decide o que a pessoa recebe. Sem Realtime, a conferência periódica de cada consulta segura a tela.
+ */
+function useRecarregarAoVivo(ativa: boolean, recarregar: () => void) {
+  useEffect(() => {
+    if (!ativa) return;
+    try {
+      return assinarMudancasDaCaixa(supabase() as unknown as ClienteRealtime, recarregar);
+    } catch {
+      return undefined;
+    }
+  }, [ativa, recarregar]);
+}
+
 export const useOpcoesChamados = (idLoja?: string) =>
   useConsulta<OpcoesChamados>((sinal) => buscarOpcoes(idLoja, { sinal }), `opcoes:${idLoja ?? ""}`);
 
-export const useResumoChamados = (idLoja?: string) =>
-  useConsulta<ResumoChamados>((sinal) => buscarResumo(idLoja, { sinal }), `resumo:${idLoja ?? ""}`, {
-    intervaloMs: 60_000,
+export function useResumoChamados(idLoja?: string) {
+  const consulta = useConsulta<ResumoChamados>((sinal) => buscarResumo(idLoja, { sinal }), `resumo:${idLoja ?? ""}`, {
+    intervaloMs: 30_000,
   });
+  useRecarregarAoVivo(true, consulta.recarregar);
+  return consulta;
+}
 
-export const useListaChamados = (filtros: FiltrosChamados) =>
-  useConsulta<ListaChamados>((sinal) => listarChamados(filtros, { sinal }), JSON.stringify(filtros));
+/** A fila se atualiza sozinha: chamado novo, assumido ou resolvido aparece sem recarregar a página. */
+export function useListaChamados(filtros: FiltrosChamados) {
+  const consulta = useConsulta<ListaChamados>((sinal) => listarChamados(filtros, { sinal }), JSON.stringify(filtros), {
+    intervaloMs: 30_000,
+  });
+  useRecarregarAoVivo(true, consulta.recarregar);
+  return consulta;
+}
 
 /** Ficha do chamado. A conversa é do chat ao vivo (`useChatAoVivo`). */
 export const useDetalheChamado = (id: string) =>
@@ -105,9 +131,10 @@ export function useChamadosSemResposta(): number {
   const sessao = useSessao();
   const papel = usePapel();
   const ativa = sessao?.tipo === "interno" && ["atendente", "gerente_loja", "admin"].includes(papel);
-  const { dados } = useConsulta<ResumoChamados>((sinal) => buscarResumo(undefined, { sinal }), "resumo-selo", {
+  const { dados, recarregar } = useConsulta<ResumoChamados>((sinal) => buscarResumo(undefined, { sinal }), "resumo-selo", {
     ativa,
-    intervaloMs: 60_000,
+    intervaloMs: 30_000,
   });
+  useRecarregarAoVivo(ativa, recarregar);
   return ativa ? (dados?.sem_resposta ?? 0) : 0;
 }
