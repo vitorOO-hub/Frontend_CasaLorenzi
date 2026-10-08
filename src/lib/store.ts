@@ -80,6 +80,40 @@ function notificar() {
   ouvintes.forEach((fn) => fn());
 }
 
+/** Esvazia só o carrinho (troca de pessoa no mesmo navegador). */
+export function esvaziarCarrinho() {
+  estado.carrinho = [];
+  notificar();
+}
+
+/**
+ * Volta ao estado inicial e apaga o que ficou guardado na aba (carrinho, chamados e pedidos locais).
+ * Roda ao sair da conta e ao trocar de pessoa, para a próxima não herdar nada da anterior.
+ */
+export function reiniciarEstado() {
+  estado.produtos = produtosIniciais.map((p) => ({ ...p, saldos: clone(p.saldos), movimentacoes: [...p.movimentacoes] }));
+  estado.chamados = clone(chamadosIniciais);
+  estado.transferencias = clone(transferenciasIniciais);
+  estado.ajustes = clone(ajustesIniciais);
+  estado.reposicoes = clone(reposicoesIniciais);
+  estado.pedidos = clone(pedidosIniciais);
+  estado.usuarios = clone(usuariosIniciais);
+  estado.auditoria = clone(auditoriaInicial);
+  estado.carrinho = [];
+  try {
+    sessionStorage.removeItem(CHAVE);
+  } catch {
+    // Storage indisponível: o estado em memória já foi limpo.
+  }
+  notificar();
+  // notificar() regrava o estado já limpo; apaga a chave de novo para não sobrar nada.
+  try {
+    sessionStorage.removeItem(CHAVE);
+  } catch {
+    // Storage indisponível.
+  }
+}
+
 /** Estado global do protótipo; o componente re-renderiza a cada alteração. */
 export function useEstado(): Estado {
   useSyncExternalStore(

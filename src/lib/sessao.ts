@@ -13,6 +13,7 @@ import { supabase } from "@/api/supabase";
 import type { Papel } from "@/api/tipos";
 import type { DadosCadastro } from "./cadastro";
 import { CLIENTE_DEMO_ID } from "./dados";
+import { esvaziarCarrinho, reiniciarEstado } from "./store";
 
 export type { Papel };
 
@@ -68,6 +69,8 @@ export function useSessaoPronta(): boolean {
 
 /** Define a sessão. Usado pelo login e pelos testes; não concede nenhum acesso no servidor. */
 export function iniciarSessao(nova: Sessao) {
+  // Outra pessoa entrando sem ter saído: o carrinho da anterior não fica para ela.
+  if (sessao && sessao.email !== nova.email) esvaziarCarrinho();
   sessao = nova;
   pronta = true;
   avisar();
@@ -199,6 +202,7 @@ export async function sincronizarSessao() {
       if (!conta) {
         if (sessao) {
           sessao = null;
+          reiniciarEstado();
           avisar();
         }
         return;
@@ -221,6 +225,7 @@ export const lojaDoPapel = (papel: Papel): string | null => equipe[papel].lojaId
 
 export function sair() {
   sessao = null;
+  reiniciarEstado();
   avisar();
   void sairDaConta().catch(() => undefined);
 }
