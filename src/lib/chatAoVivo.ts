@@ -325,6 +325,8 @@ export function abrirChatAoVivo(
 
 // ---------- Caixa de conversas ao vivo ----------
 
+let sequenciaDaCaixa = 0;
+
 /**
  * Avisa quando algo muda nas conversas que a pessoa enxerga (mensagem nova, chamado assumido ou
  * encerrado). O RLS filtra os eventos; vários seguidos viram um aviso só. Devolve a função que desliga.
@@ -344,7 +346,8 @@ export function assinarMudancasDaCaixa(
     }, espera);
   };
   const canal = realtime
-    .channel("caixa-de-conversas")
+    // Nome único: a caixa, a fila e o selo do menu ouvem ao mesmo tempo e não podem dividir o canal.
+    .channel(`caixa-de-conversas:${++sequenciaDaCaixa}`)
     .on("postgres_changes", { event: "INSERT", schema: "public", table: "mensagem" }, avisar)
     .on("postgres_changes", { event: "*", schema: "public", table: "atendimento" }, avisar)
     .subscribe();
