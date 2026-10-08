@@ -8,8 +8,8 @@ import { clientes, lojas, nomeLoja } from "@/lib/dados";
 import { casas } from "@/lib/loja";
 import { useSessao } from "@/lib/sessao";
 import * as acoes from "@/lib/acoes";
+import { criarAgendamentoCliente, listarOpcoesAgendamentoCliente, type SlotAgendamentoClienteApi } from "@/lib/agendamentosClienteApi";
 import { useProdutosCatalogo } from "@/lib/catalogoApi";
-import { abrirChamadoCliente, listarOpcoesChamadoCliente } from "@/lib/chamadosClienteApi";
 import { listarLojasCliente, type LojaClienteApi } from "@/lib/comprasClienteApi";
 import { useEstado } from "@/lib/store";
 import { useAcao } from "@/lib/useAcao";
@@ -38,6 +38,12 @@ function proximosDias() {
   return dias;
 }
 
+function rotuloData(iso: string) {
+  const [ano, mes, dia] = iso.split("-").map(Number);
+  const data = new Date(ano!, mes! - 1, dia!);
+  return `${DIAS_SEMANA[data.getDay()]} ${String(data.getDate()).padStart(2, "0")}/${String(data.getMonth() + 1).padStart(2, "0")}`;
+}
+
 function Escolha({ ativa, onClick, children, className }: { ativa: boolean; onClick: () => void; children: React.ReactNode; className?: string }) {
   return (
     <button
@@ -62,38 +68,41 @@ export function Agendar() {
   const { produtos } = useProdutosCatalogo(estado.produtos);
   const peca = produtos.find((p) => p.sku === params.get("peca"));
   const cliente = sessao?.tipo === "cliente" ? clientes.find((c) => c.id === sessao.clienteId) : undefined;
-  const dias = proximosDias();
+  const diasSimulados = proximosDias();
 
   const tipoInicial = peca ? "prova" : "ajuste";
   const [tipo, setTipo] = useState<(typeof TIPOS)[number]["id"]>(tipoInicial);
   const [lojaId, setLojaId] = useState("l1");
-  const [dia, setDia] = useState(dias[0]!.iso);
+  const [dia, setDia] = useState(diasSimulados[0]!.iso);
   const [hora, setHora] = useState("14:00");
   const [nome, setNome] = useState(cliente?.nome ?? "");
   const [telefone, setTelefone] = useState(cliente?.telefone ?? "");
   const [obs, setObs] = useState(peca ? `Quero provar a peça ${peca.nome}.` : "");
   const [feito, setFeito] = useState<{ id?: string; protocolo?: string } | null>(null);
   const [lojasApi, setLojasApi] = useState<LojaClienteApi[]>([]);
-  const [categoriaApi, setCategoriaApi] = useState("outro");
+  const [slotsApi, setSlotsApi] = useState<SlotAgendamentoClienteApi[]>([]);
   const [erroApi, setErroApi] = useState<string | null>(null);
   const { executar, ocupado, erro } = useAcao();
 
   const lojasParaEscolher = lojasApi.length
     ? lojasApi.map((l) => ({ id: l.id_loja, nome: l.nome, nota: [l.cidade, l.uf].filter(Boolean).join(", ") || l.endereco || "Casa ativa" }))
     : lojas.map((l) => ({ id: l.id, nome: l.nome, nota: casas[l.id]?.alfaiate ?? l.cidade }));
+  const slotsDaLoja = slotsApi.filter((slot) => slot.id_loja === lojaId);
+  const diasApi = Array.from(new Set(slotsDaLoja.map((slot) => slot.data))).map((iso) => ({ iso, rotulo: rotuloData(iso) }));
+  const dias = modoApi && diasApi.length ? diasApi : diasSimulados;
+  const horarios = modoApi ? slotsDaLoja.filter((slot) => slot.data === dia).map((slot) => slot.horario) : HORARIOS;
   const rotuloDia = dias.find((d) => d.iso === dia)?.rotulo ?? dia;
   const tipoRotulo = TIPOS.find((t) => t.id === tipo)!.rotulo;
 
   useEffect(() => {
     if (!modoApi || sessao?.tipo !== "cliente") return;
     let ativo = true;
-    Promise.all([listarLojasCliente(), listarOpcoesChamadoCliente()])
+    Promise.all([listarLojasCliente(), listarOpcoesAgendamentoCliente()])
       .then(([lista, opcoes]) => {
         if (!ativo) return;
         setLojasApi(lista);
         if (lista[0]) setLojaId(lista[0].id_loja);
-        const codigos = opcoes.categorias.map((c) => c.codigo);
-        setCategoriaApi(codigos.includes("outro") ? "outro" : (codigos[0] ?? "outro"));
+        setSlotsApi(opcoes.slots);
         setErroApi(null);
       })
       .catch((erro) => {
@@ -103,6 +112,21 @@ export function Agendar() {
       ativo = false;
     };
   }, [modoApi, sessao?.tipo]);
+
+  useEffect(() => {
+    if (!modoApi || !slotsApi.length) return;
+    const slots = slotsApi.filter((slot) => slot.id_loja === lojaId);
+    if (!slots.some((slot) => slot.data === dia)) {
+      const primeiro = slots[0];
+      if (primeiro) {
+        setDia(primeiro.data);
+        setHora(primeiro.horario);
+      }
+      return;
+    }
+    const horariosDoDia = slots.filter((slot) => slot.data === dia).map((slot) => slot.horario);
+    if (horariosDoDia.length && !horariosDoDia.includes(hora)) setHora(horariosDoDia[0]!);
+  }, [dia, hora, lojaId, modoApi, slotsApi]);
 
   if (feito) {
     const info = casas[lojaId];
@@ -147,18 +171,16 @@ export function Agendar() {
           void executar("agendar", async () => {
             if (modoApi) {
               if (sessao?.tipo !== "cliente") throw new Error("Entre na sua conta para agendar uma prova.");
-              const novo = await abrirChamadoCliente({
-                assunto: `Prova agendada — ${rotuloDia}, ${hora}`,
-                categoria: categoriaApi,
+              const novo = await criarAgendamentoCliente({
+                tipo,
                 id_loja: lojaId,
-                descricao: [
-                  `${tipoRotulo} na casa ${lojasParaEscolher.find((l) => l.id === lojaId)?.nome ?? nomeLoja(lojaId)}, ${rotuloDia} às ${hora}.`,
-                  peca ? `Peça: ${peca.nome} (${peca.sku}).` : null,
-                  `Contato: ${nome}, ${telefone}.`,
-                  obs ? `Observação: ${obs}` : null,
-                ]
-                  .filter(Boolean)
-                  .join(" "),
+                data: dia,
+                horario: hora,
+                nome,
+                telefone,
+                observacao: obs || null,
+                peca_sku: peca?.sku ?? null,
+                peca_nome: peca?.nome ?? null,
               });
               setFeito({ id: novo.id_atendimento, protocolo: novo.protocolo });
             } else if (cliente) {
@@ -211,12 +233,13 @@ export function Agendar() {
             ))}
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
-            {HORARIOS.map((h) => (
+            {horarios.map((h) => (
               <Escolha key={h} ativa={hora === h} onClick={() => setHora(h)} className="min-w-20 text-center">
                 {h}
               </Escolha>
             ))}
           </div>
+          {modoApi && !horarios.length ? <p className="mt-3 text-sm text-perigo">Não há horários livres nesta casa para os próximos dias.</p> : null}
         </section>
 
         <section className="grid max-w-3xl gap-4 sm:grid-cols-2">
