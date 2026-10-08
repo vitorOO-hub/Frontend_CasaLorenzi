@@ -89,7 +89,7 @@ export function Movimentacoes() {
         descricao={descricao}
         acao={
           <>
-            {escopo?.papel !== "gerente" ? (
+            {escopo?.papel === "operador_estoque" ? (
               <Botao variante="secundario" disabled={!opcoes.dados} onClick={() => setModal("ajuste")}>
                 Ajuste de inventário
               </Botao>
