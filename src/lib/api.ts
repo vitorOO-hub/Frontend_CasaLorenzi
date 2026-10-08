@@ -35,7 +35,7 @@ async function renovarToken(): Promise<string | null> {
   }
 }
 
-export type Parametros = Record<string, string | number | undefined | null>;
+export type Parametros = Record<string, string | number | string[] | undefined | null>;
 
 export type OpcoesApi = {
   sinal?: AbortSignal;
@@ -93,7 +93,8 @@ async function detalheDoCorpo(resposta: Response): Promise<unknown> {
 function montarUrl(baseUrl: string, caminho: string, parametros?: Parametros): string {
   const consulta = new URLSearchParams();
   for (const [nome, valor] of Object.entries(parametros ?? {})) {
-    if (valor !== undefined && valor !== null && valor !== "") consulta.set(nome, String(valor));
+    if (Array.isArray(valor)) valor.forEach((item) => consulta.append(nome, item));
+    else if (valor !== undefined && valor !== null && valor !== "") consulta.set(nome, String(valor));
   }
   const texto = consulta.toString();
   return `${baseUrl}${caminho}${texto ? `?${texto}` : ""}`;

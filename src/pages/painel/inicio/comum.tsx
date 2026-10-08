@@ -2,8 +2,7 @@ import { ArrowRight, RotateCcw } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Segmentado, Select, cn } from "@/components/ui";
-import { lojas } from "@/lib/dados";
-import { HOJE, corDaLoja, intervalos, rotuloPeriodo, type Periodo } from "@/lib/analise";
+import { HOJE, intervalos, rotuloPeriodo, type Periodo } from "@/lib/analise";
 import { dataBR } from "@/lib/dados";
 import { useNomeUsuario } from "@/lib/sessao";
 
@@ -14,7 +13,8 @@ export function useFiltros() {
   const [params, setParams] = useSearchParams();
   const periodoBruto = Number(params.get("periodo"));
   const periodo: Periodo = PERIODOS.includes(periodoBruto as Periodo) ? (periodoBruto as Periodo) : 30;
-  const lojaIds = (params.get("lojas") ?? "").split(",").filter((id) => lojas.some((l) => l.id === id));
+  // Ids de loja vindos da URL: só o formato é conferido aqui; o servidor valida e escopa.
+  const lojaIds = (params.get("lojas") ?? "").split(",").filter((id) => /^[\w-]{1,64}$/.test(id)).slice(0, 10);
 
   function definir(chave: string, valor: string) {
     const novo = new URLSearchParams(params);
@@ -102,7 +102,13 @@ export function FiltroSelect({
 }
 
 /** Seleção de unidades para comparar: nenhuma marcada = rede consolidada. */
-export function SeletorUnidades({ filtros }: { filtros: Filtros }) {
+export function SeletorUnidades({
+  filtros,
+  unidades,
+}: {
+  filtros: Filtros;
+  unidades: { id: string; nome: string; cor: string }[];
+}) {
   const nenhuma = filtros.lojaIds.length === 0;
   return (
     <div>
@@ -117,7 +123,7 @@ export function SeletorUnidades({ filtros }: { filtros: Filtros }) {
         >
           Rede consolidada
         </button>
-        {lojas.map((l) => {
+        {unidades.map((l) => {
           const ativa = filtros.lojaIds.includes(l.id);
           return (
             <button
@@ -129,7 +135,7 @@ export function SeletorUnidades({ filtros }: { filtros: Filtros }) {
                 ativa ? "border-tinta bg-papel text-tinta" : "border-linha bg-papel text-suave hover:border-marinho",
               )}
             >
-              <span className="h-2 w-2 rounded-full" style={{ background: corDaLoja(l.id), opacity: ativa ? 1 : 0.35 }} />
+              <span className="h-2 w-2 rounded-full" style={{ background: l.cor, opacity: ativa ? 1 : 0.35 }} />
               {l.nome}
             </button>
           );
