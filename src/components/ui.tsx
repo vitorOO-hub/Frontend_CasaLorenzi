@@ -278,6 +278,42 @@ export function Select({
     e.preventDefault();
   }
 
+  const listaDeOpcoes = (
+    <ul
+      ref={lista}
+      id={`${base}-lista`}
+      role="listbox"
+      aria-label={rotulo}
+      hidden={!aberto}
+      style={posicao ?? undefined}
+      className={cn("z-[60] max-h-64 max-w-[min(22rem,calc(100vw-2rem))] overflow-y-auto", v.lista)}
+    >
+      {opcoes.map((o, i) => {
+        const escolhida = i === indiceAtual;
+        return (
+          <li
+            key={o.value}
+            id={`${base}-${i}`}
+            role="option"
+            aria-selected={escolhida}
+            onPointerEnter={() => setAtiva(i)}
+            onPointerDown={(e) => e.preventDefault()}
+            onClick={() => escolher(i)}
+            className={cn(
+              "flex cursor-pointer items-center justify-between gap-4 whitespace-nowrap transition-colors",
+              v.opcao,
+              i === ativa && v.ativa,
+              escolhida && v.escolhida,
+            )}
+          >
+            {o.label}
+            {escolhida ? <Check className={cn("h-3.5 w-3.5 shrink-0", v.marca)} strokeWidth={2} /> : null}
+          </li>
+        );
+      })}
+    </ul>
+  );
+
   return (
     <div className={cn("relative", className)}>
       <button
@@ -298,44 +334,9 @@ export function Select({
         <span className="truncate">{atual?.label ?? ""}</span>
         <ChevronDown className={cn("shrink-0 transition-transform", v.seta, aberto && "rotate-180")} />
       </button>
-      {/* A lista fica sempre na página (escondida quando fechada), com as opções legíveis. Vai para o body:
-          um ancestral com backdrop-blur/transform viraria a referência do "fixed" e deslocaria a lista. */}
-      {createPortal(
-      <ul
-        ref={lista}
-        id={`${base}-lista`}
-        role="listbox"
-        aria-label={rotulo}
-        hidden={!aberto}
-        style={posicao ?? undefined}
-        className={cn("z-[60] max-h-64 max-w-[min(22rem,calc(100vw-2rem))] overflow-y-auto", v.lista)}
-      >
-        {opcoes.map((o, i) => {
-          const escolhida = i === indiceAtual;
-          return (
-            <li
-              key={o.value}
-              id={`${base}-${i}`}
-              role="option"
-              aria-selected={escolhida}
-              onPointerEnter={() => setAtiva(i)}
-              onPointerDown={(e) => e.preventDefault()}
-              onClick={() => escolher(i)}
-              className={cn(
-                "flex cursor-pointer items-center justify-between gap-4 whitespace-nowrap transition-colors",
-                v.opcao,
-                i === ativa && v.ativa,
-                escolhida && v.escolhida,
-              )}
-            >
-              {o.label}
-              {escolhida ? <Check className={cn("h-3.5 w-3.5 shrink-0", v.marca)} strokeWidth={2} /> : null}
-            </li>
-          );
-        })}
-      </ul>,
-      document.body,
-      )}
+      {/* Fechada, a lista fica no lugar e escondida (opções legíveis, sem depender do navegador). Aberta,
+          vai para o body: um ancestral com backdrop-blur/transform viraria a referência do "fixed". */}
+      {aberto && typeof document !== "undefined" ? createPortal(listaDeOpcoes, document.body) : listaDeOpcoes}
     </div>
   );
 }

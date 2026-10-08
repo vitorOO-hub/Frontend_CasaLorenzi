@@ -123,7 +123,8 @@ export function NovoChamado() {
               categoria: categoriaPorMotivo[motivoSelecionado],
               descricao,
               id_pedido: pedidoId || undefined,
-              id_loja: pedidoId ? undefined : lojaId || undefined,
+              // Só vai para uma loja se o cliente escolher; sem escolha, qualquer atendente vê.
+              id_loja: lojaId || undefined,
             });
             setCriado({ id: novo.id_atendimento, protocolo: novo.protocolo });
             return;
@@ -169,13 +170,8 @@ export function NovoChamado() {
         </select>
       </CampoLoja>
       {modoApi ? (
-        <CampoLoja rotulo="Loja responsavel (opcional)">
-          <select
-            value={lojaId}
-            onChange={(event) => setLojaId(event.target.value)}
-            className={campoLoja}
-            disabled={Boolean(pedidoId)}
-          >
+        <CampoLoja rotulo="Loja responsável (opcional)">
+          <select value={lojaId} onChange={(event) => setLojaId(event.target.value)} className={campoLoja}>
             <option value="">Fila geral de atendimento</option>
             {lojasApi?.map((loja) => {
               const localizacao = [loja.cidade, loja.uf].filter(Boolean).join(", ");
@@ -187,6 +183,9 @@ export function NovoChamado() {
               );
             })}
           </select>
+          <span className="mt-1.5 block text-[13px] text-suave">
+            {lojaId ? "Só a equipe desta loja recebe a mensagem." : "Sem escolher uma loja, qualquer atendente da casa pode responder."}
+          </span>
         </CampoLoja>
       ) : null}
       <CampoLoja rotulo="Conte com detalhes">
