@@ -11,6 +11,7 @@ import {
   type KeyboardEvent as EventoTeclado,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 
@@ -297,7 +298,9 @@ export function Select({
         <span className="truncate">{atual?.label ?? ""}</span>
         <ChevronDown className={cn("shrink-0 transition-transform", v.seta, aberto && "rotate-180")} />
       </button>
-      {/* A lista fica sempre na página (escondida quando fechada), com as opções legíveis. */}
+      {/* A lista fica sempre na página (escondida quando fechada), com as opções legíveis. Vai para o body:
+          um ancestral com backdrop-blur/transform viraria a referência do "fixed" e deslocaria a lista. */}
+      {createPortal(
       <ul
         ref={lista}
         id={`${base}-lista`}
@@ -330,7 +333,9 @@ export function Select({
             </li>
           );
         })}
-      </ul>
+      </ul>,
+      document.body,
+      )}
     </div>
   );
 }
