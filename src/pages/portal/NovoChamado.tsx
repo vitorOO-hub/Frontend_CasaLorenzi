@@ -77,7 +77,6 @@ export function NovoChamado() {
         setCategoriasApi(new Set(opcoes.categorias.map((c) => c.codigo)));
         setPedidosApi(pedidos);
         setLojasApi(lojas);
-        setLojaId((atual) => atual || lojas[0]?.id_loja || "");
       })
       .catch((erro) => {
         if (ativo) setErroApi(mensagemDeErro(erro));
@@ -119,9 +118,6 @@ export function NovoChamado() {
         e.preventDefault();
         void executar("chamado", async () => {
           if (modoApi) {
-            if (!pedidoId && !lojaId) {
-              throw new Error("Escolha a loja responsavel pelo atendimento.");
-            }
             const novo = await abrirChamadoCliente({
               assunto,
               categoria: categoriaPorMotivo[motivoSelecionado],
@@ -173,14 +169,14 @@ export function NovoChamado() {
         </select>
       </CampoLoja>
       {modoApi ? (
-        <CampoLoja rotulo="Loja responsavel">
+        <CampoLoja rotulo="Loja responsavel (opcional)">
           <select
-            required={!pedidoId}
             value={lojaId}
             onChange={(event) => setLojaId(event.target.value)}
             className={campoLoja}
             disabled={Boolean(pedidoId)}
           >
+            <option value="">Fila geral de atendimento</option>
             {lojasApi?.map((loja) => {
               const localizacao = [loja.cidade, loja.uf].filter(Boolean).join(", ");
               const rotulo = [loja.nome, localizacao].filter(Boolean).join(" - ");
