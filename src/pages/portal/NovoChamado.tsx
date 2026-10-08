@@ -6,7 +6,7 @@ import { cn } from "@/components/ui";
 import { botaoLoja } from "@/components/vitrine";
 import * as acoes from "@/lib/acoes";
 import { abrirChamadoCliente, listarOpcoesChamadoCliente } from "@/lib/chamadosClienteApi";
-import { listarPedidosCliente, type PedidoClienteApi } from "@/lib/comprasClienteApi";
+import { listarLojasCliente, listarPedidosCliente, type LojaClienteApi, type PedidoClienteApi } from "@/lib/comprasClienteApi";
 import { clientes, dataBR, type Chamado } from "@/lib/dados";
 import { useClienteId, useSessao } from "@/lib/sessao";
 import { useEstado } from "@/lib/store";
@@ -40,6 +40,8 @@ export function NovoChamado() {
   const clienteId = useClienteId();
   const cliente = clientes.find((c) => c.id === clienteId)!;
   const [pedidosApi, setPedidosApi] = useState<PedidoClienteApi[] | null>(null);
+  const [lojasApi, setLojasApi] = useState<LojaClienteApi[] | null>(null);
+  const [lojaId, setLojaId] = useState("");
   const [categoriasApi, setCategoriasApi] = useState<Set<string> | null>(null);
   const [erroApi, setErroApi] = useState<string | null>(null);
   const meusPedidos = useMemo(() => {
@@ -61,11 +63,13 @@ export function NovoChamado() {
   useEffect(() => {
     if (!modoApi || sessao?.tipo !== "cliente") return;
     let ativo = true;
-    Promise.all([listarOpcoesChamadoCliente(), listarPedidosCliente()])
-      .then(([opcoes, pedidos]) => {
+    Promise.all([listarOpcoesChamadoCliente(), listarPedidosCliente(), listarLojasCliente()])
+      .then(([opcoes, pedidos, lojas]) => {
         if (!ativo) return;
         setCategoriasApi(new Set(opcoes.categorias.map((c) => c.codigo)));
         setPedidosApi(pedidos);
+        setLojasApi(lojas);
+        setLojaId((atual) => atual || lojas[0]?.id_loja || "");
       })
       .catch((erro) => {
         if (ativo) setErroApi(mensagemDeErro(erro));
@@ -92,7 +96,7 @@ export function NovoChamado() {
     );
   }
 
-  if (modoApi && (pedidosApi === null || categoriasApi === null) && !erroApi) {
+  if (modoApi && (pedidosApi === null || categoriasApi === null || lojasApi === null) && !erroApi) {
     return <p className="font-display text-2xl text-suave">Carregando atendimento...</p>;
   }
 
@@ -107,7 +111,16 @@ export function NovoChamado() {
         e.preventDefault();
         void executar("chamado", async () => {
           if (modoApi) {
-            const novo = await abrirChamadoCliente({ assunto, categoria: categoriaPorMotivo[motivoSelecionado], descricao, id_pedido: pedidoId || undefined });
+            if (!pedidoId && !lojaId) {
+              throw new Error("Escolha a loja responsavel pelo atendimento.");
+            }
+            const novo = await abrirChamadoCliente({
+              assunto,
+              categoria: categoriaPorMotivo[motivoSelecionado],
+              descricao,
+              id_pedido: pedidoId || undefined,
+              id_loja: pedidoId ? undefined : lojaId || undefined,
+            });
             setCriado({ id: novo.id_atendimento, protocolo: novo.protocolo });
             return;
           }
@@ -151,6 +164,27 @@ export function NovoChamado() {
           ))}
         </select>
       </CampoLoja>
+      {modoApi ? (
+        <CampoLoja rotulo="Loja responsavel">
+          <select
+            required={!pedidoId}
+            value={lojaId}
+            onChange={(event) => setLojaId(event.target.value)}
+            className={campoLoja}
+            disabled={Boolean(pedidoId)}
+          >
+            {lojasApi?.map((loja) => {
+              const localizacao = [loja.cidade, loja.uf].filter(Boolean).join(", ");
+              const rotulo = [loja.nome, localizacao].filter(Boolean).join(" - ");
+              return (
+                <option key={loja.id_loja} value={loja.id_loja}>
+                  {rotulo}
+                </option>
+              );
+            })}
+          </select>
+        </CampoLoja>
+      ) : null}
       <CampoLoja rotulo="Conte com detalhes">
         <textarea required rows={5} value={descricao} onChange={(e) => setDescricao(e.target.value)} className={campoLoja} />
       </CampoLoja>
