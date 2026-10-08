@@ -11,6 +11,8 @@ import {
   type Reposicao,
 } from "@/lib/gerenciaApi";
 import { sair } from "@/lib/sessao";
+import { buscarLojas as buscarLojasDaRede, type LojaDaRede } from "@/lib/gerenciaApi";
+import { useConsulta } from "./useChamados";
 
 export type DadosGerente = {
   vendas: DashboardGerente;
@@ -85,3 +87,9 @@ export function useDashboardGerente(filtros: FiltrosGerente): EstadoGerente {
   const recarregar = useCallback(() => setTentativa((n) => n + 1), []);
   return { dados, carregando, erro, recarregar };
 }
+
+/** Cartão de cada loja visível (o gerente vê a dele; o admin, a rede). Reconsulta a cada 2 minutos. */
+export const useLojasDaRede = () =>
+  useConsulta<LojaDaRede[]>((sinal) => buscarLojasDaRede(undefined, { sinal }), "lojas-da-rede", {
+    intervaloMs: 120_000,
+  });

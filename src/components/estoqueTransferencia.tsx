@@ -12,13 +12,15 @@ type Props = {
   aberto: boolean;
   onFechar: () => void;
   opcoes: OpcoesEstoque;
+  /** Peça já escolhida (quando a janela abre a partir da página da peça). */
+  skuInicial?: string;
   /** Chamado depois de gravar, para a tela reler a lista do servidor. */
   onSucesso: () => void;
 };
 
 /** Peça, quantidade e (para o admin) a loja que pede: campos comuns às duas janelas. */
-function useCamposComuns(opcoes: OpcoesEstoque) {
-  const [sku, setSku] = useState(opcoes.pecas[0]?.sku ?? "");
+function useCamposComuns(opcoes: OpcoesEstoque, skuInicial?: string) {
+  const [sku, setSku] = useState(skuInicial ?? opcoes.pecas[0]?.sku ?? "");
   const [quantidadeTexto, setQuantidadeTexto] = useState("1");
   const [observacao, setObservacao] = useState("");
   const [lojaQuePede, setLojaQuePede] = useState(opcoes.lojas[0]?.id_loja ?? "");
@@ -92,9 +94,9 @@ function Rodape({ onFechar, enviar, ocupado, erro, desativado }: { onFechar: () 
 }
 
 /** Pede peças a outra loja. A origem aceita e, quando as peças chegarem, a sua loja confirma. */
-export function ModalTransferenciaEstoque({ aberto, onFechar, opcoes, onSucesso }: Props) {
+export function ModalTransferenciaEstoque({ aberto, onFechar, opcoes, skuInicial, onSucesso }: Props) {
   const { executar, ocupado, erro } = useAcao();
-  const campos = useCamposComuns(opcoes);
+  const campos = useCamposComuns(opcoes, skuInicial);
   const origens = opcoes.rede.filter((l) => l.id_loja !== campos.idDoDestino);
   const [origemEscolhida, setOrigemEscolhida] = useState("");
   const origem = origens.some((l) => l.id_loja === origemEscolhida) ? origemEscolhida : (origens[0]?.id_loja ?? "");

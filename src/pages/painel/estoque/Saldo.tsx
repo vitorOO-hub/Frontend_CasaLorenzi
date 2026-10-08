@@ -69,8 +69,8 @@ export function Saldo() {
         titulo="Saldo de estoque"
         descricao={
           porUnidade
-            ? "Saldo por unidade da rede. Clique numa peça para ver o histórico dela."
-            : `Peças disponíveis em ${lojas[0]?.nome ?? "sua unidade"}. Clique numa peça para ver o histórico dela.`
+            ? "Saldo por unidade da rede. Clique numa peça para ver o detalhe e o histórico."
+            : `Peças disponíveis em ${lojas[0]?.nome ?? "sua unidade"}. Clique numa peça para ver o detalhe e o histórico.`
         }
       />
 
@@ -131,7 +131,7 @@ export function Saldo() {
               {itens.map((p) => (
                 <tr
                   key={p.id_variacao}
-                  onClick={() => navigate(`/painel/estoque/movimentacoes?sku=${encodeURIComponent(p.sku)}`)}
+                  onClick={() => navigate(`/painel/estoque/peca/${encodeURIComponent(p.sku)}`)}
                   className={linhaClicavel}
                 >
                   <td className={td}>

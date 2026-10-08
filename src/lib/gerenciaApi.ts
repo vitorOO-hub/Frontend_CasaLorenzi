@@ -215,3 +215,42 @@ export const buscarReposicao = (f: { idLoja?: string; categoria?: string; limite
 
 export const buscarPendencias = (idLoja?: string, o?: OpcoesApi) =>
   api.get(`${BASE}/pendencias`, validarPendencias, { id_loja: idLoja }, o);
+
+export type LojaDaRede = {
+  id_loja: string;
+  codigo: string;
+  nome: string;
+  cidade: string | null;
+  uf: string | null;
+  endereco: string | null;
+  gerente: string | null;
+  equipe: number;
+  unidades_em_estoque: number;
+  pecas_em_alerta: number;
+  /** Faturamento de produtos dos últimos 30 dias. */
+  vendas_30_dias: number;
+  chamados_abertos: number;
+};
+
+export function validarLojas(dados: unknown): LojaDaRede[] {
+  return lista(objeto(dados, "lojas").itens, "itens").map((v, i) => {
+    const l = objeto(v, `itens[${i}]`);
+    return {
+      id_loja: texto(l.id_loja, "id_loja"),
+      codigo: texto(l.codigo, "codigo"),
+      nome: texto(l.nome, "nome"),
+      cidade: textoOuNulo(l.cidade, "cidade"),
+      uf: textoOuNulo(l.uf, "uf"),
+      endereco: textoOuNulo(l.endereco, "endereco"),
+      gerente: textoOuNulo(l.gerente, "gerente"),
+      equipe: numero(l.equipe, "equipe"),
+      unidades_em_estoque: numero(l.unidades_em_estoque, "unidades_em_estoque"),
+      pecas_em_alerta: numero(l.pecas_em_alerta, "pecas_em_alerta"),
+      vendas_30_dias: numero(l.vendas_30_dias, "vendas_30_dias"),
+      chamados_abertos: numero(l.chamados_abertos, "chamados_abertos"),
+    };
+  });
+}
+
+export const buscarLojas = (idLoja?: string, o?: OpcoesApi) =>
+  api.get(`${BASE}/lojas`, validarLojas, { id_loja: idLoja }, o);

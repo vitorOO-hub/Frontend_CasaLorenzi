@@ -31,7 +31,7 @@ export const rotuloPapel: Record<Papel, string> = {
 
 export type Sessao =
   | { tipo: "cliente"; clienteId: string; nome: string; email: string }
-  | { tipo: "interno"; papel: Papel; nome: string; email: string; lojaId?: string };
+  | { tipo: "interno"; papel: Papel; nome: string; email: string; lojaId?: string; lojaNome?: string };
 
 // ---------- Estado da sessão ----------
 //
@@ -75,7 +75,7 @@ export function iniciarSessao(nova: Sessao) {
 
 const nomePeloEmail = (email: string) => email.split("@")[0] || email;
 
-type Perfil = { nome: string; tipo: string | null };
+type Perfil = { nome: string; tipo: string | null; lojaNome?: string };
 
 /**
  * Nome e tipo do cadastro, lidos direto do Supabase: a policy do RLS só devolve a linha do próprio
@@ -85,13 +85,16 @@ async function perfilDoUsuario(idAuth: string, email: string): Promise<Perfil> {
   try {
     const { data } = await supabase()
       .from("usuario")
-      .select("nome, tipo_usuario(codigo)")
+      .select("nome, tipo_usuario(codigo), loja(nome)")
       .eq("auth_user_id", idAuth)
       .maybeSingle();
     const tipo = Array.isArray(data?.tipo_usuario) ? data.tipo_usuario[0] : data?.tipo_usuario;
+    const loja = Array.isArray(data?.loja) ? data.loja[0] : data?.loja;
     return {
       nome: typeof data?.nome === "string" && data.nome ? data.nome : nomePeloEmail(email),
       tipo: typeof tipo?.codigo === "string" ? tipo.codigo : null,
+      // Nome real da loja do cadastro (a policy deixa ler as lojas ativas).
+      lojaNome: typeof loja?.nome === "string" && loja.nome ? loja.nome : undefined,
     };
   } catch {
     // Sem perfil legível: cai para o e-mail e para o tipo do token.
@@ -99,9 +102,7 @@ async function perfilDoUsuario(idAuth: string, email: string): Promise<Perfil> {
   }
 }
 
-const nomeDoPerfil = async (idAuth: string, email: string) => (await perfilDoUsuario(idAuth, email)).nome;
-
-function daConta(conta: SessaoApi, nome: string): Sessao {
+function daConta(conta: SessaoApi, nome: string, lojaNome?: string): Sessao {
   if (conta.tipo === "interno") {
     return {
       tipo: "interno",
@@ -109,6 +110,7 @@ function daConta(conta: SessaoApi, nome: string): Sessao {
       nome,
       email: conta.email,
       lojaId: conta.idLoja == null ? undefined : String(conta.idLoja),
+      lojaNome,
     };
   }
   // Telas antigas ainda precisam de um cliente local para funcionar quando o modo API esta desligado.
@@ -144,7 +146,7 @@ export async function entrar(email: string, senha: string): Promise<ResultadoLog
         "Sua conta é da equipe, mas o login não trouxe o seu cargo. Peça ao administrador para conferir a ligação da conta e o hook de claims do Supabase.",
     };
   }
-  const nova = daConta(conta, perfil.nome);
+  const nova = daConta(conta, perfil.nome, perfil.lojaNome);
   iniciarSessao(nova);
   return { ok: true, sessao: nova };
 }
@@ -158,7 +160,12 @@ export async function sincronizarSessao() {
   if (!supabaseConfigurado) return;
   try {
     const conta = await sessaoDoSupabase();
-    sessao = conta ? daConta(conta, await nomeDoPerfil(conta.id, conta.email)) : null;
+    if (conta) {
+      const perfil = await perfilDoUsuario(conta.id, conta.email);
+      sessao = daConta(conta, perfil.nome, perfil.lojaNome);
+    } else {
+      sessao = null;
+    }
   } catch {
     sessao = null;
   }
@@ -174,8 +181,9 @@ export async function sincronizarSessao() {
         }
         return;
       }
-      const nome = sessao?.email === conta.email ? sessao.nome : nomePeloEmail(conta.email);
-      sessao = daConta(conta, nome);
+      const mesma = sessao?.email === conta.email ? sessao : null;
+      const nome = mesma ? mesma.nome : nomePeloEmail(conta.email);
+      sessao = daConta(conta, nome, mesma?.tipo === "interno" ? mesma.lojaNome : undefined);
       avisar();
     });
   } catch {

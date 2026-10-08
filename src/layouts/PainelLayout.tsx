@@ -8,7 +8,6 @@ import { abasDoPapel, podeAcessar, secoesDoPapel, type Secao } from "@/lib/naveg
 import { usePendencias } from "@/lib/pendencias";
 import {
   definirFiltroUnidade,
-  equipe,
   rotuloPapel,
   sair,
   useFiltroUnidade,
@@ -59,8 +58,8 @@ export function PainelLayout() {
   if (!pronta) return null;
   if (sessao?.tipo !== "interno") return <Navigate to={`/entrar?voltar=${encodeURIComponent(pathname)}`} replace />;
 
-  // Nome do cadastro (lido com RLS); a loja exibida segue o escopo das telas simuladas.
-  const pessoa = { nome: sessao.nome, lojaId: equipe[papel].lojaId };
+  // Nome e loja vêm do cadastro (lidos com RLS); nada daqui é dado de exemplo.
+  const pessoa = { nome: sessao.nome, lojaNome: papel === "admin" ? undefined : sessao.lojaNome };
   const visiveis = secoesDoPapel(papel);
   const contagem = (s: Secao) =>
     abasDoPapel(s, papel).reduce((soma, a) => soma + (a.pendencia ? pendencias[a.pendencia] : 0), 0);
@@ -70,7 +69,8 @@ export function PainelLayout() {
     navigate("/", { replace: true });
   }
 
-  const escopoTexto = escopo ? nomeLoja(escopo) : "Todas as unidades";
+  // Admin vê a rede (ou a unidade escolhida no filtro); os demais, a própria loja.
+  const escopoTexto = papel === "admin" ? (escopo ? nomeLoja(escopo) : "Todas as unidades") : (pessoa.lojaNome ?? "Sua unidade");
 
   return (
     <div className="flex min-h-screen bg-creme">
@@ -159,7 +159,7 @@ export function PainelLayout() {
                 <span className="text-[13.5px] font-medium text-creme">{pessoa.nome}</span>
                 <span className={cn("text-[11.5px]", APAGADO)}>
                   {rotuloPapel[papel]}
-                  {pessoa.lojaId ? ` · ${nomeLoja(pessoa.lojaId)}` : ""}
+                  {pessoa.lojaNome ? ` · ${pessoa.lojaNome}` : ""}
                 </span>
               </span>
             </div>
@@ -200,7 +200,7 @@ export function PainelLayout() {
               ) : null}
               <MenuUsuario
                 nome={pessoa.nome}
-                detalhe={`${rotuloPapel[papel]}${pessoa.lojaId ? ` · ${nomeLoja(pessoa.lojaId)}` : ""}`}
+                detalhe={`${rotuloPapel[papel]}${pessoa.lojaNome ? ` · ${pessoa.lojaNome}` : ""}`}
                 email={sessao.email}
                 onSair={encerrar}
               />
