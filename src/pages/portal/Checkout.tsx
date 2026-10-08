@@ -7,7 +7,9 @@ import { cn } from "@/components/ui";
 import { Foto, botaoLoja } from "@/components/vitrine";
 import { lojas, moeda } from "@/lib/dados";
 import { fecharPedidoCliente, listarLojasCliente, type LojaClienteApi } from "@/lib/comprasClienteApi";
+import { ENDERECO_VAZIO, formatarCep, preencherComCadastro } from "@/lib/cadastro";
 import { casas, fotoEstudio } from "@/lib/loja";
+import { obterPerfilCliente } from "@/lib/perfilClienteApi";
 import { novaChaveIdempotencia } from "@/api/http";
 import * as acoes from "@/lib/acoes";
 import { useSessao } from "@/lib/sessao";
@@ -71,7 +73,8 @@ export function Checkout() {
   const [erroLojas, setErroLojas] = useState<string | null>(null);
   const [pagamento, setPagamento] = useState<Pagamento>("cartao");
   const [parcelas, setParcelas] = useState("1");
-  const [endereco, setEndereco] = useState({ cep: "", rua: "", numero: "", complemento: "", uf: "SP" });
+  const [endereco, setEndereco] = useState(ENDERECO_VAZIO);
+  const [doCadastro, setDoCadastro] = useState(false);
   const [qrPix, setQrPix] = useState<string | null>(null);
   const [pedido, setPedido] = useState<string | null>(null);
   // Uma chave por tentativa de compra: duplo clique ou reenvio não criam dois pedidos.
@@ -107,6 +110,22 @@ export function Checkout() {
     if (sessao?.tipo !== "cliente") return;
     void acoes.sincronizarCarrinho().catch(() => undefined);
   }, [sessao?.tipo]);
+
+  // O endereço do cadastro já vem preenchido (e continua editável, se a entrega for em outro lugar).
+  useEffect(() => {
+    if (!modoApi || sessao?.tipo !== "cliente") return;
+    let ativo = true;
+    obterPerfilCliente()
+      .then((perfil) => {
+        if (!ativo || !perfil.rua) return;
+        setEndereco((atual) => preencherComCadastro(atual, perfil));
+        setDoCadastro(true);
+      })
+      .catch(() => undefined); // sem o perfil o formulário só fica em branco
+    return () => {
+      ativo = false;
+    };
+  }, [modoApi, sessao?.tipo]);
 
   useEffect(() => {
     if (!modoApi || sessao?.tipo !== "cliente") return;
@@ -177,6 +196,7 @@ export function Checkout() {
                       ? {
                           cep: endereco.cep,
                           rua: endereco.rua,
+                          bairro: endereco.bairro || null,
                           numero: endereco.numero,
                           complemento: endereco.complemento || null,
                           uf: endereco.uf,
@@ -214,11 +234,17 @@ export function Checkout() {
             </div>
             {entrega === "casa" ? (
               <div className="grid gap-4 sm:grid-cols-6">
+                {doCadastro ? (
+                  <p className="text-sm text-suave sm:col-span-6">Usamos o endereço do seu cadastro. Se for entregar em outro lugar, é só alterar.</p>
+                ) : null}
                 <CampoLoja rotulo="CEP" className="sm:col-span-2">
-                  <input value={endereco.cep} onChange={(e) => setEndereco((atual) => ({ ...atual, cep: e.target.value }))} required inputMode="numeric" className={campoLoja} />
+                  <input value={endereco.cep} onChange={(e) => setEndereco((atual) => ({ ...atual, cep: formatarCep(e.target.value) }))} required inputMode="numeric" className={campoLoja} />
                 </CampoLoja>
                 <CampoLoja rotulo="Rua" className="sm:col-span-4">
                   <input value={endereco.rua} onChange={(e) => setEndereco((atual) => ({ ...atual, rua: e.target.value }))} required className={campoLoja} />
+                </CampoLoja>
+                <CampoLoja rotulo="Bairro" className="sm:col-span-4">
+                  <input value={endereco.bairro} onChange={(e) => setEndereco((atual) => ({ ...atual, bairro: e.target.value }))} required className={campoLoja} />
                 </CampoLoja>
                 <CampoLoja rotulo="Número" className="sm:col-span-2">
                   <input value={endereco.numero} onChange={(e) => setEndereco((atual) => ({ ...atual, numero: e.target.value }))} required className={campoLoja} />

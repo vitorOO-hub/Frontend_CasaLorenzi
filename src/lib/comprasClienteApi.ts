@@ -57,6 +57,7 @@ export type CheckoutClienteCriar = {
   endereco_entrega?: {
     cep: string;
     rua: string;
+    bairro?: string | null;
     numero: string;
     complemento?: string | null;
     uf: string;

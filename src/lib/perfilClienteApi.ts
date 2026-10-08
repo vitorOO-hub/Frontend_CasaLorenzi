@@ -13,6 +13,12 @@ export type PerfilClienteApi = {
   total_chamados: number;
   id_loja_preferida: string | null;
   loja_preferida: string | null;
+  /** Endereço do cadastro; contas antigas podem não ter. */
+  cep: string | null;
+  rua: string | null;
+  bairro: string | null;
+  numero_endereco: string | null;
+  complemento: string | null;
 };
 
 function decimal(valor: unknown, campo: string): string {
@@ -35,6 +41,11 @@ export function validarPerfilCliente(dados: unknown): PerfilClienteApi {
     total_chamados: numero(o.total_chamados, "total_chamados"),
     id_loja_preferida: textoOuNulo(o.id_loja_preferida, "id_loja_preferida"),
     loja_preferida: textoOuNulo(o.loja_preferida, "loja_preferida"),
+    cep: textoOuNulo(o.cep, "cep"),
+    rua: textoOuNulo(o.rua, "rua"),
+    bairro: textoOuNulo(o.bairro, "bairro"),
+    numero_endereco: textoOuNulo(o.numero_endereco, "numero_endereco"),
+    complemento: textoOuNulo(o.complemento, "complemento"),
   };
 }
 
