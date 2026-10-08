@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { usandoApi } from "@/api/config";
-import { api } from "@/api/http";
+import { requisitar } from "@/api/http";
 import { supabase } from "@/api/supabase";
 import type { CorProdutoCatalogo, EstoqueVariacaoCatalogo, Produto, VariacaoProdutoCatalogo } from "./dados";
 import { lista, numero as validarNumero, objeto, texto } from "./validacao";
@@ -137,8 +137,9 @@ function validarEstoqueCatalogo(dados: unknown): EstoqueCatalogoApi[] {
   });
 }
 
-const listarEstoqueCatalogo = async () =>
-  validarEstoqueCatalogo(await api.get<unknown>("/cliente/catalogo/estoque"));
+/** Saldo por loja das peças ativas. A rota é pública, como o catálogo: vai sem token, logado ou não. */
+export const listarEstoqueCatalogo = async () =>
+  validarEstoqueCatalogo(await requisitar<unknown>("GET", "/cliente/catalogo/estoque", { semToken: true }));
 
 function aplicarEstoqueCatalogo(produtos: Produto[], linhas: EstoqueCatalogoApi[]): Produto[] {
   const porVariacao = new Map<string, EstoqueVariacaoCatalogo[]>();
