@@ -12,6 +12,7 @@ import { Conversas } from "./pages/painel/atendimento/Conversas";
 import { Chamados } from "./pages/painel/atendimento/Chamados";
 import { Cliente } from "./pages/painel/atendimento/Cliente";
 import { Clientes } from "./pages/painel/atendimento/Clientes";
+import { Aprovacoes } from "./pages/painel/estoque/Aprovacoes";
 import { Movimentacoes } from "./pages/painel/estoque/Movimentacoes";
 import { Peca } from "./pages/painel/estoque/Peca";
 import { Saldo } from "./pages/painel/estoque/Saldo";
@@ -86,6 +87,7 @@ export default function App() {
             <Route path="peca/:sku" element={<Peca />} />
             <Route path="movimentacoes" element={<Movimentacoes />} />
             <Route path="transferencias" element={<Transferencias />} />
+            <Route path="aprovacoes" element={<Aprovacoes />} />
           </Route>
           <Route path="atendimento" element={<SecaoLayout />}>
             <Route index element={<Chamados />} />
