@@ -318,7 +318,6 @@ function Rodape() {
       [
         ["Edição 64 · Garoa", "/loja"],
         ["Pronta-entrega", "/loja"],
-        ["Agendar uma prova", "/agendar"],
       ],
     ],
     [
