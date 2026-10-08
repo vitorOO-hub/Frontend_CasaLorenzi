@@ -54,14 +54,64 @@ export async function entrar(email: string, senha: string): Promise<SessaoApi> {
   return sessaoDoToken(data.session.access_token);
 }
 
-/** Cadastro de cliente. A linha em `cliente` é criada no banco a partir de auth.users. */
-export async function cadastrarCliente(dados: { nome: string; email: string; senha: string }) {
-  const { error } = await supabase().auth.signUp({
-    email: dados.email.trim().toLowerCase(),
-    password: dados.senha,
-    options: { data: { nome: dados.nome } },
+/**
+ * Traduz o erro do cadastro. Nunca confirma se um e-mail já existe de forma que ajude a descobrir
+ * contas (a mensagem é genérica); o resto vira orientação para a pessoa.
+ */
+export function erroDoCadastro(erro: { code?: string; status?: number; message?: string }): ErroApi {
+  if (erro.code === "email_provider_disabled" || erro.code === "signup_disabled")
+    return new ErroApi("configuracao", "O cadastro por e-mail está desligado neste projeto do Supabase.", erro.status ?? 422);
+  if (erro.status === 429 || erro.code === "over_request_rate_limit" || erro.code === "over_email_send_rate_limit")
+    return new ErroApi("limite", "Muitas tentativas. Aguarde um minuto e tente de novo.", 429);
+  if (erro.code === "weak_password")
+    return new ErroApi("validacao", "Senha fraca. Use pelo menos 8 caracteres, com letras e números.", 422);
+  if (erro.code === "email_address_invalid")
+    return new ErroApi("validacao", "Informe um e-mail válido.", 422);
+  if (erro.code === "user_already_exists" || erro.code === "email_exists")
+    return new ErroApi("conflito", "Não foi possível criar a conta com estes dados. Se você já tem conta, entre por aqui.", 409);
+  // O banco recusou os dados (ou o e-mail já era de outro cadastro): sem detalhes técnicos.
+  if (erro.code === "unexpected_failure" || /database error/i.test(erro.message ?? ""))
+    return new ErroApi("validacao", "Não foi possível criar a conta com estes dados. Confira tudo e tente de novo.", 422);
+  if (erro.status && erro.status >= 500) return new ErroApi("servidor", undefined, erro.status);
+  return new ErroApi("validacao", "Não foi possível criar a conta. Confira os dados e tente de novo.", erro.status ?? 422);
+}
+
+export type DadosDoCadastro = {
+  nome: string;
+  email: string;
+  senha: string;
+  telefone: string;
+  cep: string;
+  rua: string;
+  bairro: string;
+  numero: string;
+  complemento?: string;
+};
+
+/**
+ * Cadastro de cliente pelo Supabase Auth. Os dados vão nos metadados do usuário e um trigger no banco
+ * cria a linha de `usuario` com cargo SEMPRE cliente: o cargo e a loja nunca vêm do navegador. Devolve
+ * se a pessoa já ficou logada (o projeto pode exigir confirmação do e-mail antes).
+ */
+export async function cadastrarCliente(d: DadosDoCadastro): Promise<{ logado: boolean }> {
+  const { data, error } = await supabase().auth.signUp({
+    email: d.email.trim().toLowerCase(),
+    password: d.senha,
+    options: {
+      data: {
+        cadastro_cliente: true,
+        nome: d.nome,
+        telefone: d.telefone,
+        cep: d.cep,
+        rua: d.rua,
+        bairro: d.bairro,
+        numero_endereco: d.numero,
+        complemento: d.complemento ?? "",
+      },
+    },
   });
-  if (error) throw new ErroApi("validacao", error.message, 422);
+  if (error) throw erroDoCadastro(error);
+  return { logado: Boolean(data.session) };
 }
 
 export async function sairDaConta() {

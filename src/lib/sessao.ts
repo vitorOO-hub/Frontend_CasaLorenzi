@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import {
+  cadastrarCliente,
   entrar as entrarNoSupabase,
   ouvirSessao,
   sairDaConta,
@@ -10,6 +11,7 @@ import { config } from "@/api/config";
 import { ErroApi } from "@/api/erros";
 import { supabase } from "@/api/supabase";
 import type { Papel } from "@/api/tipos";
+import type { DadosCadastro } from "./cadastro";
 import { CLIENTE_DEMO_ID, lojas, type Loja } from "./dados";
 
 export type { Papel };
@@ -149,6 +151,28 @@ export async function entrar(email: string, senha: string): Promise<ResultadoLog
   const nova = daConta(conta, perfil.nome, perfil.lojaNome);
   iniciarSessao(nova);
   return { ok: true, sessao: nova };
+}
+
+export type ResultadoCadastro =
+  | { ok: true; sessao: Sessao }
+  | { ok: true; confirmar: true }
+  | { ok: false; detalhe: string };
+
+/**
+ * Cria a conta de cliente e, se o projeto não exige confirmar o e-mail, já entra com ela. Cada cliente
+ * passa a ter a própria sessão (JWT sem cargo): vê só os dados dele e não entra no painel.
+ */
+export async function criarConta(dados: DadosCadastro): Promise<ResultadoCadastro> {
+  try {
+    const { logado } = await cadastrarCliente(dados);
+    if (!logado) return { ok: true, confirmar: true };
+  } catch (erro) {
+    return { ok: false, detalhe: erro instanceof ErroApi ? erro.message : "Não foi possível criar a conta agora." };
+  }
+  const r = await entrar(dados.email, dados.senha);
+  if (r.ok) return { ok: true, sessao: r.sessao };
+  // Conta criada, mas o login automático falhou (ex.: e-mail ainda por confirmar).
+  return { ok: true, confirmar: true };
 }
 
 let sincronizando = false;

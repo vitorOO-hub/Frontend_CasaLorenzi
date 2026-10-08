@@ -5,7 +5,16 @@ import { FotoCampanha } from "@/components/vitrine";
 import { Marca } from "@/layouts/PortalLayout";
 import { CAMPANHA } from "@/lib/loja";
 import { destinoAposLogin } from "@/lib/destino";
-import { entrar } from "@/lib/sessao";
+import {
+  dadosDoCadastro,
+  FORM_VAZIO,
+  formatarCep,
+  formatarTelefone,
+  validarCadastro,
+  type ErrosCadastro,
+  type FormCadastro,
+} from "@/lib/cadastro";
+import { criarConta, entrar } from "@/lib/sessao";
 
 export function Entrar() {
   const [params] = useSearchParams();
@@ -15,6 +24,48 @@ export function Entrar() {
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+  const [criando, setCriando] = useState(false);
+  const [form, setForm] = useState<FormCadastro>(FORM_VAZIO);
+  const [errosForm, setErrosForm] = useState<ErrosCadastro>({});
+  const [aviso, setAviso] = useState<string | null>(null);
+
+  const campo = (k: keyof FormCadastro, formatar?: (v: string) => string) => ({
+    value: form[k],
+    onChange: (e: { target: { value: string } }) =>
+      setForm((f) => ({ ...f, [k]: formatar ? formatar(e.target.value) : e.target.value })),
+    className: inputClasses,
+  });
+  const erroDe = (k: keyof FormCadastro) =>
+    errosForm[k] ? <span className="mt-1 block text-xs text-perigo">{errosForm[k]}</span> : null;
+
+  function alternar() {
+    setCriando((v) => !v);
+    setErro(null);
+    setErrosForm({});
+    setAviso(null);
+  }
+
+  async function cadastrar(ev: FormEvent) {
+    ev.preventDefault();
+    setErro(null);
+    const erros = validarCadastro(form);
+    setErrosForm(erros);
+    if (Object.keys(erros).length) return;
+    setEnviando(true);
+    try {
+      const r = await criarConta(dadosDoCadastro(form));
+      if (!r.ok) return setErro(r.detalhe);
+      if ("confirmar" in r) {
+        setEmail(form.email.trim().toLowerCase());
+        setForm(FORM_VAZIO);
+        setCriando(false);
+        return setAviso("Conta criada! Confirme seu e-mail (veja a caixa de entrada) e depois entre por aqui.");
+      }
+      navigate(destinoAposLogin(r.sessao, voltar), { replace: true });
+    } finally {
+      setEnviando(false);
+    }
+  }
 
   async function enviar(ev: FormEvent) {
     ev.preventDefault();
@@ -58,11 +109,67 @@ export function Entrar() {
         </div>
 
         <div className="mx-auto my-auto w-full max-w-sm py-12">
-          <h1 className="text-[44px] leading-none">Entre na sua conta</h1>
+          <h1 className="text-[44px] leading-none">{criando ? "Crie sua conta" : "Entre na sua conta"}</h1>
           <p className="mt-2 text-sm text-suave">
-            Clientes e equipe Casa Lorenzi entram por aqui. Navegar pela coleção não exige login.
+            {criando
+              ? "Cadastro para clientes. Seus dados e pedidos ficam só na sua conta."
+              : "Clientes e equipe Casa Lorenzi entram por aqui. Navegar pela coleção não exige login."}
           </p>
+          {aviso ? <p className="mt-4 text-sm text-tabaco">{aviso}</p> : null}
 
+          {criando ? (
+            <form onSubmit={cadastrar} noValidate className="mt-8 space-y-4">
+              <Campo label="Nome">
+                <input {...campo("nome")} autoComplete="name" required />
+                {erroDe("nome")}
+              </Campo>
+              <Campo label="E-mail">
+                <input type="email" {...campo("email")} autoComplete="email" placeholder="seu@email.com" required />
+                {erroDe("email")}
+              </Campo>
+              <Campo label="Telefone">
+                <input {...campo("telefone", formatarTelefone)} inputMode="tel" autoComplete="tel" placeholder="(11) 99999-0000" required />
+                {erroDe("telefone")}
+              </Campo>
+              <Campo label="Senha" ajuda="Mínimo de 8 caracteres, com letras e números.">
+                <input type="password" {...campo("senha")} autoComplete="new-password" required />
+                {erroDe("senha")}
+              </Campo>
+              <Campo label="CEP">
+                <input {...campo("cep", formatarCep)} inputMode="numeric" autoComplete="postal-code" placeholder="00000-000" required />
+                {erroDe("cep")}
+              </Campo>
+              <Campo label="Rua">
+                <input {...campo("rua")} autoComplete="address-line1" required />
+                {erroDe("rua")}
+              </Campo>
+              <div className="grid grid-cols-3 gap-4">
+                <Campo label="Número">
+                  <input {...campo("numero")} required />
+                  {erroDe("numero")}
+                </Campo>
+                <Campo label="Complemento" className="col-span-2">
+                  <input {...campo("complemento")} placeholder="Opcional" />
+                </Campo>
+              </div>
+              <Campo label="Bairro">
+                <input {...campo("bairro")} required />
+                {erroDe("bairro")}
+              </Campo>
+              {erro ? <p className="text-sm text-perigo">{erro}</p> : null}
+              <button
+                type="submit"
+                disabled={enviando}
+                className="w-full bg-tabaco py-4 text-sm tracking-wide text-creme hover:bg-tinta disabled:opacity-60"
+              >
+                {enviando ? "Criando…" : "Criar conta"}
+              </button>
+              <button type="button" onClick={alternar} className="w-full text-sm text-suave underline">
+                Já tenho conta · Entrar
+              </button>
+            </form>
+          ) : (
+            <>
           <form onSubmit={enviar} className="mt-8 space-y-4">
             <Campo label="E-mail">
               <input
@@ -95,6 +202,11 @@ export function Entrar() {
               {enviando ? "Entrando…" : "Entrar"}
             </button>
           </form>
+          <button type="button" onClick={alternar} className="mt-6 w-full text-sm text-suave underline">
+            Ainda não tem conta? Criar conta de cliente
+          </button>
+            </>
+          )}
         </div>
       </div>
     </div>
