@@ -1,129 +1,103 @@
-import { useState } from "react";
-import { AvisoErro, Badge, Botao, Campo, Card, Modal, Select, Tabela, Titulo, inputClasses, td, th } from "@/components/ui";
-import * as acoes from "@/lib/acoes";
-import { lojas, nomeLoja, rotuloPapelUsuario, type PapelUsuario, type Usuario } from "@/lib/dados";
-import { useEstado } from "@/lib/store";
+import { AvisoErro, Badge, Botao, Card, Select, Tabela, Titulo, td, th } from "@/components/ui";
+import { useEquipe } from "@/hooks/useEquipe";
+import { mudarUsuario, type Cargo, type MudancaDeUsuario, type UsuarioDaEquipe } from "@/lib/gestaoApi";
 import { useAcao } from "@/lib/useAcao";
 
-const papeis = Object.keys(rotuloPapelUsuario) as PapelUsuario[];
-const opcoesPapel = papeis.map((p) => ({ value: p, label: rotuloPapelUsuario[p] }));
-// Só o admin enxerga a rede inteira; os outros cargos sempre têm uma unidade.
-const opcoesLoja = () => lojas.map((l) => ({ value: l.id, label: l.nome }));
-
+/** Time interno vindo do banco: cargo, unidade e acesso de cada pessoa (só o admin chega aqui). */
 export function Usuarios() {
-  const { usuarios } = useEstado();
+  const equipe = useEquipe();
   const { executar, ocupado, erro, limparErro } = useAcao();
-  const alterar = (u: Usuario, dados: Partial<Pick<Usuario, "papel" | "lojaId" | "ativo">>) =>
-    void executar(u.id, () => acoes.alterarUsuario(u.id, dados));
-  const [novo, setNovo] = useState(false);
-  const [form, setForm] = useState({ nome: "", email: "", papel: "operador_estoque" as PapelUsuario, lojaId: lojas[0]!.id });
+  const opcoes = equipe.dados?.opcoes;
+  const itens = equipe.dados?.itens ?? [];
+
+  const alterar = (u: UsuarioDaEquipe, mudanca: MudancaDeUsuario) =>
+    void executar(u.id_usuario, async () => {
+      await mudarUsuario(u.id_usuario, mudanca);
+      equipe.recarregar();
+    });
 
   return (
     <div>
       <Titulo
         titulo="Usuários"
         descricao="Time interno, cargo e unidade de cada pessoa. Mudanças de cargo valem quando a pessoa entrar de novo."
-        acao={<Botao onClick={() => { limparErro(); setNovo(true); }}>Cadastrar usuário</Botao>}
       />
-      <AvisoErro erro={novo ? null : erro} onFechar={limparErro} className="mb-6" />
+      <AvisoErro erro={erro ?? equipe.erro} onFechar={erro ? limparErro : undefined} className="mb-6" />
 
       <Card>
-        <Tabela>
-          <thead>
-            <tr>
-              <th className={th}>Pessoa</th>
-              <th className={th}>Cargo</th>
-              <th className={th}>Unidade</th>
-              <th className={th}>Acesso</th>
-            </tr>
-          </thead>
-          <tbody>
-            {usuarios.map((u) => (
-              <tr key={u.id} className={u.ativo ? "" : "opacity-50"}>
-                <td className={td}>
-                  <p className="font-medium">{u.nome}</p>
-                  <p className="text-xs text-suave">{u.email}</p>
-                </td>
-                <td className={td}>
-                  <Select
-                    aria-label={`Cargo de ${u.nome}`}
-                    value={u.papel}
-                    onChange={(e) => {
-                      const papel = e.target.value as PapelUsuario;
-                      alterar(u, { papel, lojaId: papel === "admin" ? null : (u.lojaId ?? lojas[0]!.id) });
-                    }}
-                    disabled={ocupado === u.id}
-                    className="w-48"
-                    opcoes={opcoesPapel}
-                  />
-                </td>
-                <td className={td}>
-                  {u.papel === "admin" ? (
-                    <span className="text-sm text-suave">Rede inteira</span>
-                  ) : (
-                    <Select
-                      aria-label={`Unidade de ${u.nome}`}
-                      value={u.lojaId ?? ""}
-                      onChange={(e) => alterar(u, { lojaId: e.target.value })}
-                      disabled={ocupado === u.id}
-                      className="w-48"
-                      opcoes={opcoesLoja()}
-                    />
-                  )}
-                </td>
-                <td className={td}>
-                  <div className="flex items-center gap-3">
-                    <Badge tom={u.ativo ? "ok" : "neutro"}>{u.ativo ? "Ativo" : "Inativo"}</Badge>
-                    <Botao pequeno variante="fantasma" disabled={ocupado === u.id} onClick={() => alterar(u, { ativo: !u.ativo })}>
-                      {u.ativo ? "Desativar" : "Reativar"}
-                    </Botao>
-                  </div>
-                </td>
+        <div aria-busy={equipe.carregando} className={equipe.carregando && !equipe.dados ? "opacity-60" : undefined}>
+          <Tabela>
+            <thead>
+              <tr>
+                <th className={th}>Pessoa</th>
+                <th className={th}>Cargo</th>
+                <th className={th}>Unidade</th>
+                <th className={th}>Acesso</th>
               </tr>
-            ))}
-          </tbody>
-        </Tabela>
+            </thead>
+            <tbody>
+              {itens.map((u) => (
+                <tr key={u.id_usuario} className={u.ativo ? "" : "opacity-50"}>
+                  <td className={td}>
+                    <p className="font-medium">{u.nome}</p>
+                    <p className="text-xs text-suave">{u.email}</p>
+                  </td>
+                  <td className={td}>
+                    <Select
+                      aria-label={`Cargo de ${u.nome}`}
+                      value={u.cargo}
+                      onChange={(e) => {
+                        const cargo = e.target.value as Cargo;
+                        // Cargo de unidade sempre leva uma loja; sem uma, entra a primeira da lista.
+                        const idLoja = cargo === "admin" ? undefined : (u.id_loja ?? opcoes?.lojas[0]?.id_loja);
+                        alterar(u, { cargo, idLoja });
+                      }}
+                      disabled={ocupado === u.id_usuario || !opcoes}
+                      className="w-48"
+                      opcoes={(opcoes?.cargos ?? []).map((c) => ({ value: c.codigo, label: c.nome }))}
+                    />
+                  </td>
+                  <td className={td}>
+                    {u.cargo === "admin" ? (
+                      <span className="text-sm text-suave">Rede inteira</span>
+                    ) : (
+                      <Select
+                        aria-label={`Unidade de ${u.nome}`}
+                        value={u.id_loja ?? ""}
+                        onChange={(e) => alterar(u, { idLoja: e.target.value })}
+                        disabled={ocupado === u.id_usuario || !opcoes}
+                        className="w-48"
+                        opcoes={(opcoes?.lojas ?? []).map((l) => ({ value: l.id_loja, label: l.nome }))}
+                      />
+                    )}
+                  </td>
+                  <td className={td}>
+                    <div className="flex items-center gap-3">
+                      <Badge tom={u.ativo ? "ok" : "neutro"}>{u.ativo ? "Ativo" : "Inativo"}</Badge>
+                      {!u.com_acesso ? <span className="text-xs text-suave">Ainda sem login</span> : null}
+                      <Botao
+                        pequeno
+                        variante="fantasma"
+                        disabled={ocupado === u.id_usuario}
+                        onClick={() => alterar(u, { ativo: !u.ativo })}
+                      >
+                        {u.ativo ? "Desativar" : "Reativar"}
+                      </Botao>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {itens.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="py-8 text-center text-sm text-suave">
+                    {equipe.carregando ? "Carregando o time…" : "Nenhuma pessoa no time."}
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </Tabela>
+        </div>
       </Card>
-
-      <Modal aberto={novo} titulo="Cadastrar usuário" onFechar={() => setNovo(false)}>
-        <form
-          className="space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void executar("novo", () => acoes.criarUsuario({ ...form, lojaId: form.papel === "admin" ? null : form.lojaId })).then((ok) => {
-              if (!ok) return;
-              setForm({ ...form, nome: "", email: "" });
-              setNovo(false);
-            });
-          }}
-        >
-          <Campo label="Nome">
-            <input required value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} className={inputClasses} />
-          </Campo>
-          <Campo label="E-mail corporativo">
-            <input type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="nome@casalorenzi.com.br" className={inputClasses} />
-          </Campo>
-          <div className="grid grid-cols-2 gap-4">
-            <Campo label="Cargo">
-              <Select value={form.papel} onChange={(e) => setForm({ ...form, papel: e.target.value as PapelUsuario })} opcoes={opcoesPapel} />
-            </Campo>
-            {form.papel !== "admin" ? (
-              <Campo label="Unidade">
-                <Select value={form.lojaId} onChange={(e) => setForm({ ...form, lojaId: e.target.value })} opcoes={lojas.map((l) => ({ value: l.id, label: nomeLoja(l.id) }))} />
-              </Campo>
-            ) : null}
-          </div>
-          <AvisoErro erro={erro} />
-          <div className="flex justify-end gap-2 pt-2">
-            <Botao variante="secundario" onClick={() => setNovo(false)}>
-              Cancelar
-            </Botao>
-            <Botao type="submit" disabled={ocupado !== null}>
-              {ocupado ? "Cadastrando…" : "Cadastrar"}
-            </Botao>
-          </div>
-        </form>
-      </Modal>
     </div>
   );
 }
