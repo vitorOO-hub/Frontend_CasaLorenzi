@@ -29,13 +29,14 @@ export const descricaoDaPeca = (item: Pick<ItemReposicao, "produto" | "cor" | "t
 
 export type PendenciaDoGerente = { texto: string; valor: number; to: string };
 
-/** As pendências do topo, cada uma levando à tela que resolve. */
+/** As três pendências do topo, cada uma levando à tela que resolve. */
 export function pendenciasDoGerente(p: {
   ajustes_para_aprovar: number;
   transferencias_aguardando: number;
   chamados_sem_resposta: number;
 }): PendenciaDoGerente[] {
   return [
+    { texto: "ajustes para aprovar", valor: p.ajustes_para_aprovar, to: "/painel/estoque/aprovacoes" },
     { texto: "transferências aguardando", valor: p.transferencias_aguardando, to: "/painel/estoque/transferencias" },
     { texto: "chamados sem resposta", valor: p.chamados_sem_resposta, to: "/painel/atendimento" },
   ];

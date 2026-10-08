@@ -61,6 +61,7 @@ describe("pendências do topo", () => {
   it("cada uma leva à tela que resolve, na mesma ordem de sempre", () => {
     const itens = pendenciasDoGerente({ ajustes_para_aprovar: 2, transferencias_aguardando: 0, chamados_sem_resposta: 5 });
     expect(itens.map((i) => [i.valor, i.to])).toEqual([
+      [2, "/painel/estoque/aprovacoes"],
       [0, "/painel/estoque/transferencias"],
       [5, "/painel/atendimento"],
     ]);
