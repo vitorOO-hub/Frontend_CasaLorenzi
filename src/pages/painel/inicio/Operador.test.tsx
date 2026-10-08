@@ -202,4 +202,9 @@ describe("início do operador de estoque", () => {
     expect(fonte).not.toContain("useEstado");
     expect(fonte).toContain("@/hooks/useEstoquePainel");
   });
+
+  it("respeita o limite aceito pela rota de movimentações", () => {
+    const fonte = readFileSync(new URL("./Operador.tsx", import.meta.url), "utf-8");
+    expect(fonte).toContain("const LIMITE_MOVIMENTACOES = 100");
+  });
 });

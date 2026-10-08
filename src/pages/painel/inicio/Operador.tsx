@@ -8,7 +8,7 @@ import type { ItemMovimentacao, ItemSaldo } from "@/lib/estoquePainelApi";
 import { BarraFiltros, Cabecalho, FiltroSelect, Pendencias, useFiltros } from "./comum";
 
 const LIMITE_DASHBOARD = 200;
-const LIMITE_MOVIMENTACOES = 500;
+const LIMITE_MOVIMENTACOES = 100;
 
 type MovimentoSerie = ItemMovimentacao & { data: string };
 
