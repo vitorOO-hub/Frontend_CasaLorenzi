@@ -28,7 +28,10 @@ export type VariacaoProdutoCatalogo = {
   cor: string;
   tamanho: string;
   preco: number;
+  estoque?: EstoqueVariacaoCatalogo[];
 };
+
+export type EstoqueVariacaoCatalogo = { lojaId: string; loja: string; quantidade: number };
 
 export type CorProdutoCatalogo = { nome: string; hex: string };
 
@@ -946,10 +949,21 @@ export const dataBR = (iso: string) => {
 const saldosDe = (p: Produto, lojaIds?: string[]) =>
   lojaIds ? p.saldos.filter((s) => lojaIds.includes(s.lojaId)) : p.saldos;
 
-export const totalProduto = (p: Produto, lojaIds?: string[]) =>
-  saldosDe(p, lojaIds).reduce((s, x) => s + x.quantidade, 0);
+export const totalVariacao = (v: VariacaoProdutoCatalogo, lojaIds?: string[]) => {
+  if (!v.estoque) return null;
+  const estoque = lojaIds ? v.estoque.filter((s) => lojaIds.includes(s.lojaId)) : v.estoque;
+  return estoque.reduce((s, x) => s + x.quantidade, 0);
+};
+
+const usaEstoquePorVariacao = (p: Produto) => Boolean(p.variacoes?.some((v) => v.estoque));
+
+export const totalProduto = (p: Produto, lojaIds?: string[]) => {
+  if (usaEstoquePorVariacao(p)) return (p.variacoes ?? []).reduce((s, v) => s + (totalVariacao(v, lojaIds) ?? 0), 0);
+  return saldosDe(p, lojaIds).reduce((s, x) => s + x.quantidade, 0);
+};
 
 export const produtoTemEstoque = (p: Produto, lojaIds?: string[]) => {
+  if (usaEstoquePorVariacao(p)) return totalProduto(p, lojaIds) > 0;
   const saldos = saldosDe(p, lojaIds);
   return saldos.length === 0 || saldos.reduce((s, x) => s + x.quantidade, 0) > 0;
 };

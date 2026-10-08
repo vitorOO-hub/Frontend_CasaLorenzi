@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { cn } from "@/components/ui";
 import { CartaoProduto, FichaTecnica, Foto, Legenda, NomePeca, Preco, botaoLoja, parcela } from "@/components/vitrine";
-import { produtoTemEstoque, skuVariacao, tamanhosPorCategoria, totalProduto } from "@/lib/dados";
+import { produtoTemEstoque, skuVariacao, tamanhosPorCategoria, totalProduto, totalVariacao } from "@/lib/dados";
 import { detalheDe, fotoEstudio, fotoVestida, type CorDaCasa } from "@/lib/loja";
 import { useProdutosCatalogo } from "@/lib/catalogoApi";
 import * as acoes from "@/lib/acoes";
@@ -26,12 +26,11 @@ function DetalheProduto({ sku }: { sku: string }) {
     return tamanhosApi.length ? tamanhosApi : ((produto && tamanhosPorCategoria[produto.categoria]) ?? ["Único"]);
   }, [produto, variacoes]);
   const cores = useMemo<CorDaCasa[]>(() => {
-    if (produto?.cores?.length) return produto.cores;
     const nomes = Array.from(new Set(variacoes.map((variacao) => variacao.cor).filter(Boolean))).sort();
-    if (nomes.length === 0) return d.cores;
+    if (nomes.length === 0) return produto?.cores?.length ? produto.cores : d.cores;
     return nomes.map((nome, indice) => ({
       nome,
-      hex: d.cores[indice]?.hex ?? d.cores[0]?.hex ?? "#1b2a4a",
+      hex: produto?.cores?.[indice]?.hex ?? d.cores[indice]?.hex ?? d.cores[0]?.hex ?? "#1b2a4a",
     }));
   }, [d.cores, produto?.cores, variacoes]);
   const [tamanho, setTamanho] = useState(tamanhos.length === 1 ? tamanhos[0]! : "");
@@ -49,15 +48,20 @@ function DetalheProduto({ sku }: { sku: string }) {
     return <Navigate to="/loja" replace />;
   }
 
-  const disponivel = produtoTemEstoque(produto) ? Math.max(totalProduto(produto), variacoes.length || 1) : 0;
-  // Distribui o saldo total entre os tamanhos de forma determinística (protótipo).
+  const disponivel = totalProduto(produto);
   const estoqueDo = (t: string) => {
-    if (variacoes.length) return variacoes.filter((variacao) => variacao.tamanho === t).length;
-    if (tamanhos.length === 1) return disponivel;
+    if (variacoes.length) {
+      return variacoes
+        .filter((variacao) => variacao.tamanho === t && variacao.cor === corSelecionada.nome)
+        .reduce((s, variacao) => s + (totalVariacao(variacao) ?? 0), 0);
+    }
+    if (tamanhos.length === 1) return produtoTemEstoque(produto) ? Math.max(disponivel, 1) : 0;
     const i = tamanhos.indexOf(t);
     return Math.floor(disponivel / tamanhos.length) + (i < disponivel % tamanhos.length ? 1 : 0);
   };
   const restantes = tamanhoSelecionado ? estoqueDo(tamanhoSelecionado) : disponivel;
+  const variacaoSelecionada = variacoes.find((item) => item.tamanho === tamanhoSelecionado && item.cor === corSelecionada.nome);
+  const podeAdicionar = tamanhoSelecionado && restantes > 0 && quantidade <= restantes;
   const fotoPrincipal = produto.imagemUrl ?? fotoEstudio(produto.sku);
   const fotoPrincipalAlt = produto.imagemAlt ?? produto.nome;
   const vestida = produto.imagemVestidaUrl ?? fotoVestida(produto.sku, 1400);
@@ -70,14 +74,17 @@ function DetalheProduto({ sku }: { sku: string }) {
       setAviso(true);
       return;
     }
-    const variacao = variacoes.find((item) => item.tamanho === tamanhoSelecionado && item.cor === corSelecionada.nome);
+    if (!podeAdicionar) {
+      setAviso(true);
+      return;
+    }
     void acoes.adicionarAoCarrinho({
-      idVariacao: variacao?.idVariacao,
-      sku: variacao?.sku ?? skuVariacao(produto!.sku, tamanhoSelecionado, corSelecionada.nome),
+      idVariacao: variacaoSelecionada?.idVariacao,
+      sku: variacaoSelecionada?.sku ?? skuVariacao(produto!.sku, tamanhoSelecionado, corSelecionada.nome),
       skuBase: produto!.sku,
       nome: produto!.nome,
       quantidade,
-      valor: variacao?.preco ?? produto!.preco,
+      valor: variacaoSelecionada?.preco ?? produto!.preco,
       tamanho: tamanhoSelecionado,
       cor: corSelecionada.nome,
       imagemUrl: produto!.imagemUrl,
@@ -132,7 +139,12 @@ function DetalheProduto({ sku }: { sku: string }) {
               {cores.map((c) => (
                 <button
                   key={c.nome}
-                  onClick={() => setCor(c)}
+                  onClick={() => {
+                    setCor(c);
+                    setQuantidade(1);
+                    setAviso(false);
+                    setAdicionado(false);
+                  }}
                   aria-label={c.nome}
                   title={c.nome}
                   className={cn(
@@ -162,6 +174,7 @@ function DetalheProduto({ sku }: { sku: string }) {
                     disabled={sem}
                     onClick={() => {
                       setTamanho(t);
+                      setQuantidade(1);
                       setAviso(false);
                       setAdicionado(false);
                     }}
@@ -190,11 +203,16 @@ function DetalheProduto({ sku }: { sku: string }) {
                 <Minus className="h-4 w-4" />
               </button>
               <span className="w-8 text-center text-sm">{quantidade}</span>
-              <button onClick={() => setQuantidade((q) => q + 1)} className="px-3 py-3 text-suave hover:text-tinta" aria-label="Aumentar quantidade">
+              <button
+                onClick={() => setQuantidade((q) => Math.min(restantes || q, q + 1))}
+                disabled={!restantes || quantidade >= restantes}
+                className="px-3 py-3 text-suave hover:text-tinta disabled:opacity-40"
+                aria-label="Aumentar quantidade"
+              >
                 <Plus className="h-4 w-4" />
               </button>
             </div>
-            <button onClick={adicionar} disabled={disponivel === 0} className={cn(botaoLoja(), "flex-1")}>
+            <button onClick={adicionar} disabled={!podeAdicionar} className={cn(botaoLoja(), "flex-1")}>
               {disponivel === 0 ? "Esgotada — volta na próxima edição" : "Levar para a sacola"}
             </button>
           </div>
