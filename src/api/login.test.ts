@@ -3,12 +3,18 @@ import { erroDoLogin } from "./auth";
 
 describe("erro do login", () => {
   it("senha errada e conta inexistente dizem a mesma coisa", () => {
-    for (const code of ["invalid_credentials", "user_not_found", "email_not_confirmed"]) {
+    for (const code of ["invalid_credentials", "user_not_found"]) {
       expect(erroDoLogin({ code, status: 400 })).toMatchObject({
         codigo: "nao_autenticado",
         message: "E-mail ou senha incorretos.",
       });
     }
+  });
+
+  it("e-mail ainda não confirmado pede a confirmação, não culpa a senha", () => {
+    const erro = erroDoLogin({ code: "email_not_confirmed", status: 400 });
+    expect(erro.message).toMatch(/Confirme seu e-mail/);
+    expect(erro.codigo).not.toBe("nao_autenticado");
   });
 
   it("login por e-mail desligado no projeto não é culpa da senha", () => {

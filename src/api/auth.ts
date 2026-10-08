@@ -41,8 +41,11 @@ export function erroDoLogin(erro: { code?: string; status?: number; message?: st
     return new ErroApi("limite", "Muitas tentativas de login. Aguarde um minuto e tente de novo.", 429);
   if (erro?.status && erro.status >= 500) return new ErroApi("servidor", undefined, erro.status);
   if (!erro) return new ErroApi("nao_autenticado", "E-mail ou senha incorretos.", 401);
-  // Credenciais erradas, e-mail não confirmado e conta inexistente: sem distinguir, de propósito.
-  const credenciais = ["invalid_credentials", "email_not_confirmed", "user_not_found", "validation_failed"];
+  // O Supabase só devolve este código depois de conferir a senha, então não revela contas alheias.
+  if (erro.code === "email_not_confirmed")
+    return new ErroApi("validacao", "Confirme seu e-mail primeiro: enviamos um link para a sua caixa de entrada (veja também o spam).", 401);
+  // Credenciais erradas e conta inexistente: sem distinguir, de propósito.
+  const credenciais = ["invalid_credentials", "user_not_found", "validation_failed"];
   if (!erro.code || credenciais.includes(erro.code))
     return new ErroApi("nao_autenticado", "E-mail ou senha incorretos.", 401);
   return new ErroApi("servidor", undefined, erro.status ?? 0);
