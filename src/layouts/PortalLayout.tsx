@@ -139,6 +139,10 @@ export function PortalLayout() {
             <Link to={contaLink} className="hidden hover:opacity-70 md:inline">
               {cliente ? cliente.nome.split(" ")[0] : "Entrar"}
             </Link>
+            <Link to="/sacola" className="flex items-center gap-1.5 hover:opacity-70" aria-label={`Sacola com ${itensSacola} peças`}>
+              <ShoppingBag className="h-[17px] w-[17px] md:hidden" strokeWidth={1.5} />
+              <span className="hidden md:inline">Sacola</span> ({itensSacola})
+            </Link>
             {cliente ? (
               <button
                 onClick={() => {
@@ -150,10 +154,6 @@ export function PortalLayout() {
                 Sair
               </button>
             ) : null}
-            <Link to="/sacola" className="flex items-center gap-1.5 hover:opacity-70" aria-label={`Sacola com ${itensSacola} peças`}>
-              <ShoppingBag className="h-[17px] w-[17px] md:hidden" strokeWidth={1.5} />
-              <span className="hidden md:inline">Sacola</span> ({itensSacola})
-            </Link>
           </nav>
         </header>
 
@@ -172,12 +172,7 @@ export function PortalLayout() {
                     </li>
                   ))}
                 </ul>
-                <div className="mt-8 flex gap-6 text-[11px] uppercase tracking-[0.16em] text-suave">
-                  <Link to="/agendar" className="hover:text-tinta">
-                    Agendar uma prova
-                  </Link>
-                  <span>Frete por nossa conta acima de R$ 1.000</span>
-                </div>
+                <p className="mt-8 text-[11px] uppercase tracking-[0.16em] text-suave">Frete por nossa conta acima de R$ 1.000</p>
               </div>
               <Link to={secaoPainel.destaque.to} className="group block">
                 <span className="foto-grao block aspect-[4/3]">
@@ -229,9 +224,6 @@ export function PortalLayout() {
           <div className="mt-auto flex flex-col gap-1 pt-10 text-[13px] uppercase tracking-[0.14em]">
             <Link to={contaLink} className="py-1.5 hover:text-terracota">
               {cliente ? `Conta · ${cliente.nome.split(" ")[0]}` : "Entrar"}
-            </Link>
-            <Link to="/agendar" className="py-1.5 hover:text-terracota">
-              Agendar uma prova
             </Link>
           </div>
         </aside>
@@ -326,7 +318,6 @@ function Rodape() {
       [
         ["Edição 64 · Garoa", "/loja"],
         ["Pronta-entrega", "/loja"],
-        ["Agendar uma prova", "/agendar"],
       ],
     ],
     [

@@ -159,12 +159,7 @@ function DetalheProduto({ sku }: { sku: string }) {
           </div>
 
           <div className="mt-7">
-            <div className="mb-3 flex items-center justify-between text-sm">
-              <p className="text-suave">Tamanho</p>
-              <Link to={`/agendar?peca=${produto.sku}`} className="link-tracejado">
-                Na dúvida, prove na loja
-              </Link>
-            </div>
+            <p className="mb-3 text-sm text-suave">Tamanho</p>
             <div className="flex flex-wrap gap-2">
               {tamanhos.map((t) => {
                 const sem = estoqueDo(t) === 0;
