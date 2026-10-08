@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { usandoApi } from "@/api/config";
+import { api } from "@/api/http";
 import { supabase } from "@/api/supabase";
-import type { CorProdutoCatalogo, Produto, VariacaoProdutoCatalogo } from "./dados";
+import type { CorProdutoCatalogo, EstoqueVariacaoCatalogo, Produto, VariacaoProdutoCatalogo } from "./dados";
+import { lista, numero as validarNumero, objeto, texto } from "./validacao";
 
 export type LinhaVariacaoCatalogo = {
   id_variacao: string | null;
@@ -39,12 +41,12 @@ type EstadoCatalogo = {
   origem: "api" | "simulado";
 };
 
-const numero = (valor: string | number | null | undefined) => {
+const numeroSeguro = (valor: string | number | null | undefined) => {
   const normalizado = Number(valor ?? 0);
   return Number.isFinite(normalizado) ? normalizado : 0;
 };
 
-const texto = (valor: string | null | undefined, padrao: string) => {
+const textoComPadrao = (valor: string | null | undefined, padrao: string) => {
   const limpo = valor?.trim();
   return limpo || padrao;
 };
@@ -86,9 +88,9 @@ export function produtoCatalogoDeLinha(linha: LinhaProdutoCatalogo): Produto | n
     .map<VariacaoProdutoCatalogo>((variacao) => ({
       idVariacao: variacao.id_variacao ?? undefined,
       sku: variacao.sku!,
-      cor: texto(variacao.cor, "Única"),
-      tamanho: texto(variacao.tamanho, "Único"),
-      preco: numero(variacao.preco_venda || linha.preco_base),
+      cor: textoComPadrao(variacao.cor, "Única"),
+      tamanho: textoComPadrao(variacao.tamanho, "Único"),
+      preco: numeroSeguro(variacao.preco_venda || linha.preco_base),
     }));
   const precos = variacoes.map((variacao) => variacao.preco).filter((preco) => preco > 0);
   if (variacoes.length === 0) return null;
@@ -96,8 +98,8 @@ export function produtoCatalogoDeLinha(linha: LinhaProdutoCatalogo): Produto | n
   return {
     sku: variacoes[0]?.sku ?? linha.id_produto,
     nome: linha.nome,
-    categoria: texto(linha.categoria, "Catálogo"),
-    preco: Math.min(...(precos.length ? precos : [numero(linha.preco_base)])),
+    categoria: textoComPadrao(linha.categoria, "Catálogo"),
+    preco: Math.min(...(precos.length ? precos : [numeroSeguro(linha.preco_base)])),
     descricao: linha.descricao,
     saldos: [],
     movimentacoes: [],
@@ -114,6 +116,46 @@ export function produtoCatalogoDeLinha(linha: LinhaProdutoCatalogo): Produto | n
   };
 }
 
+type EstoqueCatalogoApi = {
+  id_variacao: string;
+  sku: string;
+  id_loja: string;
+  loja: string;
+  quantidade: number;
+};
+
+function validarEstoqueCatalogo(dados: unknown): EstoqueCatalogoApi[] {
+  return lista(dados, "estoque").map((item) => {
+    const o = objeto(item, "estoque_item");
+    return {
+      id_variacao: texto(o.id_variacao, "id_variacao"),
+      sku: texto(o.sku, "sku"),
+      id_loja: texto(o.id_loja, "id_loja"),
+      loja: texto(o.loja, "loja"),
+      quantidade: validarNumero(o.quantidade, "quantidade"),
+    };
+  });
+}
+
+const listarEstoqueCatalogo = async () =>
+  validarEstoqueCatalogo(await api.get<unknown>("/cliente/catalogo/estoque"));
+
+function aplicarEstoqueCatalogo(produtos: Produto[], linhas: EstoqueCatalogoApi[]): Produto[] {
+  const porVariacao = new Map<string, EstoqueVariacaoCatalogo[]>();
+  for (const linha of linhas) {
+    const estoque = porVariacao.get(linha.id_variacao) ?? [];
+    estoque.push({ lojaId: linha.id_loja, loja: linha.loja, quantidade: linha.quantidade });
+    porVariacao.set(linha.id_variacao, estoque);
+  }
+  return produtos.map((produto) => ({
+    ...produto,
+    variacoes: (produto.variacoes ?? []).map((variacao) => ({
+      ...variacao,
+      estoque: variacao.idVariacao ? (porVariacao.get(variacao.idVariacao) ?? []) : [],
+    })),
+  }));
+}
+
 export async function listarProdutosCatalogo(): Promise<Produto[]> {
   const { data, error } = await supabase()
     .from("produto")
@@ -124,7 +166,8 @@ export async function listarProdutosCatalogo(): Promise<Produto[]> {
     .not("imagem_url", "is", null)
     .order("nome", { ascending: true });
   if (error) throw error;
-  return ((data ?? []) as LinhaProdutoCatalogo[]).map(produtoCatalogoDeLinha).filter((produto): produto is Produto => Boolean(produto));
+  const produtos = ((data ?? []) as LinhaProdutoCatalogo[]).map(produtoCatalogoDeLinha).filter((produto): produto is Produto => Boolean(produto));
+  return aplicarEstoqueCatalogo(produtos, await listarEstoqueCatalogo());
 }
 
 export function useProdutosCatalogo(produtosSimulados: Produto[]): EstadoCatalogo {
