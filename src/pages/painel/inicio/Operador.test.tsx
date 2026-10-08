@@ -51,7 +51,7 @@ const opcoes = (): OpcoesEstoque => ({
 });
 
 const saldo = (): Saldo => ({
-  resumo: { unidades: 11, pecas: 2, estoque_baixo: 1, esgotadas: 0, valor_em_estoque: 2510 },
+  resumo: { unidades: 11, pecas: 2, produtos: 1, estoque_baixo: 1, esgotadas: 0, valor_em_estoque: 2510 },
   lojas: [{ id_loja: "l1", nome: "Casa Lorenzi Centro" }],
   total: 2,
   itens: [

@@ -46,7 +46,15 @@ export type ItemSaldo = {
 };
 
 export type Saldo = {
-  resumo: { unidades: number; pecas: number; estoque_baixo: number; esgotadas: number; valor_em_estoque: number };
+  /** `pecas` são SKUs (peça + cor + tamanho); `produtos` são as peças do catálogo, o número que o cliente vê. */
+  resumo: {
+    unidades: number;
+    pecas: number;
+    produtos: number;
+    estoque_baixo: number;
+    esgotadas: number;
+    valor_em_estoque: number;
+  };
   lojas: Loja[];
   total: number;
   itens: ItemSaldo[];
@@ -190,6 +198,7 @@ export function validarSaldo(dados: unknown): Saldo {
     resumo: {
       unidades: numero(r.unidades, "resumo.unidades"),
       pecas: numero(r.pecas, "resumo.pecas"),
+      produtos: numero(r.produtos, "resumo.produtos"),
       estoque_baixo: numero(r.estoque_baixo, "resumo.estoque_baixo"),
       esgotadas: numero(r.esgotadas, "resumo.esgotadas"),
       valor_em_estoque: numero(r.valor_em_estoque, "resumo.valor_em_estoque"),

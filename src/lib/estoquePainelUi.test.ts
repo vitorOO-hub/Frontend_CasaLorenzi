@@ -90,7 +90,7 @@ describe("registrar entrada, saída e ajuste", () => {
 
   it("lê o saldo da peça na loja certa, vindo do servidor", () => {
     const saldo = {
-      resumo: { unidades: 0, pecas: 0, estoque_baixo: 0, esgotadas: 0, valor_em_estoque: 0 },
+      resumo: { unidades: 0, pecas: 0, produtos: 0, estoque_baixo: 0, esgotadas: 0, valor_em_estoque: 0 },
       lojas: [],
       total: 1,
       itens: [

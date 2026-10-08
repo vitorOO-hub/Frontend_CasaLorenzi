@@ -137,9 +137,9 @@ function Painel({ dados, periodo, cores }: { dados: DadosRede; periodo: Periodo;
         <Metrica rotulo="Venda online" valor={pct(atual.participacao_online)} nota="do faturamento no período" />
         <Metrica rotulo="Unidades em estoque" valor={estoque.unidades.toLocaleString("pt-BR")} nota="posição de agora" to="/painel/estoque" />
         <Metrica
-          rotulo="Peças esgotadas"
+          rotulo="SKUs esgotados"
           valor={estoque.pecas_esgotadas}
-          nota={`de ${estoque.pecas} no catálogo`}
+          nota={`de ${estoque.pecas} SKUs · ${estoque.produtos} ${estoque.produtos === 1 ? "peça" : "peças"} no catálogo`}
           to="/painel/estoque"
           destaque={estoque.pecas_esgotadas > 0}
         />
@@ -173,7 +173,7 @@ function Painel({ dados, periodo, cores }: { dados: DadosRede; periodo: Periodo;
           <table className="w-full min-w-[760px] text-left text-sm">
             <thead>
               <tr className="text-[10px] uppercase tracking-[0.12em] text-suave">
-                {["Unidade", "Faturamento", "Variação", "Pedidos", "Ticket médio", "Online", "Estoque", "Esgotadas", "Chamados abertos", "Primeira resposta"].map((c, i) => (
+                {["Unidade", "Faturamento", "Variação", "Pedidos", "Ticket médio", "Online", "Estoque", "SKUs esgotados", "Chamados abertos", "Primeira resposta"].map((c, i) => (
                   <th key={i} className={cn("border-b border-linha py-2 pr-3 font-semibold", i > 0 && "text-right")}>
                     {c}
                   </th>

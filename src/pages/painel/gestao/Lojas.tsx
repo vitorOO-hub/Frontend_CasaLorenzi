@@ -33,7 +33,7 @@ export function Lojas() {
               {(
                 [
                   ["Unidades", l.unidades_em_estoque],
-                  ["Peças em alerta", l.pecas_em_alerta],
+                  ["SKUs em alerta", l.pecas_em_alerta],
                   ["Vendas (30 dias)", moedaBR(l.vendas_30_dias)],
                   ["Chamados abertos", l.chamados_abertos],
                 ] as const

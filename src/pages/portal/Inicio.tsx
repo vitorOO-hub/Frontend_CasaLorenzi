@@ -10,7 +10,6 @@ import { useEstado } from "@/lib/store";
 import { CartaoMateria } from "./Caderno";
 import { CasaCartao } from "./Casas";
 
-const NOVIDADES = ["CL-0509", "CL-0204", "CL-0407", "CL-0203", "CL-0101", "CL-0611", "CL-0510", "CL-0814"];
 
 /** Fileira de peças com rolagem lateral e setas, como uma arara. */
 function FileiraProdutos({ titulo, produtos, para }: { titulo: string; produtos: Produto[]; para: string }) {
@@ -47,9 +46,10 @@ export function Inicio() {
   const estado = useEstado();
   const { produtos, carregando, erro } = useProdutosCatalogo(estado.produtos);
   const produtosDisponiveis = carregando || erro ? [] : produtos;
-  const novidadesPreferidas = NOVIDADES.map((s) => produtosDisponiveis.find((p) => p.sku === s)).filter((p) => p !== undefined);
-  const novidades = novidadesPreferidas.length >= 4 ? novidadesPreferidas : produtosDisponiveis.slice(0, 8);
-  const blazer = produtosDisponiveis.find((p) => p.sku === "CL-0204");
+  // Só peças que existem no banco: nada de SKU fixo no código.
+  const novidades = produtosDisponiveis.slice(0, 8);
+  const blazer = produtosDisponiveis.find((p) => /blazer/i.test(p.nome));
+  const trench = produtosDisponiveis.find((p) => /trench/i.test(p.nome));
 
   return (
     <div>
@@ -58,7 +58,7 @@ export function Inicio() {
         slides={[
           { midia: filme(41491), sobre: `Edição ${EDICAO.numero}`, titulo: `${EDICAO.nome}.`, acao: "Ver a coleção", to: "/loja" },
           { midia: foto(CAMPANHA.prontaEntrega, "center 35%"), sobre: "Outerwear", titulo: "O casaco camelo volta à cidade", acao: "Ver casacos", to: "/loja?categoria=Outerwear" },
-          { midia: foto(CAMPANHA.edicaoGrande), sobre: "Trench Milano", titulo: "Areia de Ipanema", acao: "Ver a peça", to: "/loja/CL-0509" },
+          { midia: foto(CAMPANHA.edicaoGrande), sobre: "Trench Milano", titulo: "Areia de Ipanema", acao: "Ver a peça", to: trench ? `/loja/${trench.sku}` : "/loja?categoria=Outerwear" },
         ]}
       />
 

@@ -4,6 +4,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/components/ui";
 import { CAMPANHA, EDICAO, unsplash } from "@/lib/loja";
 import { sair, useSessao } from "@/lib/sessao";
+import { useProdutosCatalogo } from "@/lib/catalogoApi";
 import { useEstado } from "@/lib/store";
 
 /** Marca empilhada, alinhada à esquerda. */
@@ -28,7 +29,10 @@ type SecaoMenu = { id: string; rotulo: string; to: string; itens: [string, strin
 
 export function PortalLayout() {
   const sessao = useSessao();
-  const { carrinho, produtos } = useEstado();
+  const estado = useEstado();
+  const { carrinho } = estado;
+  // As categorias do menu vêm do catálogo do banco, nunca de uma lista de exemplo.
+  const { produtos } = useProdutosCatalogo(estado.produtos);
   const navigate = useNavigate();
   const { pathname, search } = useLocation();
   // Menus guardam a rota em que foram abertos: ao navegar, fecham sozinhos.

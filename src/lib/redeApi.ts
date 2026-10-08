@@ -47,7 +47,8 @@ export type DashboardRede = {
   grupos: GrupoDaRede[];
   pecas_mais_vendidas: PecaMaisVendida[];
   atendimento: { atual: ResumoAtendimento; anterior: ResumoAtendimento; abertos_agora: number };
-  estoque: { unidades: number; pecas: number; pecas_esgotadas: number };
+  /** `pecas` são SKUs (peça + cor + tamanho); `produtos` são as peças do catálogo. */
+  estoque: { unidades: number; pecas: number; produtos: number; pecas_esgotadas: number };
   unidades: UnidadeDaRede[];
   opcoes: { lojas: { id_loja: string; nome: string }[]; canais: Opcao[]; categorias: string[] };
 };
@@ -141,6 +142,7 @@ export function validarDashboardRede(dados: unknown): DashboardRede {
     estoque: {
       unidades: numero(estoque.unidades, "estoque.unidades"),
       pecas: numero(estoque.pecas, "estoque.pecas"),
+      produtos: numero(estoque.produtos, "estoque.produtos"),
       pecas_esgotadas: numero(estoque.pecas_esgotadas, "estoque.pecas_esgotadas"),
     },
     unidades: lista(o.unidades, "unidades").map((v, i) => {

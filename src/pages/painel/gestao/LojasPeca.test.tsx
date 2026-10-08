@@ -56,7 +56,7 @@ const opcoes = validarOpcoes({
 
 const saldoComPeca = () =>
   validarSaldo({
-    resumo: { unidades: 4, pecas: 1, estoque_baixo: 1, esgotadas: 0, valor_em_estoque: 1316 },
+    resumo: { unidades: 4, pecas: 1, produtos: 1, estoque_baixo: 1, esgotadas: 0, valor_em_estoque: 1316 },
     lojas: [{ id_loja: "l1", nome: "Casa Lorenzi Centro" }],
     total: 1,
     itens: [

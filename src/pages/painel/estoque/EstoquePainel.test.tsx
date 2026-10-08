@@ -89,7 +89,7 @@ const item = (extra = {}) => ({
 
 const saldo = (extra = {}): Saldo =>
   validarSaldo({
-    resumo: { unidades: 334, pecas: 63, estoque_baixo: 22, esgotadas: 4, valor_em_estoque: 190415.2 },
+    resumo: { unidades: 334, pecas: 63, produtos: 15, estoque_baixo: 22, esgotadas: 4, valor_em_estoque: 190415.2 },
     lojas: [{ id_loja: "l1", nome: "Casa Lorenzi Centro" }],
     total: 2,
     itens: [
@@ -170,7 +170,7 @@ describe("Saldo de estoque", () => {
   it("mostra o resumo e as peças exatamente como a API devolveu", () => {
     const html = render("saldo");
     expect(html).toContain("334"); // unidades
-    expect(html).toContain("63 peças em estoque");
+    expect(html).toContain("15 peças · 63 SKUs");
     expect(html).toContain("R$"); // valor em estoque
     expect(html).toContain("Camisa Oxford Bianca");
     expect(html).toContain("Branco · M");

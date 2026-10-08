@@ -78,10 +78,10 @@ export function Saldo() {
       />
 
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Metrica rotulo="Unidades em estoque" valor={resumo?.unidades ?? "—"} nota={resumo ? `${resumo.pecas} peças em estoque` : undefined} />
-        <Metrica rotulo="Estoque baixo" valor={resumo?.estoque_baixo ?? "—"} nota="no mínimo ou abaixo" />
+        <Metrica rotulo="Unidades em estoque" valor={resumo?.unidades ?? "—"} nota={resumo ? `${resumo.produtos} ${resumo.produtos === 1 ? "peça" : "peças"} · ${resumo.pecas} SKUs` : undefined} />
+        <Metrica rotulo="SKUs com estoque baixo" valor={resumo?.estoque_baixo ?? "—"} nota="no mínimo ou abaixo" />
         <Metrica
-          rotulo="Esgotadas"
+          rotulo="SKUs esgotados"
           valor={resumo?.esgotadas ?? "—"}
           nota="sem nenhuma unidade"
           destaque={(resumo?.esgotadas ?? 0) > 0}

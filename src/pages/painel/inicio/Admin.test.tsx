@@ -70,7 +70,7 @@ function rede(extra = {}) {
       anterior: { total: 7, resolvidos: 4, taxa_resolucao: 0.5714, resposta_media_horas: 2 },
       abertos_agora: 3,
     },
-    estoque: { unidades: 1234, pecas: 80, pecas_esgotadas: 5 },
+    estoque: { unidades: 1234, pecas: 80, produtos: 15, pecas_esgotadas: 5 },
     unidades: [unidade("l1", "Casa Lorenzi Centro", 30000), unidade("l2", "Casa Lorenzi Barra", 20000)],
     opcoes: {
       lojas: [
@@ -112,7 +112,7 @@ describe("início do admin", () => {
     expect(tela).toContain("Casa Lorenzi Centro");
     expect(tela).toContain("Casa Lorenzi Barra");
     expect(tela).toContain("1.234"); // unidades em estoque
-    expect(tela).toContain("de 80 no catálogo");
+    expect(tela).toContain("de 80 SKUs · 15 peças no catálogo");
     expect(tela).toContain("Camisa Oxford Bianca");
     expect(tela).toContain("chamados sem resposta");
     expect(tela).not.toContain("ajustes para aprovar");

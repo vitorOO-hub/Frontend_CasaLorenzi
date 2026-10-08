@@ -37,7 +37,7 @@ export const itemSaldo = (extra = {}) => ({
 });
 
 export const saldoDeExemplo = (extra = {}) => ({
-  resumo: { unidades: 334, pecas: 63, estoque_baixo: 22, esgotadas: 4, valor_em_estoque: 190415.2 },
+  resumo: { unidades: 334, pecas: 63, produtos: 15, estoque_baixo: 22, esgotadas: 4, valor_em_estoque: 190415.2 },
   lojas: [{ id_loja: "l1", nome: "Casa Lorenzi Centro" }],
   total: 1,
   itens: [itemSaldo()],

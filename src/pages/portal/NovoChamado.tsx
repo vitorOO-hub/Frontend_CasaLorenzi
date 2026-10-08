@@ -5,6 +5,7 @@ import { mensagemDeErro } from "@/api/erros";
 import { cn } from "@/components/ui";
 import { botaoLoja } from "@/components/vitrine";
 import * as acoes from "@/lib/acoes";
+import { useProdutosCatalogo } from "@/lib/catalogoApi";
 import { abrirChamadoCliente, listarOpcoesChamadoCliente } from "@/lib/chamadosClienteApi";
 import { listarLojasCliente, listarPedidosCliente, type LojaClienteApi, type PedidoClienteApi } from "@/lib/comprasClienteApi";
 import { clientes, dataBR, type Chamado } from "@/lib/dados";
@@ -48,7 +49,14 @@ export function NovoChamado() {
     if (pedidosApi) return pedidosApi.map(pedidoApiParaOpcao);
     return pedidos.filter((p) => p.clienteId === cliente.id).map((p) => ({ id: p.id, rotulo: p.id, data: p.data }));
   }, [cliente.id, pedidos, pedidosApi]);
-  const peca = produtos.find((p) => p.sku === sku);
+  // A peça do chamado vem do catálogo do banco (o SKU da URL pode ser de qualquer variação).
+  const { produtos: catalogo } = useProdutosCatalogo(produtos);
+  const peca = catalogo.find((p) => p.sku === sku || p.variacoes?.some((v) => v.sku === sku));
+  // O catálogo do banco chega depois do primeiro desenho: preenche o assunto quando a peça aparece.
+  const nomeDaPeca = peca?.nome;
+  useEffect(() => {
+    if (nomeDaPeca) setAssunto((atual) => atual || `Dúvida sobre ${nomeDaPeca}`);
+  }, [nomeDaPeca]);
   const motivosDisponiveis = motivos.filter((m) => !categoriasApi || categoriasApi.has(m.categoria));
 
   const [assunto, setAssunto] = useState(peca ? `Dúvida sobre ${peca.nome}` : "");
