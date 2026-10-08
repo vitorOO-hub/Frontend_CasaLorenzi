@@ -173,7 +173,7 @@ describe("Estoque mínimo", () => {
 
   it("admin escolhe a unidade", () => {
     estado.opcoes = consulta(opcoes({ papel: "admin", id_loja: null, loja_nome: null, pode_escolher_loja: true }));
-    expect(render(TelaMinimos)).toContain("<select");
+    expect(render(TelaMinimos)).toContain(`role="combobox"`);
   });
 
   it("vazio e erro", () => {

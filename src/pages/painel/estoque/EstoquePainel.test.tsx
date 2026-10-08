@@ -381,7 +381,7 @@ describe("janelas de registro", () => {
     const html = renderToString(
       <ModalMovimentoEstoque aberto opcoes={admin} onFechar={() => undefined} onSucesso={() => undefined} />,
     );
-    expect(html).toContain("<select");
+    expect(html).toContain(`role="combobox"`);
   });
 
   it("enquanto o saldo não chegou, o botão de registrar fica desativado", () => {
