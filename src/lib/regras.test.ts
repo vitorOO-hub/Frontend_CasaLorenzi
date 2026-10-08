@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { addDias, baldes, intervalos, resumoVendas, variacao, type Venda } from "./analise";
 import { dataBR, moeda, produtosIniciais, skuVariacao, statusProduto, totalProduto } from "./dados";
-import { abaDoCaminho, podeAcessar, secaoDoCaminho, secoesDoPapel, telaInicial } from "./navegacao";
+import { abaDoCaminho, abasDoPapel, podeAcessar, secaoDoCaminho, secoesDoPapel, telaInicial } from "./navegacao";
 
 const produto = (sku: string) => produtosIniciais.find((p) => p.sku === sku)!;
 
@@ -14,11 +14,11 @@ describe("permissões da área interna", () => {
     expect(ids("admin")).toEqual(["inicio", "estoque", "gestao"]);
   });
 
-  it("aprovações e estoque mínimo ficam restritos à gestão", () => {
+  it("o estoque não tem mais as abas de aprovações e estoque mínimo", () => {
     expect(podeAcessar("operador_estoque", "/painel/estoque")).toBe(true);
-    expect(podeAcessar("operador_estoque", "/painel/estoque/aprovacoes")).toBe(false);
-    expect(podeAcessar("operador_estoque", "/painel/estoque/minimos")).toBe(false);
-    expect(podeAcessar("gerente_loja", "/painel/estoque/aprovacoes")).toBe(true);
+    const estoque = secoesDoPapel("gerente_loja").find((s) => s.id === "estoque")!;
+    expect(abasDoPapel(estoque, "gerente_loja").map((a) => a.rotulo)).toEqual(["Saldo", "Movimentações", "Transferências"]);
+    expect(abasDoPapel(estoque, "admin").map((a) => a.rotulo)).toEqual(["Saldo", "Movimentações"]);
   });
 
   it("catálogo, usuários e auditoria são exclusivos do administrador", () => {
