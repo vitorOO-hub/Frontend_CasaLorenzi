@@ -128,7 +128,7 @@ export function PainelLayout() {
                       {pendentes > 0 ? (
                         <span
                           className={cn(
-                            "relative z-[1] ml-auto mr-4 h-5 min-w-[23px] rounded-full bg-white/[.13] px-[7px] text-center text-[11px] font-semibold leading-5 text-creme tabular-nums",
+                            "relative z-[1] ml-auto mr-7 h-5 min-w-[23px] rounded-full bg-white/[.13] px-[7px] text-center text-[11px] font-semibold leading-5 text-creme tabular-nums",
                             aoAbrir,
                           )}
                         >
@@ -143,18 +143,18 @@ export function PainelLayout() {
           </nav>
 
           <div className="relative z-[1] shrink-0 border-t border-white/[.09] pb-3.5 pt-2.5">
-            <div className="flex h-12 items-center">
+            {/* Largura fixa da barra aberta: o texto não se rearruma durante a animação e termina antes da
+                fita métrica (pr-7 = régua de 18px + folga), com reticências se ainda assim não couber. */}
+            <div className="flex min-h-12 w-60 items-center py-1">
               <span className="grid w-16 shrink-0 place-items-center">
                 <span className={cn("grid h-[30px] w-[30px] place-items-center rounded-full bg-terracota text-[11px] font-semibold tracking-[.06em] text-white", ROTULO)}>
                   {iniciais(pessoa.nome)}
                 </span>
               </span>
-              <span className={cn("flex flex-col gap-0.5 whitespace-nowrap", aoAbrir)}>
-                <span className="text-[13.5px] font-medium text-creme">{pessoa.nome}</span>
-                <span className={cn("text-[11.5px]", APAGADO)}>
-                  {rotuloPapel[papel]}
-                  {pessoa.lojaNome ? ` · ${pessoa.lojaNome}` : ""}
-                </span>
+              <span className={cn("flex min-w-0 flex-1 flex-col pr-7 leading-snug", aoAbrir)}>
+                <span className="truncate text-[13.5px] font-medium text-creme">{pessoa.nome}</span>
+                <span className={cn("truncate text-[11.5px]", APAGADO)}>{rotuloPapel[papel]}</span>
+                {pessoa.lojaNome ? <span className={cn("truncate text-[11.5px]", APAGADO)}>{pessoa.lojaNome}</span> : null}
               </span>
             </div>
             <div className={cn("flex gap-5 whitespace-nowrap pl-[22px] pt-2 text-[13px] font-medium", APAGADO, aoAbrir)}>
