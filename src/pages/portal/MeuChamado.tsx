@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { usandoApi } from "@/api/config";
 import { mensagemDeErro } from "@/api/erros";
@@ -12,6 +12,7 @@ import {
   type DetalheChamadoClienteApi,
   type MensagemChamadoClienteApi,
 } from "@/lib/chamadosClienteApi";
+import { manterConversaEmDia, ouvirMensagensDoChamado } from "@/lib/conversaClienteAoVivo";
 import { dataBR, nomeLoja } from "@/lib/dados";
 import { useClienteId, useSessao } from "@/lib/sessao";
 import { useEstado } from "@/lib/store";
@@ -103,6 +104,27 @@ export function MeuChamado() {
     };
   }, [id, modoApi, sessao?.tipo]);
 
+  // Resposta da equipe e mensagem nova aparecem sozinhas, sem recarregar a página.
+  useEffect(() => {
+    if (!modoApi || sessao?.tipo !== "cliente" || !id) return;
+    return manterConversaEmDia({
+      recarregar: async () => {
+        const [detalhe, mensagens] = await Promise.all([obterChamadoCliente(id), listarMensagensChamadoCliente(id)]);
+        setChamadoApi(detalhe);
+        setMensagensApi(mensagens);
+      },
+      ouvirNovas: (aoChegar) => ouvirMensagensDoChamado(id, aoChegar),
+      visivel: () => document.visibilityState === "visible",
+    });
+  }, [id, modoApi, sessao?.tipo]);
+
+  // Rola até a última mensagem quando entra uma nova.
+  const fimDaConversa = useRef<HTMLDivElement>(null);
+  const totalMensagens = chamado?.mensagens.length ?? 0;
+  useEffect(() => {
+    if (totalMensagens > 0) fimDaConversa.current?.scrollIntoView?.({ behavior: "smooth", block: "nearest" });
+  }, [totalMensagens]);
+
   if (modoApi && carregandoApi) return <p className="font-display text-2xl text-suave">Carregando a conversa...</p>;
   if (erroApi) return <p role="alert" className="font-display text-2xl text-perigo">{erroApi}</p>;
   if (!chamado) return <Navigate to="/conta/atendimento" replace />;
@@ -138,6 +160,7 @@ export function MeuChamado() {
             </div>
           );
         })}
+        <div ref={fimDaConversa} />
       </div>
 
       {chamado.status === "Resolvido" ? (
