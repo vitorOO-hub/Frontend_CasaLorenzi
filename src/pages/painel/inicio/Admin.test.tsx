@@ -114,7 +114,8 @@ describe("início do admin", () => {
     expect(tela).toContain("1.234"); // unidades em estoque
     expect(tela).toContain("de 80 no catálogo");
     expect(tela).toContain("Camisa Oxford Bianca");
-    expect(tela).toContain("ajustes para aprovar");
+    expect(tela).toContain("chamados sem resposta");
+    expect(tela).not.toContain("ajustes para aprovar");
     expect(tela).not.toContain("Marina");
   });
 
