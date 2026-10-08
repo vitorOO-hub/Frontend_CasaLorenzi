@@ -141,11 +141,10 @@ describe("início do gerente", () => {
 
   it("mostra as pendências com o número de cada uma", () => {
     const html = pagina({ dados: dados() as EstadoGerente["dados"] });
+    expect(html).toContain("ajustes para aprovar");
     expect(html).toContain("transferências aguardando");
     expect(html).toContain("chamados sem resposta");
-    // Aprovações saíram do painel: o ajuste pendente não vira mais atalho.
-    expect(html).not.toContain("ajustes para aprovar");
-    expect(html).not.toContain('href="/painel/estoque/aprovacoes"');
+    expect(html).toContain('href="/painel/estoque/aprovacoes"');
   });
 
   it("some com a faixa de pendências quando não há nenhuma", () => {
@@ -156,7 +155,7 @@ describe("início do gerente", () => {
       total: 0,
     });
     const html = pagina({ dados: dados({ pendencias: zeradas }) as EstadoGerente["dados"] });
-    expect(html).not.toContain("transferências aguardando");
+    expect(html).not.toContain("ajustes para aprovar");
   });
 
   it("lista a reposição com selo de esgotada e de cobertura", () => {

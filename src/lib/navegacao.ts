@@ -30,7 +30,7 @@ export type Secao = {
 };
 
 /** Contadores exibidos como selo nas abas; a barra lateral soma os da seção. */
-export type Pendencia = "transferencias" | "chamados";
+export type Pendencia = "aprovacoes" | "transferencias" | "chamados";
 
 const todos: Papel[] = ["atendente", "operador_estoque", "gerente_loja", "admin"];
 const gestao: Papel[] = ["gerente_loja", "admin"];
@@ -56,6 +56,7 @@ export const secoes: Secao[] = [
       { to: "/painel/estoque", rotulo: "Saldo" },
       { to: "/painel/estoque/movimentacoes", rotulo: "Movimentações" },
       { to: "/painel/estoque/transferencias", rotulo: "Transferências", papeis: daUnidade, pendencia: "transferencias" },
+      { to: "/painel/estoque/aprovacoes", rotulo: "Aprovações", papeis: gestao, pendencia: "aprovacoes" },
     ],
   },
   {

@@ -89,9 +89,11 @@ export function Movimentacoes() {
         descricao={descricao}
         acao={
           <>
-            <Botao variante="secundario" disabled={!opcoes.dados} onClick={() => setModal("ajuste")}>
-              Ajuste de inventário
-            </Botao>
+            {escopo?.papel === "operador_estoque" ? (
+              <Botao variante="secundario" disabled={!opcoes.dados} onClick={() => setModal("ajuste")}>
+                Ajuste de inventário
+              </Botao>
+            ) : null}
             <Botao disabled={!opcoes.dados} onClick={() => setModal("movimento")}>
               Registrar entrada / saída
             </Botao>

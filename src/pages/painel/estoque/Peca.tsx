@@ -70,9 +70,11 @@ export function Peca() {
           <Botao variante="secundario" disabled={!opcoes.dados} onClick={() => setModal("movimento")}>
             Entrada / saída
           </Botao>
-          <Botao variante="secundario" disabled={!opcoes.dados} onClick={() => setModal("ajuste")}>
-            Ajuste de inventário
-          </Botao>
+          {escopo?.papel === "operador_estoque" ? (
+            <Botao variante="secundario" disabled={!opcoes.dados} onClick={() => setModal("ajuste")}>
+              Ajuste de inventário
+            </Botao>
+          ) : null}
           {escopo && !escopo.pode_escolher_loja ? (
             <Botao disabled={!opcoes.dados} onClick={() => setModal("transferencia")}>
               Pedir transferência
