@@ -16,13 +16,15 @@ function montar(
     return proxima;
   });
   const renovarToken = vi.fn(async () => (opcoes.renovado === undefined ? "token-novo" : opcoes.renovado));
+  const aoSessaoExpirar = vi.fn();
   const cliente = criarClienteApi({
     baseUrl: "http://127.0.0.1:8000/",
     obterToken: async () => (opcoes.token === undefined ? "token-velho" : opcoes.token),
     renovarToken,
+    aoSessaoExpirar,
     buscar: buscar as unknown as typeof fetch,
   });
-  return { cliente, buscar, renovarToken };
+  return { cliente, buscar, renovarToken, aoSessaoExpirar };
 }
 
 const aceita = (dados: unknown) => dados as { ok: boolean };
@@ -243,5 +245,56 @@ describe("404 de rota inexistente", () => {
   it("404 de registro (em português, vindo da nossa API) continua mostrando a explicação", async () => {
     const { cliente } = montar([json({ detail: "Cliente nao encontrado" }, { status: 404 })]);
     await expect(cliente.get("/x", aceita)).rejects.toMatchObject({ status: 404, message: "Cliente nao encontrado" });
+  });
+});
+
+describe("fim da sessão, validação e rotas públicas (um ponto só para todas as telas)", () => {
+  it("sem token ou com 401 depois de renovar, avisa que a sessão acabou", async () => {
+    const semToken = montar([], { token: null });
+    await expect(semToken.cliente.get("/x", aceita)).rejects.toMatchObject({ status: 401 });
+    expect(semToken.aoSessaoExpirar).toHaveBeenCalledTimes(1);
+
+    const naoRenova = montar([json({}, { status: 401 })], { renovado: null });
+    await expect(naoRenova.cliente.get("/x", aceita)).rejects.toMatchObject({ status: 401 });
+    expect(naoRenova.aoSessaoExpirar).toHaveBeenCalledTimes(1);
+
+    const recusado = montar([json({}, { status: 401 }), json({}, { status: 401 })]);
+    await expect(recusado.cliente.get("/x", aceita)).rejects.toMatchObject({ status: 401 });
+    expect(recusado.aoSessaoExpirar).toHaveBeenCalledTimes(1);
+  });
+
+  it("401 que a renovação resolve NÃO derruba a sessão", async () => {
+    const { cliente, aoSessaoExpirar } = montar([json({}, { status: 401 }), json({ ok: true })]);
+    await cliente.get("/x", aceita);
+    expect(aoSessaoExpirar).not.toHaveBeenCalled();
+  });
+
+  it("403 e 404 não derrubam a sessão", async () => {
+    const { cliente, aoSessaoExpirar } = montar([json({ detail: "Sem permissão" }, { status: 403 })]);
+    await expect(cliente.get("/x", aceita)).rejects.toMatchObject({ status: 403 });
+    expect(aoSessaoExpirar).not.toHaveBeenCalled();
+  });
+
+  it("422 traz a explicação e a lista de campos que o backend manda em português", async () => {
+    const corpo = {
+      detail: "Dados invalidos (nome: Texto curto demais)",
+      campos: [{ campo: "nome", mensagem: "Texto curto demais" }, { campo: 3, mensagem: "lixo" }],
+    };
+    const { cliente } = montar([json(corpo, { status: 422 })]);
+    const erro = (await cliente.post("/x", aceita, {}).catch((e: unknown) => e)) as ErroApi;
+    expect(erro.message).toBe("Dados invalidos (nome: Texto curto demais)");
+    expect(erro.campos).toEqual([{ campo: "nome", mensagem: "Texto curto demais" }]);
+  });
+
+  it("rota pública não manda token, não renova a sessão e aceita Idempotency-Key", async () => {
+    const { cliente, buscar, renovarToken, aoSessaoExpirar } = montar([json({ ok: true })], { token: null });
+    await cliente.get("/publica", aceita, undefined, { semToken: true });
+    expect((buscar.mock.calls[0]![1]?.headers as Record<string, string>).Authorization).toBeUndefined();
+    expect(renovarToken).not.toHaveBeenCalled();
+    expect(aoSessaoExpirar).not.toHaveBeenCalled();
+
+    const dois = montar([json({ ok: true })]);
+    await dois.cliente.post("/pedidos", aceita, { itens: [] }, { idempotencia: "chave-1" });
+    expect((dois.buscar.mock.calls[0]![1]?.headers as Record<string, string>)["Idempotency-Key"]).toBe("chave-1");
   });
 });

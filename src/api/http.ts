@@ -1,6 +1,12 @@
+import { avisarSessaoExpirada, criarClienteApi, obterToken, renovarToken, type Parametros } from "@/lib/api";
 import { config, faltandoParaApi } from "./config";
-import { ErroApi, erroDaResposta } from "./erros";
-import { supabase } from "./supabase";
+import { ErroApi } from "./erros";
+
+/**
+ * Camada fina sobre o cliente HTTP único (`lib/api.ts`): só traduz o formato antigo
+ * (`requisitar("GET", "/pedidos", { params })`, caminho relativo a /api/v1) para ele. Token,
+ * renovação em 401, timeout e mapeamento de erros moram num lugar só.
+ */
 
 type Metodo = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -9,17 +15,14 @@ export type OpcoesRequisicao = {
   params?: Record<string, string | number | boolean | null | undefined>;
   /** Envia o header Idempotency-Key (ex.: POST /pedidos contra duplo clique). */
   idempotencia?: string;
-  /** Rotas públicas (ex.: /health) não mandam token. */
+  /** Rotas públicas (ex.: catálogo) não mandam token. */
   semToken?: boolean;
 };
 
 /** Como o cliente HTTP obtém e renova o JWT do Supabase (trocável nos testes). */
 export type FonteToken = { obter: () => Promise<string | null>; renovar: () => Promise<string | null> };
 
-let fonteToken: FonteToken = {
-  obter: async () => (await supabase().auth.getSession()).data.session?.access_token ?? null,
-  renovar: async () => (await supabase().auth.refreshSession()).data.session?.access_token ?? null,
-};
+let fonteToken: FonteToken = { obter: obterToken, renovar: renovarToken };
 
 export function definirFonteToken(fonte: FonteToken) {
   fonteToken = fonte;
@@ -28,59 +31,34 @@ export function definirFonteToken(fonte: FonteToken) {
 /** Chave nova para o header Idempotency-Key; gere uma por tentativa de compra, não por clique. */
 export const novaChaveIdempotencia = () => crypto.randomUUID();
 
-function montarUrl(caminho: string, params?: OpcoesRequisicao["params"]) {
-  const url = new URL(`${config.apiUrl}/api/v1${caminho}`);
-  for (const [chave, valor] of Object.entries(params ?? {})) {
-    if (valor !== undefined && valor !== null && valor !== "") url.searchParams.set(chave, String(valor));
-  }
-  return url.toString();
-}
+const comoParametros = (params: OpcoesRequisicao["params"]): Parametros =>
+  Object.fromEntries(Object.entries(params ?? {}).map(([k, v]) => [k, v === undefined ? undefined : v === null ? null : String(v)]));
 
-async function enviar(metodo: Metodo, caminho: string, op: OpcoesRequisicao, token: string | null) {
-  const headers: Record<string, string> = { Accept: "application/json" };
-  if (op.corpo !== undefined) headers["Content-Type"] = "application/json";
-  if (token) headers.Authorization = `Bearer ${token}`;
-  if (op.idempotencia) headers["Idempotency-Key"] = op.idempotencia;
-
-  const controle = new AbortController();
-  const relogio = setTimeout(() => controle.abort(), config.timeoutMs);
-  try {
-    return await fetch(montarUrl(caminho, op.params), {
-      method: metodo,
-      headers,
-      body: op.corpo === undefined ? undefined : JSON.stringify(op.corpo),
-      signal: controle.signal,
-    });
-  } catch {
-    throw new ErroApi("rede");
-  } finally {
-    clearTimeout(relogio);
-  }
-}
-
-/**
- * Chamada ao FastAPI em /api/v1. Manda o JWT do Supabase como Bearer; se o servidor
- * responder 401, renova a sessão uma vez e repete. Erros viram ErroApi com mensagem em pt-BR.
- */
+/** Chamada ao FastAPI em /api/v1. Erros viram ErroApi com mensagem em pt-BR. */
 export async function requisitar<T>(metodo: Metodo, caminho: string, op: OpcoesRequisicao = {}): Promise<T> {
   if (!config.apiUrl) throw new ErroApi("configuracao", `Faltam variáveis de ambiente: ${faltandoParaApi().join(", ")}.`);
 
-  let token = op.semToken ? null : await fonteToken.obter();
-  let resposta = await enviar(metodo, caminho, op, token);
-  if (resposta.status === 401 && !op.semToken) {
-    token = await fonteToken.renovar();
-    if (token) resposta = await enviar(metodo, caminho, op, token);
+  const cliente = criarClienteApi({
+    baseUrl: config.apiUrl,
+    obterToken: fonteToken.obter,
+    renovarToken: fonteToken.renovar,
+    aoSessaoExpirar: avisarSessaoExpirada,
+  });
+  const url = `/api/v1${caminho}`;
+  const validar = (dados: unknown) => dados as T;
+  const opcoes = { idempotencia: op.idempotencia, semToken: op.semToken, timeoutMs: config.timeoutMs };
+  switch (metodo) {
+    case "GET":
+      return cliente.get(url, validar, comoParametros(op.params), opcoes);
+    case "POST":
+      return cliente.post(url, validar, op.corpo, opcoes);
+    case "PUT":
+      return cliente.put(url, validar, op.corpo, opcoes);
+    case "PATCH":
+      return cliente.patch(url, validar, op.corpo, opcoes);
+    case "DELETE":
+      return cliente.delete(url, validar, comoParametros(op.params), opcoes);
   }
-
-  const texto = await resposta.text();
-  let corpo: unknown = null;
-  try {
-    corpo = texto ? JSON.parse(texto) : null;
-  } catch {
-    corpo = null;
-  }
-  if (!resposta.ok) throw erroDaResposta(resposta.status, corpo);
-  return corpo as T;
 }
 
 export const api = {

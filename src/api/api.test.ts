@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { sessaoDoToken } from "./auth";
 import { config } from "./config";
-import { ErroApi, erroDaResposta } from "./erros";
+import { ErroApi } from "./erros";
 import { definirFonteToken, requisitar } from "./http";
 import { prioridadeInicial, statusEstoque } from "./tipos";
 
@@ -12,37 +12,11 @@ const jwt = (claims: object) =>
 const resposta = (status: number, corpo?: unknown) =>
   new Response(corpo === undefined ? "" : JSON.stringify(corpo), { status });
 
-describe("erros da API", () => {
-  it("cada status vira um código estável", () => {
-    expect(erroDaResposta(401, null).codigo).toBe("nao_autenticado");
-    expect(erroDaResposta(403, null).codigo).toBe("sem_permissao");
-    expect(erroDaResposta(404, null).codigo).toBe("nao_encontrado");
-    expect(erroDaResposta(409, null).codigo).toBe("conflito");
-    expect(erroDaResposta(422, null).codigo).toBe("validacao");
-    expect(erroDaResposta(429, null).codigo).toBe("limite");
-  });
-
-  it("usa a mensagem em português do backend nos erros de domínio", () => {
-    const e = erroDaResposta(409, { detail: "Este ajuste já foi decidido." });
-    expect(e.message).toBe("Este ajuste já foi decidido.");
-  });
-
-  it("lista os campos recusados pelo Pydantic", () => {
-    const e = erroDaResposta(422, { detail: [{ loc: ["body", "motivo"], msg: "muito curto" }] });
-    expect(e.campos).toEqual([{ campo: "motivo", mensagem: "muito curto" }]);
-  });
-
-  it("não mostra o texto do servidor em erro 500", () => {
-    const e = erroDaResposta(500, { detail: "asyncpg.exceptions.UniqueViolationError" });
-    expect(e.message).not.toContain("asyncpg");
-  });
-});
-
 describe("cliente HTTP do FastAPI", () => {
   const fetchMock = vi.fn<typeof fetch>();
 
   beforeEach(() => {
-    config.apiUrl = "http://api.teste";
+    config.apiUrl = "https://api.teste";
     vi.stubGlobal("fetch", fetchMock);
     definirFonteToken({ obter: async () => "token-velho", renovar: async () => "token-novo" });
   });
@@ -56,7 +30,7 @@ describe("cliente HTTP do FastAPI", () => {
     const r = await requisitar<{ codigo: string }>("POST", "/pedidos", { corpo: { itens: [] }, idempotencia: "chave-1" });
     expect(r.codigo).toBe("PD-10501");
     const [url, init] = fetchMock.mock.calls[0]!;
-    expect(url).toBe("http://api.teste/api/v1/pedidos");
+    expect(url).toBe("https://api.teste/api/v1/pedidos");
     const headers = init!.headers as Record<string, string>;
     expect(headers.Authorization).toBe("Bearer token-velho");
     expect(headers["Idempotency-Key"]).toBe("chave-1");

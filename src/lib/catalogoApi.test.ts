@@ -72,7 +72,7 @@ describe("estoque do catálogo", () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it("é pedido sem token, para a loja carregar também para visitantes", async () => {
-    config.apiUrl = "http://api.teste";
+    config.apiUrl = "https://api.teste";
     definirFonteToken({ obter: async () => "token-da-equipe", renovar: async () => "token-novo" });
     const buscar = vi.fn<typeof fetch>().mockResolvedValue(
       new Response(JSON.stringify([{ id_variacao: "v1", sku: "CL-1", id_loja: "l1", loja: "Barra", quantidade: 2 }]), { status: 200 }),
@@ -83,7 +83,7 @@ describe("estoque do catálogo", () => {
 
     expect(linhas).toEqual([{ id_variacao: "v1", sku: "CL-1", id_loja: "l1", loja: "Barra", quantidade: 2 }]);
     const [url, init] = buscar.mock.calls[0]!;
-    expect(url).toBe("http://api.teste/api/v1/cliente/catalogo/estoque");
+    expect(url).toBe("https://api.teste/api/v1/cliente/catalogo/estoque");
     expect((init!.headers as Record<string, string>).Authorization).toBeUndefined();
   });
 });

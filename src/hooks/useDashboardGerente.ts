@@ -10,7 +10,6 @@ import {
   type Pendencias,
   type Reposicao,
 } from "@/lib/gerenciaApi";
-import { sair } from "@/lib/sessao";
 import { buscarLojas as buscarLojasDaRede, type LojaDaRede } from "@/lib/gerenciaApi";
 import { useConsulta } from "./useChamados";
 
@@ -65,7 +64,6 @@ export function useDashboardGerente(filtros: FiltrosGerente): EstadoGerente {
         .catch((e: unknown) => {
           if (controle.signal.aborted) return;
           // Sessão que não renova mais: volta para o login em vez de ficar numa tela quebrada.
-          if (e instanceof ErroApi && e.status === 401) sair();
           setErro(e instanceof ErroApi ? e.message : "Não foi possível carregar os dados.");
           setCarregando(false);
         })

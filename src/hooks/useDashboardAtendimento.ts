@@ -7,7 +7,6 @@ import {
   type FilaAtendimento,
   type FiltrosDashboard,
 } from "@/lib/atendimentoApi";
-import { sair } from "@/lib/sessao";
 
 type Dados = { dashboard: DashboardAtendimento; fila: FilaAtendimento };
 
@@ -45,7 +44,6 @@ export function useDashboardAtendimento(filtros: FiltrosDashboard): EstadoDashbo
       .catch((e: unknown) => {
         if (controle.signal.aborted) return;
         // Sessão que não renova mais: volta para o login em vez de ficar numa tela quebrada.
-        if (e instanceof ErroApi && e.status === 401) sair();
         setErro(e instanceof ErroApi ? e.message : "Não foi possível carregar os dados.");
         setCarregando(false);
       });

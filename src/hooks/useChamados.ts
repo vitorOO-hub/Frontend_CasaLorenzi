@@ -11,7 +11,7 @@ import {
   type OpcoesChamados,
   type ResumoChamados,
 } from "@/lib/chamadosApi";
-import { sair, usePapel, useSessao } from "@/lib/sessao";
+import { usePapel, useSessao } from "@/lib/sessao";
 
 export type Consulta<T> = {
   dados: T | null;
@@ -22,7 +22,7 @@ export type Consulta<T> = {
 
 /**
  * Consulta que cancela a anterior quando o filtro muda, mantém os últimos dados na tela durante a
- * nova busca e, se a sessão não renova mais (401), volta ao login em vez de ficar numa tela quebrada.
+ * nova busca. Sessão que não renova mais (401) volta ao login pelo cliente HTTP (`lib/api.ts`).
  * \`intervaloMs\` liga a atualização automática (só enquanto a aba está visível).
  */
 export function useConsulta<T>(
@@ -58,7 +58,6 @@ export function useConsulta<T>(
         })
         .catch((e: unknown) => {
           if (controle.signal.aborted) return;
-          if (e instanceof ErroApi && e.status === 401) sair();
           setErro(e instanceof ErroApi ? e.message : "Não foi possível carregar os dados.");
           setCarregando(false);
         })

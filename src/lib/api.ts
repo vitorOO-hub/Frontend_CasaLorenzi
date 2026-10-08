@@ -1,23 +1,13 @@
 import { config } from "@/api/config";
-import { ErroApi, type CodigoErro } from "@/api/erros";
+import { ErroApi, codigoDoStatus, type ErroCampo } from "@/api/erros";
 import { supabase, tokenAtual } from "@/api/supabase";
 
-/** Mesmo ErroApi do resto do front: o status HTTP vira o código estável da interface. */
-function codigoDoStatus(status: number): CodigoErro {
-  if (status === 0) return "rede";
-  if (status === 401) return "nao_autenticado";
-  if (status === 403) return "sem_permissao";
-  if (status === 404) return "nao_encontrado";
-  if (status === 409) return "conflito";
-  if (status === 422) return "validacao";
-  if (status === 429) return "limite";
-  return "servidor";
-}
-
-const erroApi = (status: number, mensagem: string) => new ErroApi(codigoDoStatus(status), mensagem, status);
+/** O status HTTP vira o código estável da interface (0 = sem resposta do servidor). */
+const erroApi = (status: number, mensagem: string, campos: ErroCampo[] = []) =>
+  new ErroApi(status === 0 ? "rede" : codigoDoStatus(status), mensagem, status, campos);
 
 /** Token da sessão atual; sem Supabase configurado ou sem login, null. */
-async function obterToken(): Promise<string | null> {
+export async function obterToken(): Promise<string | null> {
   try {
     return await tokenAtual();
   } catch {
@@ -26,7 +16,7 @@ async function obterToken(): Promise<string | null> {
 }
 
 /** Força a renovação do token; null se a sessão não pode mais ser renovada. */
-async function renovarToken(): Promise<string | null> {
+export async function renovarToken(): Promise<string | null> {
   try {
     const { data, error } = await supabase().auth.refreshSession();
     return error ? null : (data.session?.access_token ?? null);
@@ -40,6 +30,10 @@ export type Parametros = Record<string, string | number | string[] | undefined |
 export type OpcoesApi = {
   sinal?: AbortSignal;
   timeoutMs?: number;
+  /** Envia o header Idempotency-Key (ex.: checkout, para duplo clique não comprar duas vezes). */
+  idempotencia?: string;
+  /** Rotas públicas (catálogo) não mandam token nem tentam renovar a sessão. */
+  semToken?: boolean;
 };
 
 type Metodo = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -49,6 +43,8 @@ type Dependencias = {
   baseUrl: string;
   obterToken: () => Promise<string | null>;
   renovarToken: () => Promise<string | null>;
+  /** Chamado quando a sessão acabou de vez (sem token, ou 401 mesmo depois de renovar). */
+  aoSessaoExpirar?: () => void;
   buscar?: typeof fetch;
 };
 
@@ -81,12 +77,23 @@ function mensagemDoStatus(status: number, detalhe: unknown): string {
   return "Não foi possível carregar os dados.";
 }
 
-async function detalheDoCorpo(resposta: Response): Promise<unknown> {
+type CorpoDeErro = { detalhe?: unknown; campos: ErroCampo[] };
+
+/** Lê `detail` e, na validação (422), a lista `campos` que o backend manda em português. */
+async function corpoDoErro(resposta: Response): Promise<CorpoDeErro> {
   try {
     const corpo: unknown = await resposta.json();
-    return corpo && typeof corpo === "object" ? (corpo as { detail?: unknown }).detail : undefined;
+    if (!corpo || typeof corpo !== "object") return { campos: [] };
+    const { detail, campos } = corpo as { detail?: unknown; campos?: unknown };
+    const lista = Array.isArray(campos)
+      ? campos.filter(
+          (c): c is ErroCampo =>
+            !!c && typeof (c as ErroCampo).campo === "string" && typeof (c as ErroCampo).mensagem === "string",
+        )
+      : [];
+    return { detalhe: detail, campos: lista };
   } catch {
-    return undefined;
+    return { campos: [] };
   }
 }
 
@@ -123,12 +130,14 @@ export function criarClienteApi(dependencias: Dependencias) {
   async function requisitar(
     caminho: string,
     parametros: Parametros | undefined,
-    token: string,
+    token: string | null,
     opcoes: OpcoesApi,
     pedido: Pedido,
   ): Promise<Response> {
     const tempo = sinalComTimeout(opcoes.sinal, opcoes.timeoutMs ?? TIMEOUT_PADRAO_MS);
-    const cabecalhos: Record<string, string> = { Authorization: `Bearer ${token}`, Accept: "application/json" };
+    const cabecalhos: Record<string, string> = { Accept: "application/json" };
+    if (token) cabecalhos.Authorization = `Bearer ${token}`;
+    if (opcoes.idempotencia) cabecalhos["Idempotency-Key"] = opcoes.idempotencia;
     if (pedido.corpo !== undefined) cabecalhos["Content-Type"] = "application/json";
     try {
       return await buscar(montarUrl(baseUrl, caminho, parametros), {
@@ -159,19 +168,24 @@ export function criarClienteApi(dependencias: Dependencias) {
     parametros: Parametros | undefined,
     opcoes: OpcoesApi,
   ): Promise<T> {
-    let token = await dependencias.obterToken();
-    if (!token) throw erroApi(401, mensagemDoStatus(401, undefined));
+    const sessaoAcabou = () => {
+      dependencias.aoSessaoExpirar?.();
+      return erroApi(401, mensagemDoStatus(401, undefined));
+    };
+    let token = opcoes.semToken ? null : await dependencias.obterToken();
+    if (!opcoes.semToken && !token) throw sessaoAcabou();
 
     let resposta = await requisitar(caminho, parametros, token, opcoes, pedido);
-    if (resposta.status === 401) {
+    if (resposta.status === 401 && !opcoes.semToken) {
       token = await dependencias.renovarToken();
-      if (!token) throw erroApi(401, mensagemDoStatus(401, undefined));
+      if (!token) throw sessaoAcabou();
       resposta = await requisitar(caminho, parametros, token, opcoes, pedido);
+      if (resposta.status === 401) throw sessaoAcabou();
     }
 
     if (!resposta.ok) {
-      const detalhe = await detalheDoCorpo(resposta);
-      throw erroApi(resposta.status, mensagemDoStatus(resposta.status, detalhe));
+      const { detalhe, campos } = await corpoDoErro(resposta);
+      throw erroApi(resposta.status, mensagemDoStatus(resposta.status, detalhe), campos);
     }
 
     let corpo: unknown;
@@ -227,4 +241,19 @@ export function criarClienteApi(dependencias: Dependencias) {
 
 const baseUrlPadrao = config.apiUrl || "http://127.0.0.1:8000";
 
-export const api = criarClienteApi({ baseUrl: baseUrlPadrao, obterToken, renovarToken });
+let aoSessaoExpirar: () => void = () => undefined;
+
+/** A sessão registra aqui o que fazer quando o servidor recusa o token de vez: volta para o login. */
+export function definirAoSessaoExpirar(acao: () => void) {
+  aoSessaoExpirar = acao;
+}
+
+/** Dispara a ação registrada (o cliente do portal usa a mesma, para a sessão ter um fim só). */
+export const avisarSessaoExpirada = () => aoSessaoExpirar();
+
+export const api = criarClienteApi({
+  baseUrl: baseUrlPadrao,
+  obterToken,
+  renovarToken,
+  aoSessaoExpirar: avisarSessaoExpirada,
+});

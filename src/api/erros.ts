@@ -53,27 +53,6 @@ export function codigoDoStatus(status: number): CodigoErro {
   return "servidor";
 }
 
-type DetalheFastApi = string | { loc?: (string | number)[]; msg?: string }[] | undefined;
-
-/**
- * Monta o ErroApi a partir do corpo de erro do FastAPI: `{ detail: "texto" }` nos erros de
- * domínio ou `{ detail: [{ loc, msg }] }` na validação do Pydantic. Erro 5xx nunca mostra o
- * texto do servidor (a mensagem fica genérica, como pede o briefing).
- */
-export function erroDaResposta(status: number, corpo: unknown): ErroApi {
-  const codigo = codigoDoStatus(status);
-  const detalhe = (corpo as { detail?: DetalheFastApi } | null)?.detail;
-  if (codigo === "servidor") return new ErroApi(codigo, undefined, status);
-  if (Array.isArray(detalhe)) {
-    const campos = detalhe.map((d) => ({
-      campo: (d.loc ?? []).filter((p) => p !== "body").join("."),
-      mensagem: d.msg ?? "valor inválido",
-    }));
-    return new ErroApi(codigo, undefined, status, campos);
-  }
-  return new ErroApi(codigo, typeof detalhe === "string" ? detalhe : undefined, status);
-}
-
 /** Mensagem pronta para mostrar ao usuário, qualquer que seja o erro. */
 export function mensagemDeErro(erro: unknown): string {
   if (erro instanceof ErroApi) return erro.message;

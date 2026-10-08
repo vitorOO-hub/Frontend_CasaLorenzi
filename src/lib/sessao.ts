@@ -13,6 +13,7 @@ import { supabase } from "@/api/supabase";
 import type { Papel } from "@/api/tipos";
 import type { DadosCadastro } from "./cadastro";
 import { CLIENTE_DEMO_ID } from "./dados";
+import { definirAoSessaoExpirar } from "./api";
 import { esvaziarCarrinho, reiniciarEstado } from "./store";
 
 export type { Papel };
@@ -229,6 +230,12 @@ export function sair() {
   avisar();
   void sairDaConta().catch(() => undefined);
 }
+
+// Qualquer chamada à API que descobre que a sessão acabou (sem token, ou 401 mesmo depois de renovar)
+// volta para o login aqui, num ponto só; as telas não precisam tratar 401 uma a uma.
+definirAoSessaoExpirar(() => {
+  if (sessao) sair();
+});
 
 // ---------- Time interno ----------
 
