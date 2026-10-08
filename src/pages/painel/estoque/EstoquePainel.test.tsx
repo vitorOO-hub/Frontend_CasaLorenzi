@@ -202,6 +202,14 @@ describe("Saldo de estoque", () => {
     expect(html).toContain("Saldo por unidade da rede");
   });
 
+  it("só o admin escolhe a unidade, e as unidades vêm do banco", () => {
+    expect(render("saldo")).not.toContain(">Unidade<");
+    estado.opcoes = consulta(opcoes({ papel: "admin", id_loja: null, loja_nome: null, pode_escolher_loja: true }));
+    const html = render("saldo");
+    expect(html).toContain(">Unidade<");
+    expect(html).toContain("Casa Lorenzi Centro");
+  });
+
   it("filtros vêm das opções do servidor", () => {
     const html = render("saldo");
     expect(html).toContain(">Calças<");

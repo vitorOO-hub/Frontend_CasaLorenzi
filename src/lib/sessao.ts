@@ -12,7 +12,7 @@ import { ErroApi } from "@/api/erros";
 import { supabase } from "@/api/supabase";
 import type { Papel } from "@/api/tipos";
 import type { DadosCadastro } from "./cadastro";
-import { CLIENTE_DEMO_ID, lojas, type Loja } from "./dados";
+import { CLIENTE_DEMO_ID } from "./dados";
 
 export type { Papel };
 
@@ -46,7 +46,6 @@ const supabaseConfigurado = Boolean(config.supabaseUrl && config.supabaseAnonKey
 let sessao: Sessao | null = null;
 /** Falso só enquanto a sessão guardada pelo Supabase ainda está sendo lida na abertura da página. */
 let pronta = !supabaseConfigurado;
-let filtroUnidade = "";
 const ouvintes = new Set<() => void>();
 
 function avisar() {
@@ -71,7 +70,6 @@ export function useSessaoPronta(): boolean {
 export function iniciarSessao(nova: Sessao) {
   sessao = nova;
   pronta = true;
-  filtroUnidade = "";
   avisar();
 }
 
@@ -223,7 +221,6 @@ export const lojaDoPapel = (papel: Papel): string | null => equipe[papel].lojaId
 
 export function sair() {
   sessao = null;
-  filtroUnidade = "";
   avisar();
   void sairDaConta().catch(() => undefined);
 }
@@ -240,29 +237,6 @@ export function useNomeUsuario(): string {
   const s = useSessao();
   const papel = usePapel();
   return s?.tipo === "interno" ? s.nome : equipe[papel].nome;
-}
-
-export function definirFiltroUnidade(id: string) {
-  filtroUnidade = id;
-  avisar();
-}
-
-/** Filtro de unidade do administrador ("" = rede inteira). */
-export function useFiltroUnidade(): string {
-  return useSyncExternalStore(subscrever, () => filtroUnidade);
-}
-
-/** Loja à qual o cargo está restrito; null quando enxerga a rede inteira. */
-export function useLojaEscopo(): string | null {
-  const papel = usePapel();
-  const filtro = useFiltroUnidade();
-  if (papel === "admin") return filtro || null;
-  return equipe[papel].lojaId ?? null;
-}
-
-export function useLojasVisiveis(): Loja[] {
-  const escopo = useLojaEscopo();
-  return escopo ? lojas.filter((l) => l.id === escopo) : lojas;
 }
 
 export const podeAprovar = (papel: Papel) => papel === "gerente_loja" || papel === "admin";

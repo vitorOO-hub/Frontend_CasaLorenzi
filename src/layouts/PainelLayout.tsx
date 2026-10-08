@@ -2,16 +2,12 @@ import { LogOut, Store } from "lucide-react";
 import { Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Bloqueio } from "@/components/acesso";
 import { MenuUsuario } from "@/components/MenuUsuario";
-import { Select, cn } from "@/components/ui";
-import { lojas, nomeLoja } from "@/lib/dados";
+import { cn } from "@/components/ui";
 import { abasDoPapel, podeAcessar, secoesDoPapel, type Secao } from "@/lib/navegacao";
 import { usePendencias } from "@/lib/pendencias";
 import {
-  definirFiltroUnidade,
   rotuloPapel,
   sair,
-  useFiltroUnidade,
-  useLojaEscopo,
   usePapel,
   useSessao,
   useSessaoPronta,
@@ -49,8 +45,6 @@ export function PainelLayout() {
   const sessao = useSessao();
   const pronta = useSessaoPronta();
   const papel = usePapel();
-  const escopo = useLojaEscopo();
-  const filtro = useFiltroUnidade();
   const pendencias = usePendencias();
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -69,8 +63,8 @@ export function PainelLayout() {
     navigate("/", { replace: true });
   }
 
-  // Admin vê a rede (ou a unidade escolhida no filtro); os demais, a própria loja.
-  const escopoTexto = papel === "admin" ? (escopo ? nomeLoja(escopo) : "Todas as unidades") : (pessoa.lojaNome ?? "Sua unidade");
+  // Admin vê a rede (cada tela tem o seu filtro de unidade, com as lojas do banco); os demais, a própria loja.
+  const escopoTexto = papel === "admin" ? "Todas as unidades" : (pessoa.lojaNome ?? "Sua unidade");
 
   return (
     <div className="flex min-h-screen bg-creme">
@@ -185,19 +179,6 @@ export function PainelLayout() {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              {/* No Início o admin compara unidades pelos filtros do próprio dashboard. */}
-              {papel === "admin" && pathname !== "/painel" ? (
-                <Select
-                  aria-label="Filtrar por unidade"
-                  value={filtro}
-                  onChange={(e) => definirFiltroUnidade(e.target.value)}
-                  className="w-36 sm:w-48"
-                  opcoes={[
-                    { value: "", label: "Todas as unidades" },
-                    ...lojas.map((l) => ({ value: l.id, label: l.nome })),
-                  ]}
-                />
-              ) : null}
               <MenuUsuario
                 nome={pessoa.nome}
                 detalhe={`${rotuloPapel[papel]}${pessoa.lojaNome ? ` · ${pessoa.lojaNome}` : ""}`}

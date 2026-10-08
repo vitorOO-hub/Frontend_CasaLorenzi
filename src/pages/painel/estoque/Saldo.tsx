@@ -37,11 +37,14 @@ export function Saldo() {
   const [busca, setBusca] = useState("");
   const [categoria, setCategoria] = useState("");
   const [situacao, setSituacao] = useState("");
+  const [loja, setLoja] = useState("");
   const [pagina, setPagina] = useState(0);
   const buscaAtrasada = useAtraso(busca.trim());
 
   const opcoes = useOpcoesEstoque();
+  const podeEscolherLoja = opcoes.dados?.escopo.pode_escolher_loja === true;
   const consulta = useSaldoEstoque({
+    idLoja: podeEscolherLoja ? loja || undefined : undefined,
     busca: buscaAtrasada || undefined,
     categoria: categoria || undefined,
     situacao: situacao || undefined,
@@ -87,6 +90,15 @@ export function Saldo() {
       </div>
 
       <Filtros>
+        {podeEscolherLoja ? (
+          <Campo className="flex-1" label="Unidade">
+            <Select
+              value={loja}
+              onChange={(e) => filtrar(setLoja)(e.target.value)}
+              opcoes={[{ value: "", label: "Todas" }, ...(opcoes.dados?.lojas ?? []).map((l) => ({ value: l.id_loja, label: l.nome }))]}
+            />
+          </Campo>
+        ) : null}
         <Campo className="flex-1" label="Buscar">
           <input
             value={busca}
