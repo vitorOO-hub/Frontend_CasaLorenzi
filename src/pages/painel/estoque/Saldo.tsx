@@ -10,6 +10,7 @@ import {
   LinhaVazia,
   Metrica,
   Select,
+  SeletorDeData,
   Tabela,
   Titulo,
   cn,
@@ -133,14 +134,8 @@ export function Saldo() {
             opcoes={[{ value: "", label: "Todas" }, ...(opcoes.dados?.categorias ?? []).map((c) => ({ value: c, label: c }))]}
           />
         </Campo>
-        <Campo className="flex-1" label="Saldo em" ajuda="Vazio: hoje">
-          <input
-            type="date"
-            value={dia}
-            max={hoje}
-            onChange={(e) => filtrar(setDia)(e.target.value > hoje ? hoje : e.target.value)}
-            className={inputClasses}
-          />
+        <Campo className="flex-1 sm:min-w-52" label="Saldo em">
+          <SeletorDeData aria-label="Saldo em" value={dia} max={hoje} onChange={filtrar(setDia)} />
         </Campo>
         <Campo className="flex-1" label="Situação">
           <Select
