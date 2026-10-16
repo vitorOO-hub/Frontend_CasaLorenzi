@@ -26,7 +26,9 @@ import {
   TOM_SITUACAO,
   destaqueDaQuantidade,
   detalheDaPeca,
+  diaBR,
   faixaDaPagina,
+  hojeEmSaoPaulo,
 } from "@/lib/estoquePainelUi";
 
 const POR_PAGINA = 50;
@@ -38,12 +40,16 @@ export function Saldo() {
   const [categoria, setCategoria] = useState("");
   const [situacao, setSituacao] = useState("");
   const [loja, setLoja] = useState("");
+  // Vazio = saldo de agora; AAAA-MM-DD = saldo no fim daquele dia.
+  const [dia, setDia] = useState("");
   const [pagina, setPagina] = useState(0);
+  const hoje = hojeEmSaoPaulo();
   const buscaAtrasada = useAtraso(busca.trim());
 
   const opcoes = useOpcoesEstoque();
   const podeEscolherLoja = opcoes.dados?.escopo.pode_escolher_loja === true;
   const consulta = useSaldoEstoque({
+    em: dia || undefined,
     idLoja: podeEscolherLoja ? loja || undefined : undefined,
     busca: buscaAtrasada || undefined,
     categoria: categoria || undefined,
@@ -59,6 +65,7 @@ export function Saldo() {
   const itens = saldo?.itens ?? [];
   const total = saldo?.total ?? 0;
   const erro = consulta.erro ?? opcoes.erro;
+  const noPassado = Boolean(dia);
 
   // Qualquer filtro novo volta para a primeira página.
   const filtrar = <T,>(definir: (v: T) => void) => (v: T) => {
@@ -77,8 +84,19 @@ export function Saldo() {
         }
       />
 
+      {noPassado ? (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-sm border border-dourado/40 bg-dourado-claro/40 px-4 py-3 text-sm">
+          <p>
+            Mostrando o estoque no fim de <b>{diaBR(dia)}</b>. O valor em estoque usa o preço de venda de hoje.
+          </p>
+          <Botao variante="secundario" pequeno onClick={() => filtrar(setDia)("")}>
+            Voltar para hoje
+          </Botao>
+        </div>
+      ) : null}
+
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Metrica rotulo="Unidades em estoque" valor={resumo?.unidades ?? "—"} nota={resumo ? `${resumo.produtos} ${resumo.produtos === 1 ? "peça" : "peças"} · ${resumo.pecas} SKUs` : undefined} />
+        <Metrica rotulo={noPassado ? `Unidades em ${diaBR(dia)}` : "Unidades em estoque"} valor={resumo?.unidades ?? "—"} nota={resumo ? `${resumo.produtos} ${resumo.produtos === 1 ? "peça" : "peças"} · ${resumo.pecas} SKUs` : undefined} />
         <Metrica rotulo="SKUs com estoque baixo" valor={resumo?.estoque_baixo ?? "—"} nota="no mínimo ou abaixo" />
         <Metrica
           rotulo="SKUs esgotados"
@@ -113,6 +131,15 @@ export function Saldo() {
             value={categoria}
             onChange={(e) => filtrar(setCategoria)(e.target.value)}
             opcoes={[{ value: "", label: "Todas" }, ...(opcoes.dados?.categorias ?? []).map((c) => ({ value: c, label: c }))]}
+          />
+        </Campo>
+        <Campo className="flex-1" label="Saldo em" ajuda="Vazio: hoje">
+          <input
+            type="date"
+            value={dia}
+            max={hoje}
+            onChange={(e) => filtrar(setDia)(e.target.value > hoje ? hoje : e.target.value)}
+            className={inputClasses}
           />
         </Campo>
         <Campo className="flex-1" label="Situação">

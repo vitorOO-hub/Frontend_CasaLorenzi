@@ -72,3 +72,10 @@ export function inteiroDoCampo(valor: string, minimo = 0): number | null {
   const n = Number(valor);
   return Number.isSafeInteger(n) && n >= minimo && n <= 100_000 ? n : null;
 }
+
+/** Hoje no calendário de São Paulo, em AAAA-MM-DD: o limite do filtro "Saldo em". */
+export const hojeEmSaoPaulo = (agora = new Date()) =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(agora);
+
+/** "2026-09-26" → "26/09/2026". */
+export const diaBR = (iso: string) => iso.split("-").reverse().join("/");
