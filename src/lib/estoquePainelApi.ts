@@ -46,6 +46,8 @@ export type ItemSaldo = {
 };
 
 export type Saldo = {
+  /** Dia em que o saldo foi lido (fim do dia, horário de São Paulo); null = agora. */
+  em: string | null;
   /** `pecas` são SKUs (peça + cor + tamanho); `produtos` são as peças do catálogo, o número que o cliente vê. */
   resumo: {
     unidades: number;
@@ -85,6 +87,8 @@ export type ItemMovimentacao = {
 export type Movimentacoes = { total: number; itens: ItemMovimentacao[] };
 
 export type FiltrosSaldo = {
+  /** AAAA-MM-DD: saldo no fim desse dia (horário de São Paulo). Sem ele, o saldo de agora. */
+  em?: string;
   busca?: string;
   categoria?: string;
   situacao?: string;
@@ -195,6 +199,7 @@ export function validarSaldo(dados: unknown): Saldo {
   const o = objeto(dados, "saldo");
   const r = objeto(o.resumo, "resumo");
   return {
+    em: textoOuNulo(o.em, "em"),
     resumo: {
       unidades: numero(r.unidades, "resumo.unidades"),
       pecas: numero(r.pecas, "resumo.pecas"),
@@ -310,6 +315,7 @@ export const buscarSaldo = (f: FiltrosSaldo, o?: OpcoesApi) =>
     `${BASE}/saldo`,
     validarSaldo,
     {
+      em: f.em,
       busca: f.busca,
       categoria: f.categoria,
       situacao: f.situacao,

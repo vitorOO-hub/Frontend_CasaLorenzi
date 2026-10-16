@@ -136,9 +136,24 @@ describe("chamadas do estoque do painel", () => {
     expect(api.get).toHaveBeenCalledWith(
       "/api/v1/painel/estoque/saldo",
       validarSaldo,
-      { busca: "linho", categoria: "Camisas", situacao: "baixo", id_loja: undefined, limit: 50, offset: 100 },
+      { em: undefined, busca: "linho", categoria: "Camisas", situacao: "baixo", id_loja: undefined, limit: 50, offset: 100 },
       undefined,
     );
+  });
+
+  it("pede o saldo de um dia passado quando há data", () => {
+    buscarSaldo({ em: "2026-09-26", limit: 50, offset: 0 });
+    expect(api.get).toHaveBeenLastCalledWith(
+      "/api/v1/painel/estoque/saldo",
+      validarSaldo,
+      expect.objectContaining({ em: "2026-09-26" }),
+      undefined,
+    );
+  });
+
+  it("guarda o dia em que o saldo foi lido", () => {
+    expect(validarSaldo({ ...saldoDeExemplo(), em: "2026-09-26" }).em).toBe("2026-09-26");
+    expect(validarSaldo(saldoDeExemplo()).em).toBeNull();
   });
 
   it("manda os filtros das movimentações", () => {

@@ -11,6 +11,8 @@ import {
   TOM_SITUACAO,
   destaqueDaQuantidade,
   detalheDaPeca,
+  diaBR,
+  hojeEmSaoPaulo,
   faixaDaPagina,
   observacaoDaMovimentacao,
   responsavelDaMovimentacao,
@@ -90,6 +92,7 @@ describe("registrar entrada, saída e ajuste", () => {
 
   it("lê o saldo da peça na loja certa, vindo do servidor", () => {
     const saldo = {
+      em: null,
       resumo: { unidades: 0, pecas: 0, produtos: 0, estoque_baixo: 0, esgotadas: 0, valor_em_estoque: 0 },
       lojas: [],
       total: 1,
@@ -122,5 +125,13 @@ describe("registrar entrada, saída e ajuste", () => {
   it("rótulos e cores do status do ajuste", () => {
     expect(ROTULO_AJUSTE).toEqual({ pendente: "Pendente", aprovado: "Aprovado", rejeitado: "Recusado" });
     expect(TOM_AJUSTE).toEqual({ pendente: "alerta", aprovado: "ok", rejeitado: "perigo" });
+  });
+});
+
+describe("datas do saldo", () => {
+  it("formata o dia e calcula hoje no calendário de São Paulo", () => {
+    expect(diaBR("2026-09-26")).toBe("26/09/2026");
+    // 01h de 16/10 em UTC ainda é 15/10 em São Paulo.
+    expect(hojeEmSaoPaulo(new Date("2026-10-16T01:00:00Z"))).toBe("2026-10-15");
   });
 });
