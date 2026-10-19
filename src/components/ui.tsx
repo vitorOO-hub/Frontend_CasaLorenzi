@@ -1,5 +1,5 @@
 import { clsx, type ClassValue } from "clsx";
-import { Check, ChevronDown, ChevronLeft, X } from "lucide-react";
+import { CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, X } from "lucide-react";
 import {
   useCallback,
   useEffect,
@@ -337,6 +337,182 @@ export function Select({
       {/* Fechada, a lista fica no lugar e escondida (opções legíveis, sem depender do navegador). Aberta,
           vai para o body: um ancestral com backdrop-blur/transform viraria a referência do "fixed". */}
       {aberto && typeof document !== "undefined" ? createPortal(listaDeOpcoes, document.body) : listaDeOpcoes}
+    </div>
+  );
+}
+
+const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+const INICIAIS_DA_SEMANA = ["D", "S", "T", "Q", "Q", "S", "S"];
+
+/** "2026-09" + 3 → "2026-09-03". */
+const diaDoMes = (mes: string, dia: number) => `${mes}-${String(dia).padStart(2, "0")}`;
+
+/**
+ * Seletor de data no padrão dos filtros (o campo de data nativo abre o calendário do sistema).
+ * `value` e `max` em AAAA-MM-DD; vazio = sem data (o campo mostra `rotuloVazio`). Abre com clique,
+ * Enter ou seta para baixo; fecha com Esc, clique fora ou rolagem. Dias depois de `max` ficam
+ * desativados. Como no Select, o calendário só vai para o body quando abre.
+ */
+export function SeletorDeData({
+  value,
+  onChange,
+  max,
+  rotuloVazio = "Hoje",
+  className,
+  "aria-label": rotulo,
+}: {
+  value: string;
+  onChange: (valor: string) => void;
+  max?: string;
+  rotuloVazio?: string;
+  className?: string;
+  "aria-label"?: string;
+}) {
+  const botao = useRef<HTMLButtonElement>(null);
+  const painel = useRef<HTMLDivElement>(null);
+  const base = useId();
+  const [posicao, setPosicao] = useState<CSSProperties | null>(null);
+  const [mes, setMes] = useState(() => (value || max || new Date().toISOString()).slice(0, 7));
+  const aberto = posicao !== null;
+  const fechar = useCallback(() => setPosicao(null), []);
+
+  function abrir() {
+    const r = botao.current?.getBoundingClientRect();
+    if (!r) return;
+    const largura = 312;
+    const vertical = window.innerHeight - r.bottom < 380 ? { bottom: window.innerHeight - r.top + 4 } : { top: r.bottom + 4 };
+    setPosicao({ position: "fixed", width: largura, left: Math.max(8, Math.min(r.left, window.innerWidth - largura - 8)), ...vertical });
+    setMes((value || max || new Date().toISOString()).slice(0, 7));
+  }
+
+  function escolher(dia: string) {
+    fechar();
+    botao.current?.focus();
+    if (dia !== value) onChange(dia);
+  }
+
+  useEffect(() => {
+    if (!aberto) return;
+    const fora = (e: PointerEvent) => {
+      const alvo = e.target as Node;
+      if (!botao.current?.contains(alvo) && !painel.current?.contains(alvo)) fechar();
+    };
+    const rolou = (e: Event) => {
+      if (!painel.current?.contains(e.target as Node)) fechar();
+    };
+    document.addEventListener("pointerdown", fora);
+    window.addEventListener("scroll", rolou, true);
+    window.addEventListener("resize", fechar);
+    return () => {
+      document.removeEventListener("pointerdown", fora);
+      window.removeEventListener("scroll", rolou, true);
+      window.removeEventListener("resize", fechar);
+    };
+  }, [aberto, fechar]);
+
+  const [ano, numeroDoMes] = mes.split("-").map(Number) as [number, number];
+  const vazios = new Date(Date.UTC(ano, numeroDoMes - 1, 1)).getUTCDay();
+  const diasNoMes = new Date(Date.UTC(ano, numeroDoMes, 0)).getUTCDate();
+  const irPara = (delta: number) => setMes(new Date(Date.UTC(ano, numeroDoMes - 1 + delta, 1)).toISOString().slice(0, 7));
+  const podeAvancar = !max || mes < max.slice(0, 7);
+  const [a, m, d] = value.split("-");
+
+  const calendario = (
+    <div
+      ref={painel}
+      id={`${base}-calendario`}
+      role="dialog"
+      aria-label={rotulo ? `${rotulo}: escolher o dia` : "Escolher o dia"}
+      style={posicao ?? undefined}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          // Fecha só o calendário, sem fechar junto o modal em que ele estiver.
+          e.stopPropagation();
+          fechar();
+          botao.current?.focus();
+        }
+      }}
+      className="z-[60] rounded-sm border border-linha bg-papel p-3 shadow-[0_14px_34px_-14px_rgba(22,32,58,.38)]"
+    >
+      <div className="mb-2 flex items-center justify-between">
+        <button type="button" onClick={() => irPara(-1)} aria-label="Mês anterior" className="grid h-9 w-9 place-items-center rounded-sm text-suave hover:bg-areia hover:text-tinta">
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <p className="text-sm font-medium capitalize text-tinta">
+          {MESES.at(numeroDoMes - 1)} {ano}
+        </p>
+        <button
+          type="button"
+          onClick={() => irPara(1)}
+          disabled={!podeAvancar}
+          aria-label="Próximo mês"
+          className="grid h-9 w-9 place-items-center rounded-sm text-suave hover:bg-areia hover:text-tinta disabled:pointer-events-none disabled:opacity-30"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+      <div className="grid grid-cols-7 gap-1 text-center">
+        {INICIAIS_DA_SEMANA.map((inicial, i) => (
+          <span key={i} className="rotulo py-1">
+            {inicial}
+          </span>
+        ))}
+        {Array.from({ length: vazios }, (_, i) => (
+          <span key={`vazio-${i}`} />
+        ))}
+        {Array.from({ length: diasNoMes }, (_, i) => {
+          const dia = diaDoMes(mes, i + 1);
+          const escolhido = dia === value;
+          const depoisDoLimite = Boolean(max && dia > max);
+          return (
+            <button
+              key={dia}
+              type="button"
+              disabled={depoisDoLimite}
+              aria-pressed={escolhido}
+              onClick={() => escolher(dia)}
+              className={cn(
+                "h-9 rounded-sm text-sm tabular-nums transition-colors",
+                escolhido ? "bg-marinho font-medium text-white" : "text-tinta hover:bg-areia",
+                dia === max && !escolhido && "font-semibold text-marinho ring-1 ring-inset ring-marinho/30",
+                depoisDoLimite && "pointer-events-none text-suave/40",
+              )}
+            >
+              {i + 1}
+            </button>
+          );
+        })}
+      </div>
+      {value ? (
+        <button type="button" onClick={() => escolher("")} className="mt-3 w-full rounded-sm border border-linha py-2 text-sm text-suave hover:border-marinho/40 hover:text-tinta">
+          Voltar para {rotuloVazio.toLowerCase()}
+        </button>
+      ) : null}
+    </div>
+  );
+
+  return (
+    <div className={cn("relative", className)}>
+      <button
+        ref={botao}
+        type="button"
+        aria-label={rotulo}
+        aria-haspopup="dialog"
+        aria-expanded={aberto}
+        aria-controls={`${base}-calendario`}
+        onClick={() => (aberto ? fechar() : abrir())}
+        onKeyDown={(e) => {
+          if (!aberto && (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ")) {
+            e.preventDefault();
+            abrir();
+          }
+        }}
+        className={cn(inputClasses, "flex items-center justify-between gap-2 text-left")}
+      >
+        <span className={cn("truncate tabular-nums", !value && "text-suave")}>{value ? `${d}/${m}/${a}` : rotuloVazio}</span>
+        <CalendarDays className={cn("h-4 w-4 shrink-0 transition-colors", aberto ? "text-marinho" : "text-suave")} />
+      </button>
+      {aberto && typeof document !== "undefined" ? createPortal(calendario, document.body) : null}
     </div>
   );
 }

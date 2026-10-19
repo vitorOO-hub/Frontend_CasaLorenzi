@@ -19,7 +19,7 @@ export type LinhaProdutoCatalogo = {
   nome: string;
   marca: string | null;
   categoria: string | null;
-  descricao: string | null;
+  colecao: string | null;
   preco_base: string | number;
   ativo: boolean | null;
   imagem_url: string | null;
@@ -100,7 +100,7 @@ export function produtoCatalogoDeLinha(linha: LinhaProdutoCatalogo): Produto | n
     nome: linha.nome,
     categoria: textoComPadrao(linha.categoria, "Catálogo"),
     preco: Math.min(...(precos.length ? precos : [numeroSeguro(linha.preco_base)])),
-    descricao: linha.descricao,
+    colecao: linha.colecao,
     saldos: [],
     movimentacoes: [],
     variacoes,
@@ -161,7 +161,7 @@ export async function listarProdutosCatalogo(): Promise<Produto[]> {
   const { data, error } = await supabase()
     .from("produto")
     .select(
-      "id_produto,nome,marca,categoria,descricao,preco_base,ativo,imagem_url,imagem_alt,imagem_vestida_url,tipo,tecido,tecelagem,costurado_em,nota,cores,variacao_produto(id_variacao,sku,cor,tamanho,preco_venda,ativa)",
+      "id_produto,nome,marca,categoria,colecao,preco_base,ativo,imagem_url,imagem_alt,imagem_vestida_url,tipo,tecido,tecelagem,costurado_em,nota,cores,variacao_produto(id_variacao,sku,cor,tamanho,preco_venda,ativa)",
     )
     .eq("ativo", true)
     .not("imagem_url", "is", null)
