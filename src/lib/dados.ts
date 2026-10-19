@@ -42,7 +42,7 @@ export type Produto = {
   preco: number;
   saldos: SaldoLoja[];
   movimentacoes: Movimentacao[];
-  descricao?: string | null;
+  colecao?: string | null;
   variacoes?: VariacaoProdutoCatalogo[];
   imagemUrl?: string;
   imagemAlt?: string;
