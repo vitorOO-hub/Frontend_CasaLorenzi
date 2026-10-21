@@ -82,6 +82,7 @@ export function erroDoCadastro(erro: { code?: string; status?: number; message?:
 export type DadosDoCadastro = {
   nome: string;
   email: string;
+  cpf?: string;
   senha: string;
   telefone: string;
   cep: string;
@@ -104,6 +105,8 @@ export async function cadastrarCliente(d: DadosDoCadastro): Promise<{ logado: bo
       data: {
         cadastro_cliente: true,
         nome: d.nome,
+        // Com o mesmo CPF e e-mail de um cliente Vulto+ importado, o banco liga a conta aos pontos dele.
+        documento: d.cpf ?? "",
         telefone: d.telefone,
         cep: d.cep,
         rua: d.rua,

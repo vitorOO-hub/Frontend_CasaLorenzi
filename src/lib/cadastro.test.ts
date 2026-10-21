@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { dadosDoCadastro, ENDERECO_VAZIO, FORM_VAZIO, formatarCep, formatarTelefone, preencherComCadastro, ufDoCep, validarCadastro } from "./cadastro";
+import { cpfValido, dadosDoCadastro, ENDERECO_VAZIO, FORM_VAZIO, formatarCep, formatarCpf, formatarTelefone, preencherComCadastro, ufDoCep, validarCadastro } from "./cadastro";
 
 const ok = {
   nome: " Helena Souza ",
   email: " Helena@Exemplo.com ",
+  cpf: "",
   telefone: "(11) 99999-0001",
   senha: "senha1234",
   cep: "01001-000",
@@ -22,7 +23,17 @@ describe("cadastro de cliente", () => {
       telefone: "11999990001",
       cep: "01001000",
       complemento: undefined,
+      cpf: undefined,
     });
+  });
+
+  it("CPF é opcional; quando informado, precisa ser válido e vai só com dígitos", () => {
+    expect(validarCadastro({ ...ok, cpf: "529.982.247-25" })).toEqual({});
+    expect(dadosDoCadastro({ ...ok, cpf: "529.982.247-25" }).cpf).toBe("52998224725");
+    expect(validarCadastro({ ...ok, cpf: "529.982.247-26" }).cpf).toBeDefined();
+    expect(cpfValido("111.111.111-11")).toBe(false);
+    expect(formatarCpf("52998224725")).toBe("529.982.247-25");
+    expect(formatarCpf("5299")).toBe("529.9");
   });
 
   it("exige nome, e-mail, telefone, senha, CEP, rua, bairro e número", () => {

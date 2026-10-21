@@ -117,7 +117,7 @@ export function Clientes() {
                 <tr key={c.id_cliente} onClick={() => navigate(`/painel/atendimento/clientes/${c.id_cliente}`)} className={linhaClicavel}>
                   <td className={td}>
                     <p className="font-medium">{c.nome}</p>
-                    <p className="text-xs text-suave">{c.email}</p>
+                    <p className="text-xs text-suave">{c.email ?? "sem e-mail"}</p>
                   </td>
                   <td className={td}>{c.telefone ?? "—"}</td>
                   <td className={td}>{c.cidade ?? "—"}</td>

@@ -138,7 +138,7 @@ export function Chamado() {
           <Card className="p-5">
             <p className="rotulo">Cliente</p>
             <p className="mt-2 font-display text-xl">{chamado.cliente.nome}</p>
-            <p className="mt-1 break-all text-sm text-suave">{chamado.cliente.email}</p>
+            <p className="mt-1 break-all text-sm text-suave">{chamado.cliente.email ?? "sem e-mail"}</p>
             {chamado.cliente.telefone ? <p className="text-sm text-suave">{chamado.cliente.telefone}</p> : null}
             <p className="text-sm text-suave">
               {chamado.cliente.cidade ? `${chamado.cliente.cidade} · ` : ""}desde {dataBRdoIso(chamado.cliente.cliente_desde)}
