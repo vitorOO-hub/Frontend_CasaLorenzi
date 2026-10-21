@@ -77,8 +77,8 @@ export function validarCadastro(f: FormCadastro): ErrosCadastro {
   const erros: ErrosCadastro = {};
   if (f.nome.trim().length < 2) erros.nome = "Informe seu nome.";
   if (!EMAIL.test(f.email.trim())) erros.email = "Informe um e-mail válido.";
-  // CPF é opcional; quem já é cliente Vulto+ informa para trazer os pontos para a conta.
-  if (f.cpf.trim() && !cpfValido(f.cpf)) erros.cpf = "Confira o CPF.";
+  if (!f.cpf.trim()) erros.cpf = "Informe seu CPF.";
+  else if (!cpfValido(f.cpf)) erros.cpf = "Confira o CPF.";
   const tel = soDigitos(f.telefone).length;
   if (tel < 10 || tel > 11) erros.telefone = "Informe o telefone com DDD.";
   if (f.senha.length < SENHA_MINIMA) erros.senha = `A senha precisa de pelo menos ${SENHA_MINIMA} caracteres.`;
@@ -95,7 +95,7 @@ export function dadosDoCadastro(f: FormCadastro) {
   return {
     nome: f.nome.trim(),
     email: f.email.trim().toLowerCase(),
-    cpf: soDigitos(f.cpf) || undefined,
+    cpf: soDigitos(f.cpf),
     senha: f.senha,
     telefone: soDigitos(f.telefone),
     cep: soDigitos(f.cep),

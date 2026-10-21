@@ -128,8 +128,8 @@ export function Entrar() {
                 <input type="email" {...campo("email")} autoComplete="email" placeholder="seu@email.com" required />
                 {erroDe("email")}
               </Campo>
-              <Campo label="CPF (opcional)">
-                <input {...campo("cpf", formatarCpf)} inputMode="numeric" placeholder="000.000.000-00" />
+              <Campo label="CPF">
+                <input {...campo("cpf", formatarCpf)} inputMode="numeric" placeholder="000.000.000-00" required />
                 <span className="mt-1 block text-xs text-suave">Já é cliente Vulto+? Use o mesmo CPF e e-mail para trazer seus pontos.</span>
                 {erroDe("cpf")}
               </Campo>
