@@ -9,6 +9,7 @@ import {
   dadosDoCadastro,
   FORM_VAZIO,
   formatarCep,
+  formatarCpf,
   formatarTelefone,
   validarCadastro,
   type ErrosCadastro,
@@ -126,6 +127,11 @@ export function Entrar() {
               <Campo label="E-mail">
                 <input type="email" {...campo("email")} autoComplete="email" placeholder="seu@email.com" required />
                 {erroDe("email")}
+              </Campo>
+              <Campo label="CPF">
+                <input {...campo("cpf", formatarCpf)} inputMode="numeric" placeholder="000.000.000-00" required />
+                <span className="mt-1 block text-xs text-suave">Já é cliente Vulto+? Use o mesmo CPF e e-mail para trazer seus pontos.</span>
+                {erroDe("cpf")}
               </Campo>
               <Campo label="Telefone">
                 <input {...campo("telefone", formatarTelefone)} inputMode="tel" autoComplete="tel" placeholder="(11) 99999-0000" required />

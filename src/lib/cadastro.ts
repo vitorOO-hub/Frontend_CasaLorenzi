@@ -7,6 +7,7 @@
 export type FormCadastro = {
   nome: string;
   email: string;
+  cpf: string;
   telefone: string;
   senha: string;
   cep: string;
@@ -19,6 +20,7 @@ export type FormCadastro = {
 export const FORM_VAZIO: FormCadastro = {
   nome: "",
   email: "",
+  cpf: "",
   telefone: "",
   senha: "",
   cep: "",
@@ -48,6 +50,24 @@ export function formatarTelefone(valor: string): string {
   return `${ddd}${d.slice(2, corte)}-${d.slice(corte)}`;
 }
 
+/** "52998224725" → "529.982.247-25" enquanto a pessoa digita (no máximo 11 dígitos). */
+export function formatarCpf(valor: string): string {
+  const d = soDigitos(valor).slice(0, 11);
+  return d.replace(/^(\d{3})(\d)/, "$1.$2").replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3").replace(/\.(\d{3})(\d{1,2})$/, ".$1-$2");
+}
+
+/** CPF com os dois dígitos verificadores certos (e não uma sequência como 111.111.111-11). */
+export function cpfValido(valor: string): boolean {
+  const d = soDigitos(valor);
+  if (d.length !== 11 || /^(\d)\1{10}$/.test(d)) return false;
+  for (const tamanho of [9, 10]) {
+    let soma = 0;
+    for (let i = 0; i < tamanho; i++) soma += Number(d[i]) * (tamanho + 1 - i);
+    if (((soma * 10) % 11) % 10 !== Number(d[tamanho])) return false;
+  }
+  return true;
+}
+
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 export const SENHA_MINIMA = 8;
@@ -57,6 +77,8 @@ export function validarCadastro(f: FormCadastro): ErrosCadastro {
   const erros: ErrosCadastro = {};
   if (f.nome.trim().length < 2) erros.nome = "Informe seu nome.";
   if (!EMAIL.test(f.email.trim())) erros.email = "Informe um e-mail válido.";
+  if (!f.cpf.trim()) erros.cpf = "Informe seu CPF.";
+  else if (!cpfValido(f.cpf)) erros.cpf = "Confira o CPF.";
   const tel = soDigitos(f.telefone).length;
   if (tel < 10 || tel > 11) erros.telefone = "Informe o telefone com DDD.";
   if (f.senha.length < SENHA_MINIMA) erros.senha = `A senha precisa de pelo menos ${SENHA_MINIMA} caracteres.`;
@@ -73,6 +95,7 @@ export function dadosDoCadastro(f: FormCadastro) {
   return {
     nome: f.nome.trim(),
     email: f.email.trim().toLowerCase(),
+    cpf: soDigitos(f.cpf),
     senha: f.senha,
     telefone: soDigitos(f.telefone),
     cep: soDigitos(f.cep),

@@ -59,7 +59,7 @@ export type DetalheChamado = ItemChamado & {
   cliente: {
     id_cliente: string;
     nome: string;
-    email: string;
+    email: string | null;
     telefone: string | null;
     cidade: string | null;
     cliente_desde: string;
@@ -155,7 +155,7 @@ export function validarDetalhe(dados: unknown): DetalheChamado {
     cliente: {
       id_cliente: texto(c.id_cliente, "id_cliente"),
       nome: texto(c.nome, "cliente.nome"),
-      email: texto(c.email, "cliente.email"),
+      email: textoOuNulo(c.email, "cliente.email"),
       telefone: textoOuNulo(c.telefone, "cliente.telefone"),
       cidade: textoOuNulo(c.cidade, "cliente.cidade"),
       cliente_desde: texto(c.cliente_desde, "cliente_desde"),
