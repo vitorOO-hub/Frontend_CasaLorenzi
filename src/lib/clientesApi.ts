@@ -10,7 +10,8 @@ export type SecaoClientes = "todos" | "com_aberto" | "meus";
 export type ItemCliente = {
   id_cliente: string;
   nome: string;
-  email: string;
+  /** Clientes importados do Vulto+ podem não ter e-mail. */
+  email: string | null;
   telefone: string | null;
   cidade: string | null;
   cliente_desde: string;
@@ -66,7 +67,7 @@ function dadosDoCliente(v: unknown) {
   return {
     id_cliente: texto(o.id_cliente, "id_cliente"),
     nome: texto(o.nome, "nome"),
-    email: texto(o.email, "email"),
+    email: textoOuNulo(o.email, "email"),
     telefone: textoOuNulo(o.telefone, "telefone"),
     cidade: textoOuNulo(o.cidade, "cidade"),
     cliente_desde: texto(o.cliente_desde, "cliente_desde"),

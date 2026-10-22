@@ -3,6 +3,8 @@ import {
   LayoutDashboard,
   MessagesSquare,
   Package,
+  ShoppingBag,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import type { Papel } from "./sessao";
@@ -32,10 +34,13 @@ export type Secao = {
 /** Contadores exibidos como selo nas abas; a barra lateral soma os da seção. */
 export type Pendencia = "aprovacoes" | "transferencias" | "chamados";
 
+// O vendedor não tem Início: começa em Vendas (ver `telaInicial`).
 const todos: Papel[] = ["atendente", "operador_estoque", "gerente_loja", "admin"];
 const gestao: Papel[] = ["gerente_loja", "admin"];
 // O admin é o dono da rede: acompanha os números, mas não opera transferências nem atendimento.
 const daUnidade: Papel[] = ["operador_estoque", "gerente_loja"];
+// Movimentar estoque (entrada, saída, ajuste) não é do vendedor: ele só consulta o saldo.
+const movimenta: Papel[] = ["operador_estoque", "gerente_loja", "admin"];
 
 export const secoes: Secao[] = [
   {
@@ -51,10 +56,10 @@ export const secoes: Secao[] = [
     rotulo: "Estoque",
     icone: Package,
     to: "/painel/estoque",
-    papeis: ["operador_estoque", "gerente_loja", "admin"],
+    papeis: ["operador_estoque", "vendedor", "gerente_loja", "admin"],
     abas: [
       { to: "/painel/estoque", rotulo: "Saldo" },
-      { to: "/painel/estoque/movimentacoes", rotulo: "Movimentações" },
+      { to: "/painel/estoque/movimentacoes", rotulo: "Movimentações", papeis: movimenta },
       { to: "/painel/estoque/transferencias", rotulo: "Transferências", papeis: daUnidade, pendencia: "transferencias" },
       { to: "/painel/estoque/aprovacoes", rotulo: "Aprovações", papeis: gestao, pendencia: "aprovacoes" },
     ],
@@ -70,6 +75,22 @@ export const secoes: Secao[] = [
       { to: "/painel/atendimento/conversas", rotulo: "Conversas" },
       { to: "/painel/atendimento/clientes", rotulo: "Clientes" },
     ],
+  },
+  {
+    id: "vendas",
+    rotulo: "Vendas",
+    icone: ShoppingBag,
+    to: "/painel/vendas",
+    papeis: ["vendedor"],
+    abas: [],
+  },
+  {
+    id: "clientes",
+    rotulo: "Clientes",
+    icone: Users,
+    to: "/painel/clientes",
+    papeis: ["vendedor"],
+    abas: [],
   },
   {
     id: "gestao",
@@ -116,4 +137,4 @@ export function podeAcessar(papel: Papel, caminho: string): boolean {
 
 /** Primeira tela que o cargo pode abrir (destino do bloqueio). */
 export const telaInicial = (papel: Papel) =>
-  papel === "atendente" ? "/painel/atendimento" : "/painel";
+  papel === "atendente" ? "/painel/atendimento" : papel === "vendedor" ? "/painel/vendas" : "/painel";

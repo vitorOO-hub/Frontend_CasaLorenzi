@@ -110,6 +110,15 @@ describe("cliente da API", () => {
     expect(erro.message).not.toContain("psycopg");
   });
 
+  it("503 mostra o que o servidor disse estar fora do ar; sem corpo, a frase genérica", async () => {
+    const { cliente } = montar([json({ detail: "A ativacao de conta esta indisponivel no momento." }, { status: 503 })]);
+    await expect(cliente.get("/x", aceita)).rejects.toMatchObject({ message: "A ativacao de conta esta indisponivel no momento." });
+    const semCorpo = montar([new Response("", { status: 503 })]);
+    await expect(semCorpo.cliente.get("/x", aceita)).rejects.toMatchObject({
+      message: "O servidor está indisponível no momento. Tente de novo em instantes.",
+    });
+  });
+
   it("falha de rede vira erro amigável", async () => {
     const { cliente } = montar([new TypeError("Failed to fetch")]);
     await expect(cliente.get("/x", aceita)).rejects.toMatchObject({ status: 0 });
