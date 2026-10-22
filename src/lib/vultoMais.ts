@@ -13,6 +13,29 @@ const normalizar = (valor: string | null | undefined) =>
 /** Peça da linha Vulto: a marca do catálogo diz de onde ela vem. */
 export const ehVulto = (produto: Pick<Produto, "marca">) => normalizar(produto.marca) === "vulto";
 
+/** Amostra aproximada das cores das peças Vulto (vêm só pelo nome); desconhecida = cinza neutro. */
+const CORES_PELO_NOME: Record<string, string> = {
+  "verde oliva": "#6b6b3a",
+  "off white": "#f2efe6",
+  branco: "#fafaf7",
+  bege: "#d9c8a9",
+  marrom: "#6b4a32",
+  amarelo: "#e6c34a",
+  "amarelo manteiga": "#f1e3a1",
+  "azul marinho": "#1f2a48",
+  vinho: "#6b1f2e",
+  preto: "#111111",
+  "cinza mescla": "#9a9a9a",
+  lilas: "#b9a3c9",
+  lavanda: "#c8bde3",
+  "jeans claro": "#8fa9c7",
+  "jeans escuro": "#3b4f6b",
+  areia: "#d8c9ad",
+  cafe: "#4a3426",
+};
+
+export const corPeloNome = (nome: string) => CORES_PELO_NOME[normalizar(nome)] ?? "#c9c3b8";
+
 export type MarcaFiltro = "" | "casa-lorenzi" | "vulto";
 
 export const MARCAS_FILTRO: { valor: MarcaFiltro; rotulo: string }[] = [

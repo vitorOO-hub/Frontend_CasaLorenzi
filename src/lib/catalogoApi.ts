@@ -3,6 +3,7 @@ import { usandoApi } from "@/api/config";
 import { requisitar } from "@/api/http";
 import { supabase } from "@/api/supabase";
 import type { CorProdutoCatalogo, EstoqueVariacaoCatalogo, Produto, VariacaoProdutoCatalogo } from "./dados";
+import { corPeloNome, ehVulto } from "./vultoMais";
 import { lista, numero as validarNumero, objeto, texto } from "./validacao";
 
 export type LinhaVariacaoCatalogo = {
@@ -79,9 +80,11 @@ export function produtoCatalogoDeLinha(linha: LinhaProdutoCatalogo): Produto | n
   const costuradoEm = textoObrigatorio(linha.costurado_em);
   const nota = textoObrigatorio(linha.nota);
   const cores = coresCatalogo(linha.cores);
-  if (!imagemUrl || !imagemAlt || !tipo || !tecido || !tecelagem || !costuradoEm || !nota || !cores) {
-    return null;
-  }
+  const fichaCompleta = Boolean(imagemUrl && imagemAlt && tipo && tecido && tecelagem && costuradoEm && nota && cores);
+  // Peça Casa Lorenzi só entra com foto e ficha completas. Peça da linha Vulto entra sem elas
+  // (foram importadas sem foto): a tela mostra "foto em breve" e não inventa tecido nem origem.
+  const semFoto = !fichaCompleta && ehVulto({ marca: linha.marca });
+  if (!fichaCompleta && !semFoto) return null;
 
   const variacoes = (linha.variacao_produto ?? [])
     .filter((variacao) => variacao.ativa !== false && variacao.sku)
@@ -95,6 +98,24 @@ export function produtoCatalogoDeLinha(linha: LinhaProdutoCatalogo): Produto | n
   const precos = variacoes.map((variacao) => variacao.preco).filter((preco) => preco > 0);
   if (variacoes.length === 0) return null;
 
+  if (semFoto) {
+    const nomesDeCor = Array.from(new Set(variacoes.map((v) => v.cor))).sort();
+    return {
+      sku: variacoes[0]?.sku ?? linha.id_produto,
+      nome: linha.nome,
+      categoria: textoComPadrao(linha.categoria, "Catálogo"),
+      preco: Math.min(...(precos.length ? precos : [numeroSeguro(linha.preco_base)])),
+      colecao: linha.colecao,
+      marca: textoObrigatorio(linha.marca),
+      semFoto: true,
+      saldos: [],
+      movimentacoes: [],
+      variacoes,
+      imagemAlt: linha.nome,
+      cores: nomesDeCor.map((nome) => ({ nome, hex: corPeloNome(nome) })),
+    };
+  }
+
   return {
     sku: variacoes[0]?.sku ?? linha.id_produto,
     nome: linha.nome,
@@ -105,15 +126,16 @@ export function produtoCatalogoDeLinha(linha: LinhaProdutoCatalogo): Produto | n
     saldos: [],
     movimentacoes: [],
     variacoes,
-    imagemUrl,
-    imagemAlt,
+    // Aqui a ficha esta completa (fichaCompleta): todos os campos abaixo existem.
+    imagemUrl: imagemUrl!,
+    imagemAlt: imagemAlt!,
     imagemVestidaUrl: textoObrigatorio(linha.imagem_vestida_url),
-    tipo,
-    tecido,
-    tecelagem,
-    costuradoEm,
-    nota,
-    cores,
+    tipo: tipo!,
+    tecido: tecido!,
+    tecelagem: tecelagem!,
+    costuradoEm: costuradoEm!,
+    nota: nota!,
+    cores: cores!,
   };
 }
 
@@ -165,7 +187,6 @@ export async function listarProdutosCatalogo(): Promise<Produto[]> {
       "id_produto,nome,marca,categoria,colecao,preco_base,ativo,imagem_url,imagem_alt,imagem_vestida_url,tipo,tecido,tecelagem,costurado_em,nota,cores,variacao_produto(id_variacao,sku,cor,tamanho,preco_venda,ativa)",
     )
     .eq("ativo", true)
-    .not("imagem_url", "is", null)
     .order("nome", { ascending: true });
   if (error) throw error;
   const produtos = ((data ?? []) as LinhaProdutoCatalogo[]).map(produtoCatalogoDeLinha).filter((produto): produto is Produto => Boolean(produto));
