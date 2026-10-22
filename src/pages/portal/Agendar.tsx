@@ -17,7 +17,7 @@ import { CampoLoja, campoLoja } from "./Checkout";
 
 const TIPOS = [
   { id: "ajuste", rotulo: "Ajustar uma peça", nota: "Barra, mangas, cintura — 20 min" },
-  { id: "prova", rotulo: "Provar a pronta-entrega", nota: "Separamos as peças no seu tamanho" },
+  { id: "prova", rotulo: "Provar peças da Linha Lorenzi", nota: "Separamos as peças no seu tamanho" },
 ] as const;
 
 const HORARIOS = ["10:00", "11:30", "14:00", "15:30", "17:00", "18:30"];

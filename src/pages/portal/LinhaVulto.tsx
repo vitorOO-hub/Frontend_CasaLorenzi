@@ -5,6 +5,7 @@ import { CartaoProduto } from "@/components/vitrine";
 import { useProdutosCatalogo } from "@/lib/catalogoApi";
 import { useEstado } from "@/lib/store";
 import { ehVulto } from "@/lib/vultoMais";
+import { categoriasUnicas, mesmaCategoria } from "@/lib/categorias";
 
 /**
  * Linha Vulto dentro da Casa Lorenzi+: a marca urbana que se uniu à casa tem a sua entrada no menu,
@@ -16,8 +17,8 @@ export function LinhaVulto() {
   const [params, setParams] = useSearchParams();
   const categoria = params.get("categoria") ?? "";
   const daLinha = produtos.filter(ehVulto);
-  const categorias = Array.from(new Set(daLinha.map((p) => p.categoria))).sort();
-  const lista = daLinha.filter((p) => !categoria || p.categoria === categoria);
+  const categorias = categoriasUnicas(daLinha.map((p) => p.categoria));
+  const lista = daLinha.filter((p) => !categoria || mesmaCategoria(p.categoria, categoria));
 
   function escolher(valor: string) {
     const novo = new URLSearchParams(params);
@@ -51,16 +52,16 @@ export function LinhaVulto() {
       <div className="mx-auto max-w-[1360px] px-5 md:px-12">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-dashed border-linha py-6">
           <nav className="flex min-w-0 gap-6 overflow-x-auto text-[13px] uppercase tracking-[0.12em] [scrollbar-width:none]" aria-label="Categorias da linha Vulto">
-            {["", ...categorias].map((c) => (
+            {[{ valor: "", rotulo: "Toda a linha" }, ...categorias].map((c) => (
               <button
-                key={c || "todas"}
-                onClick={() => escolher(c)}
+                key={c.valor || "todas"}
+                onClick={() => escolher(c.valor)}
                 className={cn(
                   "shrink-0 whitespace-nowrap border-b pb-1 transition-colors",
-                  categoria === c ? "border-tinta text-tinta" : "border-transparent text-suave hover:text-tinta",
+                  (c.valor ? mesmaCategoria(categoria, c.valor) : !categoria) ? "border-tinta text-tinta" : "border-transparent text-suave hover:text-tinta",
                 )}
               >
-                {c || "Toda a linha"}
+                {c.rotulo}
               </button>
             ))}
           </nav>
