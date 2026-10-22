@@ -2,11 +2,13 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { CarrosselCampanha, filme, foto } from "@/components/campanha";
+import { SinalMais } from "@/components/marca";
 import { CabecalhoSecao, CartaoProduto, FotoCampanha, FichaTecnica } from "@/components/vitrine";
 import { useProdutosCatalogo } from "@/lib/catalogoApi";
 import { lojas, type Produto } from "@/lib/dados";
 import { CAMPANHA, EDICAO, materias } from "@/lib/loja";
 import { useEstado } from "@/lib/store";
+import { ehVulto } from "@/lib/vultoMais";
 import { CartaoMateria } from "./Caderno";
 import { CasaCartao } from "./Casas";
 
@@ -50,6 +52,7 @@ export function Inicio() {
   const novidades = produtosDisponiveis.slice(0, 8);
   const blazer = produtosDisponiveis.find((p) => /blazer/i.test(p.nome));
   const trench = produtosDisponiveis.find((p) => /trench/i.test(p.nome));
+  const linhaVulto = produtosDisponiveis.filter(ehVulto).slice(0, 8);
 
   return (
     <div>
@@ -67,6 +70,28 @@ export function Inicio() {
       ) : (
         <FileiraProdutos titulo={`Novidades da Edição ${EDICAO.numero}`} produtos={novidades} para="/loja" />
       )}
+
+      {/* Linha Vulto: as peças urbanas dentro da loja, com entrada própria no menu. */}
+      {linhaVulto.length ? <FileiraProdutos titulo="Linha Vulto" produtos={linhaVulto} para="/vulto" /> : null}
+
+      {/* Vulto+: o programa de pontos agora é da casa inteira. */}
+      <section className="border-y border-dashed border-linha">
+        <div className="mx-auto flex max-w-[1360px] flex-col gap-6 px-5 py-12 md:flex-row md:items-center md:justify-between md:px-12">
+          <div className="flex items-center gap-5">
+            <span className="flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-[0.18em] text-tinta">
+              Vulto
+              <SinalMais className="text-[22px]" />
+            </span>
+            <p className="max-w-xl font-display text-[24px] leading-snug">
+              Os pontos agora valem nas lojas Casa Lorenzi e Vulto e no site.{" "}
+              <span className="text-suave">Quem já era Vulto+ continua com o mesmo saldo.</span>
+            </p>
+          </div>
+          <Link to="/conta/vulto-mais" className="link-tracejado shrink-0 text-sm">
+            Ver meus pontos
+          </Link>
+        </div>
+      </section>
 
       {/* Por dentro de uma peça */}
       <div className="bg-marinho text-creme">
