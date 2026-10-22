@@ -65,12 +65,15 @@ export function LinhaVulto() {
               </button>
             ))}
           </nav>
-          <span className="text-sm text-suave">
-            {lista.length} {lista.length === 1 ? "peça" : "peças"}
-          </span>
+          {carregando ? null : (
+            <span className="text-sm text-suave">
+              {lista.length} {lista.length === 1 ? "peça" : "peças"}
+            </span>
+          )}
         </div>
 
-        {carregando || erro ? <p className="py-6 text-sm text-suave">{carregando ? "Carregando peças..." : erro}</p> : null}
+        {carregando ? <p className="py-24 text-center font-display text-2xl text-suave">Carregando produtos...</p> : null}
+        {erro ? <p className="py-6 text-sm text-suave">{erro}</p> : null}
 
         <div className="grid gap-x-6 gap-y-14 pt-10 sm:grid-cols-2 lg:grid-cols-3">
           {lista.map((p) => (

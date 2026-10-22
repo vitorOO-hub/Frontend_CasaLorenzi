@@ -11,6 +11,8 @@ import { MARCAS_FILTRO, daMarca, type MarcaFiltro } from "@/lib/vultoMais";
 
 type Ordem = "edicao" | "menor" | "maior";
 
+const CARREGANDO = "Carregando produtos...";
+
 export function Catalogo() {
   const estado = useEstado();
   const { produtos, carregando, erro } = useProdutosCatalogo(estado.produtos);
@@ -68,15 +70,11 @@ export function Catalogo() {
           </h1>
         </div>
         <p className="font-display text-[19px] leading-normal text-suave md:text-right">
-          {lista.length} {lista.length === 1 ? "peça" : "peças"}. Todas com a barra e as mangas ajustadas na hora, em qualquer uma das três casas.
+          {carregando ? CARREGANDO : `${lista.length} ${lista.length === 1 ? "peça" : "peças"}.`} Todas com a barra e as mangas ajustadas na hora, em qualquer uma das três casas.
         </p>
       </div>
 
-      {carregando || erro ? (
-        <p className="border-b border-dashed border-linha py-3 text-sm text-suave">
-          {carregando ? "Carregando peças..." : erro}
-        </p>
-      ) : null}
+      {erro ? <p className="border-b border-dashed border-linha py-3 text-sm text-suave">{erro}</p> : null}
 
       <div className="flex items-center justify-between gap-6 py-6">
         {tipos.length > 1 ? (
@@ -149,7 +147,10 @@ export function Catalogo() {
           />
         ))}
       </div>
-      {lista.length === 0 ? (
+      {/* Enquanto carrega, a lista ainda está vazia: não é "nada encontrado". */}
+      {carregando ? (
+        <p className="py-24 text-center font-display text-2xl text-suave">{CARREGANDO}</p>
+      ) : lista.length === 0 && !erro ? (
         <p className="py-24 text-center font-display text-2xl text-suave">
           Nada com esse nome nesta edição. Que tal procurar por um tecido — “linho”, “merino”, “couro”?
         </p>

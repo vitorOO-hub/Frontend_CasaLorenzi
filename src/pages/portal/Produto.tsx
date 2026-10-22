@@ -47,7 +47,7 @@ function DetalheProduto({ sku }: { sku: string }) {
 
   if (!produto) {
     if (carregando) {
-      return <p className="px-5 py-24 text-center font-display text-2xl text-suave">Carregando peça...</p>;
+      return <p className="px-5 py-24 text-center font-display text-2xl text-suave">Carregando...</p>;
     }
     return <Navigate to="/loja" replace />;
   }
