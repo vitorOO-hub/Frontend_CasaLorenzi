@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { moeda, produtoTemEstoque, type Produto } from "@/lib/dados";
 import { detalheDe, fotoEstudio, fotoVestida, unsplash } from "@/lib/loja";
+import { ehVulto } from "@/lib/vultoMais";
+import { SeloVulto } from "./marca";
 import { cn } from "./ui";
 
 /** Foto com o tratamento da casa (tom quente + grão de filme). */
@@ -127,6 +129,8 @@ export function CartaoProduto({
         {esgotado ? (
           <span className="absolute left-3 top-3 z-[2] bg-creme px-2.5 py-1 text-xs text-suave">Esgotado — volta na próxima edição</span>
         ) : null}
+        {/* Peça da linha Vulto: selo no canto oposto ao aviso de esgotado. */}
+        {ehVulto(produto) ? <SeloVulto className="absolute right-3 top-3 z-[2]" /> : null}
       </div>
       <h3 className="mt-4 text-[21px]">
         <NomePeca produto={produto} />

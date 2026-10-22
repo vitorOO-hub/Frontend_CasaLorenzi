@@ -41,6 +41,11 @@
   --color-etiqueta: #f1e4da;
   --color-ouro-claro: #e9c3aa;
 
+  /* Casa Lorenzi+: os dois tons da Vulto. O neon é só acento (o "+", Vulto+ e o selo VULTO),
+     nunca texto sobre fundo claro. */
+  --color-vulto-preto: #111111;
+  --color-vulto-neon: #e8ff5a;
+
   --font-mao: "IBM Plex Mono", ui-monospace, Menlo, monospace;
   --font-menu: "Archivo Narrow", "Helvetica Neue", Arial, sans-serif;
 

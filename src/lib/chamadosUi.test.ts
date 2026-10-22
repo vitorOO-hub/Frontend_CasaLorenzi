@@ -26,7 +26,7 @@ describe("apresentação dos chamados", () => {
   });
 
   it("os valores do seletor de situação são exatamente os que a API aceita", () => {
-    expect(SITUACOES.map((s) => s.value)).toEqual(["abertos", "aberto", "em_andamento", "resolvido", "todos"]);
+    expect(SITUACOES.map((s) => s.value)).toEqual(["abertos", "aberto", "em_andamento", "resolvido", "todos", "historico_vulto"]);
   });
 
   it("formata dinheiro em reais", () => {

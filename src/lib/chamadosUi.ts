@@ -29,6 +29,7 @@ export const SITUACOES: { value: Situacao; label: string }[] = [
   { value: "em_andamento", label: "Em andamento" },
   { value: "resolvido", label: "Resolvidos" },
   { value: "todos", label: "Todos" },
+  { value: "historico_vulto", label: "Histórico Vulto" },
 ];
 
 export const PRIORIDADES_FILTRO = [

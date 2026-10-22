@@ -15,7 +15,8 @@ import {
 
 const BASE = "/api/v1/painel/atendimentos";
 
-export type Situacao = "abertos" | "aberto" | "em_andamento" | "resolvido" | "todos";
+/** "historico_vulto": só os atendimentos importados da Vulto, para consulta (fora da operação). */
+export type Situacao = "abertos" | "aberto" | "em_andamento" | "resolvido" | "todos" | "historico_vulto";
 export type Responsavel = "todos" | "eu" | "fila";
 export type PrioridadeFiltro = "baixa" | "media" | "alta" | "urgente";
 

@@ -28,6 +28,8 @@ import { Agendar } from "./pages/portal/Agendar";
 import { Caderno, MateriaPagina } from "./pages/portal/Caderno";
 import { Casas } from "./pages/portal/Casas";
 import { Catalogo } from "./pages/portal/Catalogo";
+import { LinhaVulto } from "./pages/portal/LinhaVulto";
+import { VultoMaisConta } from "./pages/portal/VultoMaisConta";
 import { Checkout } from "./pages/portal/Checkout";
 import { Inicio } from "./pages/portal/Inicio";
 import { MeuChamado } from "./pages/portal/MeuChamado";
@@ -56,6 +58,7 @@ export default function App() {
           <Route index element={<Inicio />} />
           <Route path="loja" element={<Catalogo />} />
           <Route path="loja/:sku" element={<Produto />} />
+          <Route path="vulto" element={<LinhaVulto />} />
           <Route path="sacola" element={<Sacola />} />
           <Route path="agendar" element={<Agendar />} />
           <Route path="caderno" element={<Caderno />} />
@@ -75,6 +78,7 @@ export default function App() {
             <Route path="atendimento" element={<MeusChamados />} />
             <Route path="atendimento/novo" element={<NovoChamado />} />
             <Route path="atendimento/:id" element={<MeuChamado />} />
+            <Route path="vulto-mais" element={<VultoMaisConta />} />
             <Route path="perfil" element={<Perfil />} />
           </Route>
         </Route>

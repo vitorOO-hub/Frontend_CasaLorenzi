@@ -101,6 +101,7 @@ export function produtoCatalogoDeLinha(linha: LinhaProdutoCatalogo): Produto | n
     categoria: textoComPadrao(linha.categoria, "Catálogo"),
     preco: Math.min(...(precos.length ? precos : [numeroSeguro(linha.preco_base)])),
     colecao: linha.colecao,
+    marca: textoObrigatorio(linha.marca),
     saldos: [],
     movimentacoes: [],
     variacoes,
@@ -171,6 +172,19 @@ export async function listarProdutosCatalogo(): Promise<Produto[]> {
   return aplicarEstoqueCatalogo(produtos, await listarEstoqueCatalogo());
 }
 
+// Uma busca so por vez: cabecalho, pagina e vitrine pedem o catalogo juntos e dividem a mesma
+// resposta (antes cada um buscava o seu, e as buscas repetidas cancelavam as anteriores).
+let buscaEmAndamento: Promise<Produto[]> | null = null;
+
+export function carregarCatalogoCompartilhado(buscar: () => Promise<Produto[]> = listarProdutosCatalogo): Promise<Produto[]> {
+  if (!buscaEmAndamento) {
+    buscaEmAndamento = buscar().finally(() => {
+      buscaEmAndamento = null;
+    });
+  }
+  return buscaEmAndamento;
+}
+
 export function useProdutosCatalogo(produtosSimulados: Produto[]): EstadoCatalogo {
   const modoApi = usandoApi();
   const [estado, setEstado] = useState<EstadoCatalogo>({
@@ -184,7 +198,7 @@ export function useProdutosCatalogo(produtosSimulados: Produto[]): EstadoCatalog
     if (!modoApi) return;
 
     let ativo = true;
-    listarProdutosCatalogo()
+    carregarCatalogoCompartilhado()
       .then((produtos) => {
         if (!ativo) return;
         if (produtos.length === 0) {
@@ -211,7 +225,9 @@ export function useProdutosCatalogo(produtosSimulados: Produto[]): EstadoCatalog
     return () => {
       ativo = false;
     };
-  }, [modoApi, produtosSimulados]);
+    // So o modo decide a busca: a lista simulada nao e usada com a API, e depender dela fazia o
+    // catalogo ser buscado de novo a cada mudanca na loja (e nunca terminar de carregar).
+  }, [modoApi]);
 
   return modoApi ? estado : { produtos: produtosSimulados, carregando: false, erro: null, origem: "simulado" };
 }
