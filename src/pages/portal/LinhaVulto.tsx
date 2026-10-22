@@ -8,7 +8,7 @@ import { ehVulto } from "@/lib/vultoMais";
 
 /**
  * Linha Vulto dentro da Casa Lorenzi+: a marca urbana que se uniu à casa tem a sua entrada no menu,
- * mas o mesmo cabeçalho, sacola, conta e Vulto+. Abertura em preto, catálogo só com as peças Vulto.
+ * mas o mesmo cabeçalho, sacola, conta e Lorenzi+. Abertura em preto, catálogo só com as peças Vulto.
  */
 export function LinhaVulto() {
   const estado = useEstado();
@@ -36,14 +36,14 @@ export function LinhaVulto() {
           </h1>
           <p className="mt-6 max-w-xl text-[15px] leading-relaxed text-creme/75">
             A linha urbana da casa: as mesmas medidas, ajustes e trocas da Casa Lorenzi, e os pontos valem no mesmo{" "}
-            <Link to="/conta/vulto-mais" className="inline-flex items-center gap-1 whitespace-nowrap text-creme underline-offset-4 hover:underline">
-              Vulto
+            <Link to="/conta/lorenzi-mais" className="inline-flex items-center gap-1 whitespace-nowrap text-creme underline-offset-4 hover:underline">
+              Lorenzi
               <SinalMais claro className="text-[14px]" />
             </Link>
             .
           </p>
           <Link to="/entrar?ativar=1" className="mt-4 inline-block text-[13px] text-creme/70 underline-offset-4 hover:text-creme hover:underline">
-            Já é cliente Vulto+ e ainda não tem senha? Ative sua conta
+            Já era cliente Vulto+ e ainda não tem senha? Ative sua conta
           </Link>
         </div>
       </section>

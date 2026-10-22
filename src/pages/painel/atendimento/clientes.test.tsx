@@ -178,7 +178,7 @@ describe("ficha do cliente", () => {
     expect(html).toContain("AT-2026-0001");
     for (const proibido of ["Total gasto", "Ticket médio", "Compras", "PD-1", "R$"]) expect(html).not.toContain(proibido);
     // Vulto+ aparece para o atendente, sem o valor dos resgates.
-    for (const t of ["Vulto+", "2.000 pts", "vulto pinheiros", "camila duarte", "800 pontos vencem nos próximos 30 dias (em 05/11)"]) expect(html).toContain(t);
+    for (const t of ["Lorenzi+", "2.000 pts", "vulto pinheiros", "camila duarte", "800 pontos vencem nos próximos 30 dias (em 05/11)"]) expect(html).toContain(t);
     expect(erros).toEqual([]);
   });
 

@@ -126,12 +126,12 @@ export function Cliente() {
   );
 }
 
-/** Vulto+ na ficha: saldo, categoria, extrato e resgates. Valor dos resgates só para gestão. */
+/** Lorenzi+ na ficha: saldo, categoria, extrato e resgates. Valor dos resgates só para gestão. */
 function CartaoVultoMais({ dados, erro }: { dados: VultoMaisDaFicha | null; erro: string | null }) {
   if (erro) {
     return (
       <Card>
-        <CardTitulo titulo="Vulto+" />
+        <CardTitulo titulo="Lorenzi+" />
         <AvisoErro erro={erro} className="m-5" />
       </Card>
     );
@@ -139,7 +139,7 @@ function CartaoVultoMais({ dados, erro }: { dados: VultoMaisDaFicha | null; erro
   if (!dados) {
     return (
       <Card>
-        <CardTitulo titulo="Vulto+" />
+        <CardTitulo titulo="Lorenzi+" />
         <p className="px-5 py-8 text-sm text-suave">Carregando os pontos…</p>
       </Card>
     );
@@ -149,7 +149,7 @@ function CartaoVultoMais({ dados, erro }: { dados: VultoMaisDaFicha | null; erro
   return (
     <Card>
       <CardTitulo
-        titulo="Vulto+"
+        titulo="Lorenzi+"
         acao={
           <span className="flex items-center gap-1 text-xs text-suave">
             programa de pontos

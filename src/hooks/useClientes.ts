@@ -26,7 +26,7 @@ export function useAtraso<T>(valor: T, ms = 350): T {
 export const useListaClientes = (filtros: FiltrosClientes): Consulta<ListaClientes> =>
   useConsulta((sinal) => listarClientes(filtros, { sinal }), JSON.stringify(filtros));
 
-/** Lojas de cadastro e categorias Vulto+ para os filtros da lista. */
+/** Lojas de cadastro e categorias Lorenzi+ para os filtros da lista. */
 export const useOpcoesClientes = (): Consulta<OpcoesClientes> =>
   useConsulta((sinal) => buscarOpcoesClientes({ sinal }), "clientes:opcoes");
 
@@ -34,6 +34,6 @@ export const useOpcoesClientes = (): Consulta<OpcoesClientes> =>
 export const useFichaCliente = (id: string | undefined): Consulta<FichaCliente> =>
   useConsulta((sinal) => buscarFicha(id as string, undefined, { sinal }), `ficha:${id}`, { ativa: ehUuid(id) });
 
-/** Pontos Vulto+ do cliente na ficha. */
+/** Pontos Lorenzi+ do cliente na ficha. */
 export const useVultoMaisDaFicha = (id: string | undefined): Consulta<VultoMaisDaFicha> =>
   useConsulta((sinal) => buscarVultoMaisDaFicha(id as string, undefined, { sinal }), `vulto-mais:${id}`, { ativa: ehUuid(id) });

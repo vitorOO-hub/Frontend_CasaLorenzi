@@ -5,6 +5,7 @@ import { detalheDaPeca } from "@/lib/estoquePainelUi";
 import { definirMinimos } from "@/lib/transferenciasApi";
 import { minimosAlterados, rascunhoInvalido } from "@/lib/transferenciasUi";
 import { useAcao } from "@/lib/useAcao";
+import { opcoesDeLojas } from "@/lib/lojasAgrupadas";
 
 /** Estoque mínimo por peça: abaixo dele a peça aparece como "estoque baixo". Dados e gravação no servidor. */
 export function Minimos() {
@@ -39,7 +40,7 @@ export function Minimos() {
                   setRascunho({});
                 }}
                 className="w-52"
-                opcoes={(opcoes.dados?.lojas ?? []).map((l) => ({ value: l.id_loja, label: l.nome }))}
+                opcoes={opcoesDeLojas(opcoes.dados?.lojas ?? [])}
               />
             ) : null}
             <Botao

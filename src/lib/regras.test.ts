@@ -21,7 +21,7 @@ describe("permissões da área interna", () => {
   });
 
   it("catálogo, usuários e auditoria são exclusivos do administrador", () => {
-    for (const tela of ["catalogo", "usuarios", "auditoria", "integracoes"]) {
+    for (const tela of ["catalogo", "usuarios", "auditoria", "integracoes", "vendas-pendentes"]) {
       expect(podeAcessar("gerente_loja", `/painel/gestao/${tela}`)).toBe(false);
       expect(podeAcessar("admin", `/painel/gestao/${tela}`)).toBe(true);
     }

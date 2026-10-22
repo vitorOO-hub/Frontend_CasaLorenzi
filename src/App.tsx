@@ -22,6 +22,7 @@ import { Vendas } from "./pages/painel/vendas/Vendas";
 import { Auditoria } from "./pages/painel/gestao/Auditoria";
 import { CatalogoAdmin } from "./pages/painel/gestao/CatalogoAdmin";
 import { Integracoes } from "./pages/painel/gestao/Integracoes";
+import { VendasPendentes } from "./pages/painel/gestao/VendasPendentes";
 import { Lojas } from "./pages/painel/gestao/Lojas";
 import { Usuarios } from "./pages/painel/gestao/Usuarios";
 import { Agendar } from "./pages/portal/Agendar";
@@ -78,7 +79,9 @@ export default function App() {
             <Route path="atendimento" element={<MeusChamados />} />
             <Route path="atendimento/novo" element={<NovoChamado />} />
             <Route path="atendimento/:id" element={<MeuChamado />} />
-            <Route path="vulto-mais" element={<VultoMaisConta />} />
+            <Route path="lorenzi-mais" element={<VultoMaisConta />} />
+            {/* Endereço antigo do programa (Vulto+), mantido para links já enviados. */}
+            <Route path="vulto-mais" element={<Navigate to="/conta/lorenzi-mais" replace />} />
             <Route path="perfil" element={<Perfil />} />
           </Route>
         </Route>
@@ -110,6 +113,7 @@ export default function App() {
             <Route path="usuarios" element={<Usuarios />} />
             <Route path="auditoria" element={<Auditoria />} />
             <Route path="integracoes" element={<Integracoes />} />
+            <Route path="vendas-pendentes" element={<VendasPendentes />} />
           </Route>
           <Route path="*" element={<Navigate to="/painel" replace />} />
         </Route>

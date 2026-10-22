@@ -29,6 +29,7 @@ import {
   tomPrioridade,
   tomStatus,
 } from "@/lib/chamadosUi";
+import { opcoesDeLojas } from "@/lib/lojasAgrupadas";
 
 const POR_PAGINA = 20;
 const comTodos = (lista: { value: string; label: string }[], todos = "Todos") => [{ value: "", label: todos }, ...lista];
@@ -105,7 +106,7 @@ export function Chamados() {
             <Select
               value={loja}
               onChange={(e) => filtrar(setLoja)(e.target.value)}
-              opcoes={comTodos(lojas.map((l) => ({ value: l.id_loja, label: l.nome })), "Todas")}
+              opcoes={opcoesDeLojas(lojas, "Todas")}
             />
           </Campo>
         ) : null}

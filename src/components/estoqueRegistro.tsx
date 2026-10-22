@@ -8,6 +8,7 @@ import {
 import { diferencaDoAjuste, inteiroDoCampo, saldoDepois, saldoNaLoja } from "@/lib/estoquePainelUi";
 import { useAcao } from "@/lib/useAcao";
 import { AvisoErro, Botao, Campo, Modal, Segmentado, Select, inputClasses } from "./ui";
+import { opcoesDeLojas } from "@/lib/lojasAgrupadas";
 
 type Props = {
   aberto: boolean;
@@ -42,7 +43,7 @@ function usePecaELoja(opcoes: OpcoesEstoque, skuInicial?: string) {
       <Select
         value={lojaEscolhida}
         onChange={(e) => setLojaEscolhida(e.target.value)}
-        opcoes={opcoes.lojas.map((l) => ({ value: l.id_loja, label: l.nome }))}
+        opcoes={opcoesDeLojas(opcoes.lojas)}
       />
     </Campo>
   ) : (

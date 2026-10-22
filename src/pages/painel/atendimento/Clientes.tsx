@@ -25,6 +25,7 @@ import { NOMES_CATEGORIA_VULTO, POR_PAGINA_CLIENTES, SECOES_CLIENTES, tomCategor
 import { dataBRdoIso, moedaBR } from "@/lib/chamadosUi";
 import { podeAprovar, usePapel } from "@/lib/sessao";
 import { pontos } from "@/lib/vultoMais";
+import { opcoesDeLojas } from "@/lib/lojasAgrupadas";
 
 /**
  * Clientes do atendimento. As seções separam o trabalho de cada atendente: todos os clientes do
@@ -99,7 +100,7 @@ export function Clientes() {
                 setLoja(e.target.value);
                 setPagina(0);
               }}
-              opcoes={[{ value: "", label: "Todas" }, ...lojas.map((l) => ({ value: l.id_loja, label: l.nome }))]}
+              opcoes={opcoesDeLojas(lojas, "Todas")}
             />
           </Campo>
         ) : null}
@@ -111,12 +112,12 @@ export function Clientes() {
                 setLojaCadastro(e.target.value);
                 setPagina(0);
               }}
-              opcoes={[{ value: "", label: "Todas" }, ...lojasCadastro.map((l) => ({ value: l.id_loja, label: l.nome }))]}
+              opcoes={opcoesDeLojas(lojasCadastro, "Todas")}
             />
           </Campo>
         ) : null}
         {categorias.length > 0 ? (
-          <Campo label="Vulto+" className="flex-1">
+          <Campo label="Lorenzi+" className="flex-1">
             <Select
               value={categoria}
               onChange={(e) => {
@@ -140,7 +141,7 @@ export function Clientes() {
                 <th className={th}>Telefone</th>
                 <th className={th}>Cidade</th>
                 <th className={th}>Loja de cadastro</th>
-                <th className={th}>Vulto+</th>
+                <th className={th}>Lorenzi+</th>
                 {gestor ? <th className={th}>Compras</th> : null}
                 {gestor ? <th className={th}>Total gasto</th> : null}
                 <th className={th}>Chamados</th>

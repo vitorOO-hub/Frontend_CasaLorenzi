@@ -5,6 +5,7 @@ import { Segmentado, Select, cn } from "@/components/ui";
 import { HOJE, intervalos, rotuloPeriodo, type Periodo } from "@/lib/analise";
 import { dataBR } from "@/lib/dados";
 import { useNomeUsuario } from "@/lib/sessao";
+import { agruparLojas } from "@/lib/lojasAgrupadas";
 
 const PERIODOS: Periodo[] = [7, 30, 90, 365];
 
@@ -111,34 +112,62 @@ export function SeletorUnidades({
   unidades: { id: string; nome: string; cor: string }[];
 }) {
   const nenhuma = filtros.lojaIds.length === 0;
+  const porId = new Map(unidades.map((u) => [u.id, u]));
+  const grupos: { grupo: string; unidades: typeof unidades }[] = [];
+  for (const l of agruparLojas(unidades.map((u) => ({ id_loja: u.id, nome: u.nome })))) {
+    const u = { ...porId.get(l.id_loja)!, nome: l.rotulo };
+    const atual = grupos[grupos.length - 1];
+    if (atual?.grupo === l.grupo) atual.unidades.push(u);
+    else grupos.push({ grupo: l.grupo, unidades: [u] });
+  }
   return (
     <div>
       <span className="rotulo mb-1.5 block">Unidades</span>
-      <div className="flex flex-wrap gap-1.5">
-        <button
-          onClick={() => filtros.definir("lojas", "")}
-          className={cn(
-            "rounded-full border px-3 py-1.5 text-xs transition-colors",
-            nenhuma ? "border-marinho bg-marinho text-white" : "border-linha bg-papel text-suave hover:border-marinho",
-          )}
-        >
-          Rede consolidada
-        </button>
-        {unidades.map((l) => {
-          const ativa = filtros.lojaIds.includes(l.id);
+      <button
+        onClick={() => filtros.definir("lojas", "")}
+        className={cn(
+          "mb-2 rounded-full border px-3 py-1.5 text-xs transition-colors",
+          nenhuma ? "border-marinho bg-marinho text-white" : "border-linha bg-papel text-suave hover:border-marinho",
+        )}
+      >
+        Rede consolidada
+      </button>
+      <div className="flex flex-col gap-2">
+        {grupos.map(({ grupo, unidades: doGrupo }) => {
+          const ids = doGrupo.map((u) => u.id);
+          const todasMarcadas = ids.length > 1 && ids.length === filtros.lojaIds.length && ids.every((id) => filtros.lojaIds.includes(id));
           return (
-            <button
-              key={l.id}
-              onClick={() => filtros.alternarLoja(l.id)}
-              aria-pressed={ativa}
-              className={cn(
-                "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors",
-                ativa ? "border-tinta bg-papel text-tinta" : "border-linha bg-papel text-suave hover:border-marinho",
+            <div key={grupo} className="flex flex-wrap items-center gap-1.5">
+              {ids.length > 1 ? (
+                <button
+                  onClick={() => filtros.definir("lojas", todasMarcadas ? "" : ids.join(","))}
+                  aria-pressed={todasMarcadas}
+                  title={`Comparar só as lojas de ${grupo}`}
+                  className={cn("rotulo mr-1 w-full text-left text-[10px] hover:text-marinho sm:w-36", todasMarcadas && "!text-marinho")}
+                >
+                  {grupo}
+                </button>
+              ) : (
+                <span className="rotulo mr-1 w-full text-[10px] sm:w-36">{grupo}</span>
               )}
-            >
-              <span className="h-2 w-2 rounded-full" style={{ background: l.cor, opacity: ativa ? 1 : 0.35 }} />
-              {l.nome}
-            </button>
+              {doGrupo.map((l) => {
+                const ativa = filtros.lojaIds.includes(l.id);
+                return (
+                  <button
+                    key={l.id}
+                    onClick={() => filtros.alternarLoja(l.id)}
+                    aria-pressed={ativa}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors",
+                      ativa ? "border-tinta bg-papel text-tinta" : "border-linha bg-papel text-suave hover:border-marinho",
+                    )}
+                  >
+                    <span className="h-2 w-2 rounded-full" style={{ background: l.cor, opacity: ativa ? 1 : 0.35 }} />
+                    {l.nome}
+                  </button>
+                );
+              })}
+            </div>
           );
         })}
       </div>

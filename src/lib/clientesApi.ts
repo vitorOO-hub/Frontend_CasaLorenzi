@@ -24,7 +24,7 @@ export type ItemCliente = {
   /** Loja em que o cliente se cadastrou (clientes vindos da Vulto trazem a loja de origem). */
   id_loja_cadastro: string | null;
   loja_cadastro: string | null;
-  /** Nulos quando o cliente não tem movimento de pontos (fora do Vulto+). */
+  /** Nulos quando o cliente não tem movimento de pontos (sem movimento no Lorenzi+). */
   saldo_pontos: number | null;
   categoria_vulto_mais: string | null;
 };
@@ -168,7 +168,7 @@ export function validarFicha(dados: unknown): FichaCliente {
   };
 }
 
-/** Vulto+ do cliente na ficha (GET /painel/clientes/{id}/vulto-mais). */
+/** Lorenzi+ do cliente na ficha (GET /painel/clientes/{id}/vulto-mais). */
 export type VultoMaisDaFicha = AvisoDeVencimento & {
   saldo: number;
   categoria: string;

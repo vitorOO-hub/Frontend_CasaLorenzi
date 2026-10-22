@@ -159,8 +159,8 @@ export function PortalLayout() {
               <Search className="h-[17px] w-[17px]" strokeWidth={1.5} />
               <span className="hidden md:inline">Buscar</span>
             </button>
-            <Link to={cliente ? "/conta/vulto-mais" : contaLink} className="hidden items-center gap-1 hover:opacity-70 lg:flex" aria-label="Vulto+, programa de pontos">
-              Vulto
+            <Link to={cliente ? "/conta/lorenzi-mais" : contaLink} className="hidden items-center gap-1 hover:opacity-70 lg:flex" aria-label="Lorenzi+, programa de pontos">
+              Lorenzi
               <SinalMais claro={transparente} className="text-[15px]" />
             </Link>
             <Link to={contaLink} className="hidden hover:opacity-70 md:inline">
@@ -346,8 +346,8 @@ function Rodape() {
         ["Edição 64 · Garoa", "/loja"],
         ["Pronta-entrega", "/loja"],
         ["Linha Vulto", "/vulto"],
-        ["Vulto+, programa de pontos", "/conta/vulto-mais"],
-        ["Ativar conta Vulto+", "/entrar?ativar=1"],
+        ["Lorenzi+, programa de pontos", "/conta/lorenzi-mais"],
+        ["Já era cliente Vulto+? Ative sua conta", "/entrar?ativar=1"],
       ],
     ],
     [

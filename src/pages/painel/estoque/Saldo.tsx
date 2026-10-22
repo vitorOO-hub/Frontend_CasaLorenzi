@@ -31,6 +31,7 @@ import {
   faixaDaPagina,
   hojeEmSaoPaulo,
 } from "@/lib/estoquePainelUi";
+import { nomeDaLoja, opcoesDeLojas } from "@/lib/lojasAgrupadas";
 
 const POR_PAGINA = 50;
 
@@ -114,7 +115,7 @@ export function Saldo() {
             <Select
               value={loja}
               onChange={(e) => filtrar(setLoja)(e.target.value)}
-              opcoes={[{ value: "", label: "Todas" }, ...(opcoes.dados?.lojas ?? []).map((l) => ({ value: l.id_loja, label: l.nome }))]}
+              opcoes={opcoesDeLojas(opcoes.dados?.lojas ?? [], "Todas")}
             />
           </Campo>
         ) : null}
@@ -156,7 +157,7 @@ export function Saldo() {
                 <th className={th}>Peça</th>
                 <th className={th}>Categoria</th>
                 <th className={th}>Preço</th>
-                {porUnidade ? lojas.map((l) => <th key={l.id_loja} className={cn(th, "text-right")}>{l.nome}</th>) : null}
+                {porUnidade ? lojas.map((l) => <th key={l.id_loja} className={cn(th, "text-right")}>{nomeDaLoja(l.nome)}</th>) : null}
                 <th className={cn(th, "text-right")}>{porUnidade ? "Total" : "Saldo"}</th>
                 <th className={th}>Situação</th>
               </tr>
