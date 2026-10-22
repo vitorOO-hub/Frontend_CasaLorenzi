@@ -87,9 +87,14 @@ export function Inicio() {
               <span className="text-suave">Quem já era Vulto+ continua com o mesmo saldo.</span>
             </p>
           </div>
-          <Link to="/conta/vulto-mais" className="link-tracejado shrink-0 text-sm">
-            Ver meus pontos
-          </Link>
+          <span className="flex shrink-0 flex-col items-start gap-2 text-sm md:items-end">
+            <Link to="/conta/vulto-mais" className="link-tracejado">
+              Ver meus pontos
+            </Link>
+            <Link to="/entrar?ativar=1" className="text-suave hover:text-tinta">
+              Já é cliente e não tem senha? Ative sua conta
+            </Link>
+          </span>
         </div>
       </section>
 

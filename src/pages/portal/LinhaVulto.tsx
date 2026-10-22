@@ -42,6 +42,9 @@ export function LinhaVulto() {
             </Link>
             .
           </p>
+          <Link to="/entrar?ativar=1" className="mt-4 inline-block text-[13px] text-creme/70 underline-offset-4 hover:text-creme hover:underline">
+            Já é cliente Vulto+ e ainda não tem senha? Ative sua conta
+          </Link>
         </div>
       </section>
 

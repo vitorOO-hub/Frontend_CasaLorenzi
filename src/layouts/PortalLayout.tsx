@@ -347,6 +347,7 @@ function Rodape() {
         ["Pronta-entrega", "/loja"],
         ["Linha Vulto", "/vulto"],
         ["Vulto+, programa de pontos", "/conta/vulto-mais"],
+        ["Ativar conta Vulto+", "/entrar?ativar=1"],
       ],
     ],
     [
