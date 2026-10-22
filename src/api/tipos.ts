@@ -31,7 +31,7 @@ export type Pagina<T> = { itens: T[]; total: number; limit: number; offset: numb
 
 // ===================== Enums =====================
 
-export const PAPEIS = ["atendente", "operador_estoque", "gerente_loja", "admin"] as const;
+export const PAPEIS = ["atendente", "operador_estoque", "vendedor", "gerente_loja", "admin"] as const;
 export type Papel = (typeof PAPEIS)[number];
 
 export const TIPOS_MOVIMENTACAO = ["Entrada", "Saída", "Ajuste", "Transferência"] as const;

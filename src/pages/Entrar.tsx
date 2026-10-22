@@ -16,6 +16,7 @@ import {
   type FormCadastro,
 } from "@/lib/cadastro";
 import { criarConta, entrar } from "@/lib/sessao";
+import { AtivarConta } from "./AtivarConta";
 
 export function Entrar() {
   const [params] = useSearchParams();
@@ -26,6 +27,7 @@ export function Entrar() {
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [criando, setCriando] = useState(false);
+  const [ativando, setAtivando] = useState(false);
   const [form, setForm] = useState<FormCadastro>(FORM_VAZIO);
   const [errosForm, setErrosForm] = useState<ErrosCadastro>({});
   const [aviso, setAviso] = useState<string | null>(null);
@@ -41,8 +43,21 @@ export function Entrar() {
 
   function alternar() {
     setCriando((v) => !v);
+    setAtivando(false);
     setErro(null);
     setErrosForm({});
+    setAviso(null);
+  }
+
+  function aoAtivar(emailMascarado: string) {
+    setAtivando(false);
+    setErro(null);
+    setAviso(`Conta ativada! Entre com o e-mail ${emailMascarado} e a senha que você acabou de criar.`);
+  }
+
+  function abrirAtivacao() {
+    setAtivando(true);
+    setErro(null);
     setAviso(null);
   }
 
@@ -110,15 +125,21 @@ export function Entrar() {
         </div>
 
         <div className="mx-auto my-auto w-full max-w-sm py-12">
-          <h1 className="text-[44px] leading-none">{criando ? "Crie sua conta" : "Entre na sua conta"}</h1>
+          <h1 className="text-[44px] leading-none">
+            {ativando ? "Ative sua conta" : criando ? "Crie sua conta" : "Entre na sua conta"}
+          </h1>
           <p className="mt-2 text-sm text-suave">
-            {criando
-              ? "Cadastro para clientes. Seus dados e pedidos ficam só na sua conta."
-              : "Clientes e equipe Casa Lorenzi entram por aqui. Navegar pela coleção não exige login."}
+            {ativando
+              ? "Já é cliente e ainda não tem senha? Informe seu CPF para criar o acesso."
+              : criando
+                ? "Cadastro para clientes. Seus dados e pedidos ficam só na sua conta."
+                : "Clientes e equipe Casa Lorenzi entram por aqui. Navegar pela coleção não exige login."}
           </p>
           {aviso ? <p className="mt-4 text-sm text-tabaco">{aviso}</p> : null}
 
-          {criando ? (
+          {ativando ? (
+            <AtivarConta aoAtivar={aoAtivar} aoVoltar={() => setAtivando(false)} />
+          ) : criando ? (
             <form onSubmit={cadastrar} noValidate className="mt-8 space-y-4">
               <Campo label="Nome">
                 <input {...campo("nome")} autoComplete="name" required />
@@ -210,6 +231,9 @@ export function Entrar() {
           </form>
           <button type="button" onClick={alternar} className="mt-6 w-full text-sm text-suave underline">
             Ainda não tem conta? Criar conta de cliente
+          </button>
+          <button type="button" onClick={abrirAtivacao} className="mt-3 w-full text-sm text-suave underline">
+            Já é cliente? Primeiro acesso ou recuperar conta
           </button>
             </>
           )}

@@ -17,6 +17,8 @@ import { Movimentacoes } from "./pages/painel/estoque/Movimentacoes";
 import { Peca } from "./pages/painel/estoque/Peca";
 import { Saldo } from "./pages/painel/estoque/Saldo";
 import { Transferencias } from "./pages/painel/estoque/Transferencias";
+import { ClientesCadastrados } from "./pages/painel/vendas/ClientesCadastrados";
+import { Vendas } from "./pages/painel/vendas/Vendas";
 import { Auditoria } from "./pages/painel/gestao/Auditoria";
 import { CatalogoAdmin } from "./pages/painel/gestao/CatalogoAdmin";
 import { Integracoes } from "./pages/painel/gestao/Integracoes";
@@ -96,6 +98,8 @@ export default function App() {
             <Route path="clientes" element={<Clientes />} />
             <Route path="clientes/:id" element={<Cliente />} />
           </Route>
+          <Route path="vendas" element={<Vendas />} />
+          <Route path="clientes" element={<ClientesCadastrados />} />
           <Route path="gestao" element={<SecaoLayout />}>
             <Route index element={<Lojas />} />
             <Route path="catalogo" element={<CatalogoAdmin />} />

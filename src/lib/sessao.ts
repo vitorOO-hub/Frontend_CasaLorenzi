@@ -22,6 +22,7 @@ export type { Papel };
 export const equipe: Record<Papel, { nome: string; cargo: string; lojaId?: string }> = {
   atendente: { nome: "Rafael Nunes", cargo: "Atendente · SAC" },
   operador_estoque: { nome: "Vinícius Prado", cargo: "Operador de estoque", lojaId: "l1" },
+  vendedor: { nome: "Bianca Torres", cargo: "Vendedor", lojaId: "l1" },
   gerente_loja: { nome: "Marina Toledo", cargo: "Gerente de unidade", lojaId: "l1" },
   admin: { nome: "Cecília Lorenzi", cargo: "Administradora da rede" },
 };
@@ -29,6 +30,7 @@ export const equipe: Record<Papel, { nome: string; cargo: string; lojaId?: strin
 export const rotuloPapel: Record<Papel, string> = {
   atendente: "Atendente",
   operador_estoque: "Operador de estoque",
+  vendedor: "Vendedor",
   gerente_loja: "Gerente de unidade",
   admin: "Administrador",
 };

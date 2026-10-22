@@ -735,6 +735,7 @@ export const prioridadeChamado = (c: Chamado): Prioridade =>
 
 export const rotuloPapelUsuario: Record<PapelUsuario, string> = {
   operador_estoque: "Operador de estoque",
+  vendedor: "Vendedor",
   atendente: "Atendente",
   gerente_loja: "Gerente de loja",
   admin: "Administrador",

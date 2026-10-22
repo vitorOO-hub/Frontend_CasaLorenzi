@@ -5,11 +5,12 @@ import { booleano, lista, numero, objeto, texto, textoOuNulo } from "./validacao
 
 const BASE = "/api/v1/painel/gestao";
 
-export type Cargo = "atendente" | "operador_estoque" | "gerente_loja" | "admin";
+export type Cargo = "atendente" | "operador_estoque" | "vendedor" | "gerente_loja" | "admin";
 
 export const ROTULO_CARGO: Record<Cargo, string> = {
   atendente: "Atendente",
   operador_estoque: "Operador de estoque",
+  vendedor: "Vendedor",
   gerente_loja: "Gerente de unidade",
   admin: "Administrador",
 };

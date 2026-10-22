@@ -57,7 +57,7 @@ export function Movimentacoes() {
   });
 
   // Quem não aprova acompanha aqui o andamento dos ajustes que pediu.
-  const acompanha = escopo !== undefined && escopo.papel === "operador_estoque";
+  const acompanha = escopo !== undefined && escopo.somente_minhas;
   const meusAjustes = useAjustesEstoque({ limit: 10, offset: 0 }, acompanha);
   const itens = consulta.dados?.itens ?? [];
   const total = consulta.dados?.total ?? 0;
@@ -89,7 +89,7 @@ export function Movimentacoes() {
         descricao={descricao}
         acao={
           <>
-            {escopo?.papel === "operador_estoque" ? (
+            {escopo?.somente_minhas ? (
               <Botao variante="secundario" disabled={!opcoes.dados} onClick={() => setModal("ajuste")}>
                 Ajuste de inventário
               </Botao>
