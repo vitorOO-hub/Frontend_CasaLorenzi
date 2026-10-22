@@ -1,24 +1,29 @@
 import { Menu, Plus, Search, ShoppingBag, X } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { SinalMais } from "@/components/marca";
 import { cn } from "@/components/ui";
 import { CAMPANHA, EDICAO, unsplash } from "@/lib/loja";
 import { sair, useSessao } from "@/lib/sessao";
 import { useProdutosCatalogo } from "@/lib/catalogoApi";
 import { useEstado } from "@/lib/store";
+import { ehVulto } from "@/lib/vultoMais";
 
-/** Marca empilhada, alinhada à esquerda. */
+/** Marca Casa Lorenzi+ empilhada, alinhada à esquerda: "Casa / Lorenzi" com o + da Vulto. */
 export function Marca({ claro = false, grande = false, className }: { claro?: boolean; grande?: boolean; className?: string }) {
   return (
     <span className={cn("block font-display leading-[0.9]", claro ? "text-creme" : "text-marinho", className)}>
-      <span className={cn("block", grande ? "text-[60px] md:text-[88px]" : "text-[34px]")}>
-        Casa
-        <br />
-        Lorenzi
+      <span className={cn("flex items-end gap-[0.08em]", grande ? "text-[60px] md:text-[88px]" : "text-[34px]")}>
+        <span className="block">
+          Casa
+          <br />
+          Lorenzi
+        </span>
+        <SinalMais claro={claro} className="mb-[0.06em]" />
       </span>
       {grande ? null : (
         <small className={cn("mt-2 block font-sans text-[11px] tracking-wide", claro ? "text-creme/60" : "text-suave")}>
-          Alfaiates desde 1962
+          Alfaiates desde 1962 · com Vulto
         </small>
       )}
     </span>
@@ -67,6 +72,8 @@ export function PortalLayout() {
   }
 
   const categorias = Array.from(new Set(produtos.map((p) => p.categoria))).sort();
+  // A linha Vulto entra no menu como uma seção da casa (como a Kanui dentro da Dafiti).
+  const categoriasVulto = Array.from(new Set(produtos.filter(ehVulto).map((p) => p.categoria))).sort();
   const secoesMenu: SecaoMenu[] = [
     {
       id: "destaques",
@@ -81,6 +88,13 @@ export function PortalLayout() {
       to: "/loja",
       itens: [["Ver tudo", "/loja"], ...categorias.map((c): [string, string] => [c, `/loja?categoria=${c}`])],
       destaque: { foto: unsplash(CAMPANHA.prontaEntrega, 700), legenda: "Casacos da estação", to: "/loja?categoria=Outerwear" },
+    },
+    {
+      id: "vulto",
+      rotulo: "Vulto",
+      to: "/vulto",
+      itens: [["Ver toda a linha", "/vulto"], ...categoriasVulto.map((c): [string, string] => [c, `/vulto?categoria=${c}`])],
+      destaque: { foto: unsplash(CAMPANHA.prontaEntrega, 700), legenda: "Linha Vulto", to: "/vulto" },
     },
     {
       id: "casa",
@@ -113,8 +127,9 @@ export function PortalLayout() {
           <button onClick={() => setMenuEm(rota)} className="hover:opacity-70 lg:hidden" aria-label="Abrir menu">
             <Menu className="h-5 w-5" strokeWidth={1.4} />
           </button>
-          <Link to="/" aria-label="Casa Lorenzi — início" onMouseEnter={() => setPainel(null)} className="whitespace-nowrap font-display text-[24px] leading-none">
+          <Link to="/" aria-label="Casa Lorenzi+ — início" onMouseEnter={() => setPainel(null)} className="flex items-end gap-[0.12em] whitespace-nowrap font-display text-[24px] leading-none">
             Casa Lorenzi
+            <SinalMais claro={transparente} className="mb-[0.08em]" />
           </Link>
 
           <nav className="hidden h-full items-stretch gap-7 lg:flex" aria-label="Principal">
@@ -144,6 +159,10 @@ export function PortalLayout() {
               <Search className="h-[17px] w-[17px]" strokeWidth={1.5} />
               <span className="hidden md:inline">Buscar</span>
             </button>
+            <Link to={cliente ? "/conta/vulto-mais" : contaLink} className="hidden items-center gap-1 hover:opacity-70 lg:flex" aria-label="Vulto+, programa de pontos">
+              Vulto
+              <SinalMais claro={transparente} className="text-[15px]" />
+            </Link>
             <Link to={contaLink} className="hidden hover:opacity-70 md:inline">
               {cliente ? cliente.nome.split(" ")[0] : "Entrar"}
             </Link>
@@ -326,6 +345,8 @@ function Rodape() {
       [
         ["Edição 64 · Garoa", "/loja"],
         ["Pronta-entrega", "/loja"],
+        ["Linha Vulto", "/vulto"],
+        ["Vulto+, programa de pontos", "/conta/vulto-mais"],
       ],
     ],
     [
@@ -368,7 +389,7 @@ function Rodape() {
         ))}
       </div>
       <p className="mx-auto mt-14 max-w-[1360px] border-t border-dashed border-linha pt-5 text-center text-xs text-suave">
-        © 2026 Casa Lorenzi · Protótipo — fotos do Unsplash com tratamento de cor; nomes, histórias e eventos são ilustrativos.
+        © 2026 Casa Lorenzi+ · Protótipo — fotos do Unsplash com tratamento de cor; nomes, histórias e eventos são ilustrativos.
       </p>
     </footer>
   );

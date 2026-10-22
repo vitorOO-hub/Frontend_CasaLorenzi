@@ -6,6 +6,7 @@ import { produtoTemEstoque } from "@/lib/dados";
 import { useProdutosCatalogo } from "@/lib/catalogoApi";
 import { EDICAO } from "@/lib/loja";
 import { useEstado } from "@/lib/store";
+import { MARCAS_FILTRO, daMarca, type MarcaFiltro } from "@/lib/vultoMais";
 
 type Ordem = "edicao" | "menor" | "maior";
 
@@ -17,6 +18,7 @@ export function Catalogo() {
   const tipo = params.get("tipo") ?? "";
   const busca = (params.get("busca") ?? "").trim();
   const ordem = (params.get("ordem") as Ordem) || "edicao";
+  const marca = (params.get("marca") as MarcaFiltro) || "";
 
   // Dentro de uma categoria, o topo mostra só os subtipos dela; trocar de categoria é pelo menu.
   const tipos = useMemo(
@@ -26,6 +28,7 @@ export function Catalogo() {
 
   // A busca também procura no tecido e no nome das cores ("linho", "Areia de Ipanema").
   const lista = produtos
+    .filter((p) => daMarca(p, marca))
     .filter((p) => !categoria || p.categoria === categoria)
     .filter((p) => !tipo || p.tipo === tipo)
     .filter((p) => {
@@ -47,7 +50,7 @@ export function Catalogo() {
     setParams(novo);
   }
 
-  const semFiltro = !categoria && !tipo && !busca && ordem === "edicao";
+  const semFiltro = !categoria && !tipo && !busca && !marca && ordem === "edicao";
   const titulo = busca ? <>“{busca}”</> : tipo || categoria || EDICAO.nome;
 
   return (
@@ -96,6 +99,22 @@ export function Catalogo() {
           <span />
         )}
         <div className="flex shrink-0 items-center gap-4 text-sm text-suave">
+          {/* Casa Lorenzi e Vulto no mesmo catálogo: o filtro separa as duas linhas. */}
+          <span className="flex items-center gap-1.5" role="group" aria-label="Marca">
+            {MARCAS_FILTRO.map((m) => (
+              <button
+                key={m.valor || "todas"}
+                onClick={() => alterar("marca", m.valor)}
+                aria-pressed={marca === m.valor}
+                className={cn(
+                  "border px-2.5 py-1 text-[11px] uppercase tracking-[0.12em] transition-colors",
+                  marca === m.valor ? "border-marinho bg-marinho text-creme" : "border-linha text-tinta hover:border-tinta",
+                )}
+              >
+                {m.rotulo}
+              </button>
+            ))}
+          </span>
           {busca ? (
             <button onClick={() => alterar("busca", "")} className="link-tracejado text-tinta">
               Limpar busca

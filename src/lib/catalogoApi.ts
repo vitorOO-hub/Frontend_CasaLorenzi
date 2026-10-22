@@ -101,6 +101,7 @@ export function produtoCatalogoDeLinha(linha: LinhaProdutoCatalogo): Produto | n
     categoria: textoComPadrao(linha.categoria, "Catálogo"),
     preco: Math.min(...(precos.length ? precos : [numeroSeguro(linha.preco_base)])),
     colecao: linha.colecao,
+    marca: textoObrigatorio(linha.marca),
     saldos: [],
     movimentacoes: [],
     variacoes,

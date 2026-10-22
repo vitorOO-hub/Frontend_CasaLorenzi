@@ -43,6 +43,8 @@ export type Produto = {
   saldos: SaldoLoja[];
   movimentacoes: Movimentacao[];
   colecao?: string | null;
+  /** Marca da peça no catálogo ("Vulto" nas peças da linha Vulto). */
+  marca?: string | null;
   variacoes?: VariacaoProdutoCatalogo[];
   imagemUrl?: string;
   imagemAlt?: string;

@@ -2,6 +2,7 @@ import { LogOut, Store } from "lucide-react";
 import { Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Bloqueio } from "@/components/acesso";
 import { MenuUsuario } from "@/components/MenuUsuario";
+import { SinalMais } from "@/components/marca";
 import { cn } from "@/components/ui";
 import { abasDoPapel, podeAcessar, secoesDoPapel, type Secao } from "@/lib/navegacao";
 import { usePendencias } from "@/lib/pendencias";
@@ -79,14 +80,18 @@ export function PainelLayout() {
 
           <NavLink
             to="/painel"
-            aria-label="Casa Lorenzi — início do painel"
+            aria-label="Casa Lorenzi+ — início do painel"
             className="relative block h-[78px] shrink-0 border-b border-white/[.09]"
           >
-            <span className={cn("absolute inset-y-0 left-0 grid w-16 place-items-center font-display text-[22px] tracking-[.03em]", aoFechar)}>
+            <span className={cn("absolute inset-y-0 left-0 flex w-16 items-center justify-center gap-[2px] font-display text-[22px] tracking-[.03em]", aoFechar)}>
               CL
+              <SinalMais claro className="text-[15px]" />
             </span>
             <span className={cn("absolute left-[22px] top-1/2 flex -translate-y-1/2 flex-col gap-[3px] whitespace-nowrap", aoAbrir)}>
-              <span className="font-display text-[21px] leading-none tracking-[.01em]">Casa Lorenzi</span>
+              <span className="flex items-end gap-[3px] font-display text-[21px] leading-none tracking-[.01em]">
+                Casa Lorenzi
+                <SinalMais claro className="mb-[1px] text-[15px]" />
+              </span>
               <span className={cn("text-[10.5px] uppercase tracking-[.2em]", ROTULO, APAGADO)}>Operações</span>
             </span>
           </NavLink>
@@ -173,7 +178,10 @@ export function PainelLayout() {
         <header className="sticky top-0 z-30 border-b border-linha bg-papel/95 backdrop-blur">
           <div className="flex items-center justify-between gap-4 px-5 py-3 md:px-8">
             <div className="min-w-0">
-              <p className="whitespace-nowrap font-display text-xl leading-none md:hidden">Casa Lorenzi</p>
+              <p className="flex items-end gap-1 whitespace-nowrap font-display text-xl leading-none md:hidden">
+                Casa Lorenzi
+                <SinalMais className="mb-[1px] text-[15px]" />
+              </p>
               <p className="hidden truncate text-sm text-suave md:block">
                 {rotuloPapel[papel]} · <span className="text-tinta">{escopoTexto}</span>
               </p>
