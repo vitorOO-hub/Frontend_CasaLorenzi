@@ -66,7 +66,7 @@ export function Inicio() {
       />
 
       {carregando || erro ? (
-        <section className="mx-auto max-w-[1440px] px-5 py-24 text-sm text-suave md:px-12">{carregando ? "Carregando peças..." : erro}</section>
+        <section className="mx-auto max-w-[1440px] px-5 py-24 text-sm text-suave md:px-12">{carregando ? "Carregando produtos..." : erro}</section>
       ) : (
         <FileiraProdutos titulo={`Novidades da Edição ${EDICAO.numero}`} produtos={novidades} para="/loja" />
       )}
