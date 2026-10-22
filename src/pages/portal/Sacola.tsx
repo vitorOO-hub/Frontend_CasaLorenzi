@@ -8,6 +8,10 @@ import { detalheDe, fotoEstudio } from "@/lib/loja";
 import * as acoes from "@/lib/acoes";
 import { useSessao } from "@/lib/sessao";
 import { useEstado } from "@/lib/store";
+import { SinalMais } from "@/components/marca";
+import { useLorenziMais } from "@/hooks/useLorenziMais";
+import { descontoDosPontos, maximoResgatavel, pontosDaCompra } from "@/lib/regrasLorenziMais";
+import { pontos as fmtPontos } from "@/lib/vultoMais";
 
 const alterarQuantidadeCarrinho = (sku: string, quantidade: number) => void acoes.alterarQuantidadeCarrinho(sku, quantidade);
 
@@ -21,6 +25,10 @@ export function Sacola() {
   const subtotal = carrinho.reduce((s, i) => s + i.valor * i.quantidade, 0);
   const frete = freteDe(subtotal);
   const falta = FRETE_GRATIS_A_PARTIR - subtotal;
+  const lorenziMais = useLorenziMais();
+  const regras = lorenziMais?.regras;
+  const rende = pontosDaCompra(subtotal + frete, true, regras);
+  const resgatavel = lorenziMais ? maximoResgatavel(lorenziMais.saldo, subtotal, regras) : 0;
 
   useEffect(() => {
     if (sessao?.tipo !== "cliente") return;
@@ -110,6 +118,13 @@ export function Sacola() {
             <span className="font-display text-[34px]">{moeda(subtotal + frete)}</span>
           </div>
           <p className="text-right text-xs text-suave">ou 10x de {moeda((subtotal + frete) / 10)} sem juros</p>
+          <div className="mt-5 flex items-start gap-2 text-[14px] text-suave">
+            <SinalMais className="mt-[3px] text-[14px]" />
+            <p>
+              Esta compra rende <b className="font-medium text-tinta">{fmtPontos(rende)} pontos Lorenzi+</b>.
+              {resgatavel > 0 ? ` Você pode usar até ${fmtPontos(resgatavel)} pontos (${moeda(descontoDosPontos(resgatavel, regras))} de desconto) no fechamento.` : null}
+            </p>
+          </div>
           <Link to="/checkout" className={cn(botaoLoja(), "mt-6 w-full")}>
             Fechar o pedido
           </Link>

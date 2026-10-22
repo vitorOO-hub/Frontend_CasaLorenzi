@@ -1,6 +1,7 @@
 import { api } from "@/api/http";
 import type { Produto } from "./dados";
 import { lista, numero, numeroOuNulo, objeto, texto, textoOuNulo } from "./validacao";
+import { validarRegras, type RegrasLorenziMais } from "./regrasLorenziMais";
 import { validarAvisoDeVencimento, type AvisoDeVencimento } from "./vencimentoPontos";
 
 export { textoDoAviso } from "./vencimentoPontos";
@@ -59,6 +60,7 @@ export type VultoMais = AvisoDeVencimento & {
   proxima_categoria: string | null;
   faltam_para_proxima: number | null;
   extrato: MovimentoPontos[];
+  regras: RegrasLorenziMais;
 };
 
 export function validarVultoMais(dados: unknown): VultoMais {
@@ -70,6 +72,7 @@ export function validarVultoMais(dados: unknown): VultoMais {
     proxima_categoria: textoOuNulo(o.proxima_categoria, "proxima_categoria"),
     faltam_para_proxima: numeroOuNulo(o.faltam_para_proxima ?? null, "faltam_para_proxima"),
     ...validarAvisoDeVencimento(o),
+    regras: validarRegras(o.regras),
     extrato: lista(o.extrato, "extrato").map((item, i) => {
       const m = objeto(item, `extrato.${i}`);
       return {

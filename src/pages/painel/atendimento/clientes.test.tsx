@@ -69,6 +69,10 @@ vi.mock("@/hooks/useClientes", () => {
           { codigo: "ouro", nome: "Ouro" },
           { codigo: "sem_pontos", nome: "Sem pontos" },
         ],
+        marcas: [
+          { codigo: "casa_lorenzi", nome: "Casa Lorenzi" },
+          { codigo: "vulto", nome: "Vulto" },
+        ],
       }),
     useFichaCliente: () => resposta(ficha(estado.papel === "gerente_loja")),
     // Vulto+: o servidor manda o valor do resgate só para a gestão.
@@ -148,7 +152,7 @@ describe("lista de clientes", () => {
 
   it("mostra loja de cadastro e Vulto+ e oferece os filtros", () => {
     const html = tela(<Clientes />);
-    for (const t of ["Loja de cadastro", "vulto pinheiros", "Ouro", "6.200 pts", "Sem pontos"]) expect(html).toContain(t);
+    for (const t of ["Loja de cadastro", "Marca do cadastro", "vulto pinheiros", "Ouro", "6.200 pts", "Sem pontos"]) expect(html).toContain(t);
   });
 
   it("atendente não vê as colunas de compras nem valores", () => {

@@ -63,6 +63,8 @@ export type CheckoutClienteCriar = {
     uf: string;
   } | null;
   itens: { id_variacao: string; quantidade: number }[];
+  /** Lorenzi+: pontos que viram desconto nas peças (múltiplos de 100). */
+  pontos_resgatados?: number;
 };
 
 function decimal(valor: unknown, campo: string): string {

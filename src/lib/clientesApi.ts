@@ -63,6 +63,8 @@ export type FiltrosClientes = {
   /** ouro, prata, bronze ou sem_pontos. */
   categoria?: string;
   idLojaCadastro?: string;
+  /** Marca do cadastro: casa_lorenzi ou vulto. */
+  marca?: string;
   limit: number;
   offset: number;
 };
@@ -109,7 +111,7 @@ export function validarItemCliente(dados: unknown): ItemCliente {
 }
 
 /** Opções dos filtros da lista (GET /painel/clientes/opcoes). */
-export type OpcoesClientes = { lojas_cadastro: { id_loja: string; nome: string }[]; categorias: Opcao[] };
+export type OpcoesClientes = { lojas_cadastro: { id_loja: string; nome: string }[]; categorias: Opcao[]; marcas: Opcao[] };
 
 export function validarOpcoesClientes(dados: unknown): OpcoesClientes {
   const o = objeto(dados, "opcoes");
@@ -119,6 +121,7 @@ export function validarOpcoesClientes(dados: unknown): OpcoesClientes {
       return { id_loja: texto(l.id_loja, "id_loja"), nome: texto(l.nome, "nome") };
     }),
     categorias: lista(o.categorias, "categorias").map((v, i) => opcao(v, `categorias[${i}]`)),
+    marcas: (o.marcas === undefined ? [] : lista(o.marcas, "marcas")).map((v, i) => opcao(v, `marcas[${i}]`)),
   };
 }
 
@@ -233,6 +236,7 @@ export const listarClientes = (f: FiltrosClientes, o?: OpcoesApi) =>
       id_loja: f.idLoja,
       categoria: f.categoria,
       id_loja_cadastro: f.idLojaCadastro,
+      marca: f.marca,
       limit: f.limit,
       offset: f.offset,
     },

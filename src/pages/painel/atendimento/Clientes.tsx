@@ -39,6 +39,7 @@ export function Clientes() {
   const [loja, setLoja] = useState("");
   const [lojaCadastro, setLojaCadastro] = useState("");
   const [categoria, setCategoria] = useState("");
+  const [marca, setMarca] = useState("");
   const [pagina, setPagina] = useState(0);
 
   const termo = useAtraso(busca);
@@ -50,6 +51,7 @@ export function Clientes() {
     idLoja: loja || undefined,
     idLojaCadastro: lojaCadastro || undefined,
     categoria: categoria || undefined,
+    marca: marca || undefined,
     limit: POR_PAGINA_CLIENTES,
     offset: pagina * POR_PAGINA_CLIENTES,
   });
@@ -59,6 +61,7 @@ export function Clientes() {
   const lojas = opcoes.dados?.lojas ?? [];
   const lojasCadastro = opcoesClientes.dados?.lojas_cadastro ?? [];
   const categorias = opcoesClientes.dados?.categorias ?? [];
+  const marcas = opcoesClientes.dados?.marcas ?? [];
   const colunas = gestor ? 9 : 7;
 
   return (
@@ -101,6 +104,18 @@ export function Clientes() {
                 setPagina(0);
               }}
               opcoes={opcoesDeLojas(lojas, "Todas")}
+            />
+          </Campo>
+        ) : null}
+        {marcas.length > 0 ? (
+          <Campo label="Marca do cadastro" className="flex-1">
+            <Select
+              value={marca}
+              onChange={(e) => {
+                setMarca(e.target.value);
+                setPagina(0);
+              }}
+              opcoes={[{ value: "", label: "Todas" }, ...marcas.map((m) => ({ value: m.codigo, label: m.nome }))]}
             />
           </Campo>
         ) : null}
