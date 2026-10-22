@@ -20,6 +20,12 @@ export type ItemCliente = {
   /** Só gerente e admin; para o atendente vem nulo. */
   compras: number | null;
   total_gasto: number | null;
+  /** Loja em que o cliente se cadastrou (clientes vindos da Vulto trazem a loja de origem). */
+  id_loja_cadastro: string | null;
+  loja_cadastro: string | null;
+  /** Nulos quando o cliente não tem movimento de pontos (fora do Vulto+). */
+  saldo_pontos: number | null;
+  categoria_vulto_mais: string | null;
 };
 
 export type ListaClientes = { total: number; itens: ItemCliente[] };
@@ -53,6 +59,9 @@ export type FiltrosClientes = {
   busca?: string;
   secao: SecaoClientes;
   idLoja?: string;
+  /** ouro, prata, bronze ou sem_pontos. */
+  categoria?: string;
+  idLojaCadastro?: string;
   limit: number;
   offset: number;
 };
@@ -91,6 +100,24 @@ export function validarItemCliente(dados: unknown): ItemCliente {
     chamados_em_aberto: numero(o.chamados_em_aberto, "chamados_em_aberto"),
     compras: inteiroOuNulo(o.compras, "compras"),
     total_gasto: dinheiro(o.total_gasto, "total_gasto"),
+    id_loja_cadastro: textoOuNulo(o.id_loja_cadastro, "id_loja_cadastro"),
+    loja_cadastro: textoOuNulo(o.loja_cadastro, "loja_cadastro"),
+    saldo_pontos: inteiroOuNulo(o.saldo_pontos, "saldo_pontos"),
+    categoria_vulto_mais: textoOuNulo(o.categoria_vulto_mais, "categoria_vulto_mais"),
+  };
+}
+
+/** Opções dos filtros da lista (GET /painel/clientes/opcoes). */
+export type OpcoesClientes = { lojas_cadastro: { id_loja: string; nome: string }[]; categorias: Opcao[] };
+
+export function validarOpcoesClientes(dados: unknown): OpcoesClientes {
+  const o = objeto(dados, "opcoes");
+  return {
+    lojas_cadastro: lista(o.lojas_cadastro, "lojas_cadastro").map((v, i) => {
+      const l = objeto(v, `lojas_cadastro[${i}]`);
+      return { id_loja: texto(l.id_loja, "id_loja"), nome: texto(l.nome, "nome") };
+    }),
+    categorias: lista(o.categorias, "categorias").map((v, i) => opcao(v, `categorias[${i}]`)),
   };
 }
 
@@ -198,9 +225,19 @@ export const listarClientes = (f: FiltrosClientes, o?: OpcoesApi) =>
   api.get(
     BASE,
     validarListaClientes,
-    { busca: f.busca?.trim() || undefined, secao: f.secao, id_loja: f.idLoja, limit: f.limit, offset: f.offset },
+    {
+      busca: f.busca?.trim() || undefined,
+      secao: f.secao,
+      id_loja: f.idLoja,
+      categoria: f.categoria,
+      id_loja_cadastro: f.idLojaCadastro,
+      limit: f.limit,
+      offset: f.offset,
+    },
     o,
   );
+
+export const buscarOpcoesClientes = (o?: OpcoesApi) => api.get(`${BASE}/opcoes`, validarOpcoesClientes, undefined, o);
 
 export const buscarFicha = (id: string, idLoja?: string, o?: OpcoesApi) =>
   api.get(`${BASE}/${id}`, validarFicha, { id_loja: idLoja }, o);
