@@ -84,6 +84,7 @@ describe("validação das respostas de clientes", () => {
     const o = validarOpcoesClientes({ lojas_cadastro: [{ id_loja: "l-1", nome: "Vulto Centro" }], categorias: [op("ouro", "Ouro")] });
     expect(o.lojas_cadastro[0]!.nome).toBe("Vulto Centro");
     expect(o.categorias).toEqual([{ codigo: "ouro", nome: "Ouro" }]);
+    expect(o.marcas).toEqual([]); // backend antigo sem marcas
     expect(() => validarOpcoesClientes({ lojas_cadastro: [{ nome: "x" }], categorias: [] })).toThrow();
   });
 
@@ -137,9 +138,10 @@ describe("chamadas", () => {
   });
 
   it("lista: manda os filtros do Vulto+", () => {
-    listarClientes({ secao: "todos", categoria: "ouro", idLojaCadastro: "6f1c3a52-6a4e-4c8e-9a39-0f1f2b6f2f10", limit: 20, offset: 0 });
+    listarClientes({ secao: "todos", categoria: "ouro", idLojaCadastro: "6f1c3a52-6a4e-4c8e-9a39-0f1f2b6f2f10", marca: "vulto", limit: 20, offset: 0 });
     const parametros = api.get.mock.calls[0]![2];
     expect(parametros.categoria).toBe("ouro");
+    expect(parametros.marca).toBe("vulto");
     expect(parametros.id_loja_cadastro).toBe("6f1c3a52-6a4e-4c8e-9a39-0f1f2b6f2f10");
   });
 
