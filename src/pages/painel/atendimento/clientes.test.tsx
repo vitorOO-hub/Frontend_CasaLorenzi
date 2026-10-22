@@ -58,6 +58,27 @@ vi.mock("@/hooks/useClientes", () => {
         : resposta({ total: 2, itens: [cliente(1, gestao), cliente(2, gestao)] });
     },
     useFichaCliente: () => resposta(ficha(estado.papel === "gerente_loja")),
+    // Vulto+: o servidor manda o valor do resgate só para a gestão.
+    useVultoMaisDaFicha: () =>
+      resposta({
+        saldo: 2000,
+        categoria: "prata",
+        creditos_no_ano: 2500,
+        proxima_categoria: "ouro",
+        faltam_para_proxima: 2500,
+        loja_cadastro: "vulto pinheiros",
+        extrato: [{ ocorrido_em: "2026-10-12T15:00:00Z", tipo: "credito", pontos: 2500, descricao: "compra" }],
+        resgates: [
+          {
+            resgatado_em: "2026-10-13T15:00:00Z",
+            pontos: 500,
+            desconto: estado.papel === "gerente_loja" ? 25 : null,
+            loja_nome: "vulto pinheiros",
+            atendente: "camila duarte",
+            observacao: null,
+          },
+        ],
+      }),
   };
 });
 
@@ -136,13 +157,15 @@ describe("ficha do cliente", () => {
     expect(html).toContain("Cliente 1");
     expect(html).toContain("AT-2026-0001");
     for (const proibido of ["Total gasto", "Ticket médio", "Compras", "PD-1", "R$"]) expect(html).not.toContain(proibido);
+    // Vulto+ aparece para o atendente, sem o valor dos resgates.
+    for (const t of ["Vulto+", "2.000 pts", "vulto pinheiros", "camila duarte"]) expect(html).toContain(t);
     expect(erros).toEqual([]);
   });
 
   it("gerente vê as compras e os valores", () => {
     estado.papel = "gerente_loja";
     const html = ficha();
-    for (const t of ["Total gasto", "Ticket médio", "PD-1", "R$"]) expect(html).toContain(t);
+    for (const t of ["Total gasto", "Ticket médio", "PD-1", "R$", "Desconto"]) expect(html).toContain(t);
     expect(erros).toEqual([]);
   });
 

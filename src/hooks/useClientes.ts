@@ -1,5 +1,14 @@
 import { useEffect, useState } from "react";
-import { buscarFicha, ehUuid, listarClientes, type FichaCliente, type FiltrosClientes, type ListaClientes } from "@/lib/clientesApi";
+import {
+  buscarFicha,
+  buscarVultoMaisDaFicha,
+  ehUuid,
+  listarClientes,
+  type FichaCliente,
+  type FiltrosClientes,
+  type ListaClientes,
+  type VultoMaisDaFicha,
+} from "@/lib/clientesApi";
 import { useConsulta, type Consulta } from "./useChamados";
 
 /** Valor que só muda depois de `ms` sem novas alterações (para não consultar a cada tecla). */
@@ -18,3 +27,7 @@ export const useListaClientes = (filtros: FiltrosClientes): Consulta<ListaClient
 /** Ficha do cliente. Id que não é um UUID nem chega a consultar o servidor. */
 export const useFichaCliente = (id: string | undefined): Consulta<FichaCliente> =>
   useConsulta((sinal) => buscarFicha(id as string, undefined, { sinal }), `ficha:${id}`, { ativa: ehUuid(id) });
+
+/** Pontos Vulto+ do cliente na ficha. */
+export const useVultoMaisDaFicha = (id: string | undefined): Consulta<VultoMaisDaFicha> =>
+  useConsulta((sinal) => buscarVultoMaisDaFicha(id as string, undefined, { sinal }), `vulto-mais:${id}`, { ativa: ehUuid(id) });
