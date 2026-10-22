@@ -27,7 +27,8 @@ export function Entrar() {
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [criando, setCriando] = useState(false);
-  const [ativando, setAtivando] = useState(false);
+  // /entrar?ativar=1 abre direto a ativação (links "Já é cliente Vulto+? Ative sua conta").
+  const [ativando, setAtivando] = useState(() => params.get("ativar") === "1");
   const [form, setForm] = useState<FormCadastro>(FORM_VAZIO);
   const [errosForm, setErrosForm] = useState<ErrosCadastro>({});
   const [aviso, setAviso] = useState<string | null>(null);
@@ -151,7 +152,13 @@ export function Entrar() {
               </Campo>
               <Campo label="CPF">
                 <input {...campo("cpf", formatarCpf)} inputMode="numeric" placeholder="000.000.000-00" required />
-                <span className="mt-1 block text-xs text-suave">Já é cliente Vulto+? Use o mesmo CPF e e-mail para trazer seus pontos.</span>
+                <span className="mt-1 block text-xs text-suave">
+                  Já é cliente Vulto+?{" "}
+                  <button type="button" onClick={abrirAtivacao} className="underline hover:text-tinta">
+                    Ative sua conta
+                  </button>{" "}
+                  em vez de criar outra: seus pontos já estão lá.
+                </span>
                 {erroDe("cpf")}
               </Campo>
               <Campo label="Telefone">
