@@ -80,6 +80,8 @@ vi.mock("@/hooks/useClientes", () => {
         proxima_categoria: "ouro",
         faltam_para_proxima: 2500,
         loja_cadastro: "vulto pinheiros",
+        pontos_a_vencer: 800,
+        proximos_vencimentos: [{ vence_em: "2026-11-05T15:00:00Z", pontos: 800 }],
         extrato: [{ ocorrido_em: "2026-10-12T15:00:00Z", tipo: "credito", pontos: 2500, descricao: "compra" }],
         resgates: [
           {
@@ -176,7 +178,7 @@ describe("ficha do cliente", () => {
     expect(html).toContain("AT-2026-0001");
     for (const proibido of ["Total gasto", "Ticket médio", "Compras", "PD-1", "R$"]) expect(html).not.toContain(proibido);
     // Vulto+ aparece para o atendente, sem o valor dos resgates.
-    for (const t of ["Vulto+", "2.000 pts", "vulto pinheiros", "camila duarte"]) expect(html).toContain(t);
+    for (const t of ["Vulto+", "2.000 pts", "vulto pinheiros", "camila duarte", "800 pontos vencem nos próximos 30 dias (em 05/11)"]) expect(html).toContain(t);
     expect(erros).toEqual([]);
   });
 

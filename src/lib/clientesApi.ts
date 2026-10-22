@@ -1,4 +1,5 @@
 import { api, type OpcoesApi } from "./api";
+import { validarAvisoDeVencimento, type AvisoDeVencimento } from "./vencimentoPontos";
 import { booleanoOuPadrao, lista, numero, objeto, opcao, texto, textoOuNulo, type Opcao } from "./validacao";
 
 /** Tipos e chamadas da área de clientes do painel (espelham app/clientes/schemas.py do backend). */
@@ -168,7 +169,7 @@ export function validarFicha(dados: unknown): FichaCliente {
 }
 
 /** Vulto+ do cliente na ficha (GET /painel/clientes/{id}/vulto-mais). */
-export type VultoMaisDaFicha = {
+export type VultoMaisDaFicha = AvisoDeVencimento & {
   saldo: number;
   categoria: string;
   creditos_no_ano: number;
@@ -196,6 +197,7 @@ export function validarVultoMaisDaFicha(dados: unknown): VultoMaisDaFicha {
     proxima_categoria: textoOuNulo(o.proxima_categoria, "proxima_categoria"),
     faltam_para_proxima: inteiroOuNulo(o.faltam_para_proxima, "faltam_para_proxima"),
     loja_cadastro: textoOuNulo(o.loja_cadastro, "loja_cadastro"),
+    ...validarAvisoDeVencimento(o),
     extrato: lista(o.extrato, "extrato").map((v, i) => {
       const m = objeto(v, `extrato[${i}]`);
       return {

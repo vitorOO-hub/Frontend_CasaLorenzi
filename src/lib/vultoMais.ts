@@ -1,6 +1,9 @@
 import { api } from "@/api/http";
 import type { Produto } from "./dados";
 import { lista, numero, numeroOuNulo, objeto, texto, textoOuNulo } from "./validacao";
+import { validarAvisoDeVencimento, type AvisoDeVencimento } from "./vencimentoPontos";
+
+export { textoDoAviso } from "./vencimentoPontos";
 
 /**
  * Casa Lorenzi+: a linha Vulto dentro da loja e o Vulto+, o programa de pontos da casa inteira
@@ -49,7 +52,7 @@ export const daMarca = (produto: Pick<Produto, "marca">, marca: MarcaFiltro) =>
 
 export type MovimentoPontos = { ocorrido_em: string; tipo: string; pontos: number; descricao: string };
 
-export type VultoMais = {
+export type VultoMais = AvisoDeVencimento & {
   saldo: number;
   categoria: string;
   creditos_no_ano: number;
@@ -66,6 +69,7 @@ export function validarVultoMais(dados: unknown): VultoMais {
     creditos_no_ano: numero(o.creditos_no_ano, "creditos_no_ano"),
     proxima_categoria: textoOuNulo(o.proxima_categoria, "proxima_categoria"),
     faltam_para_proxima: numeroOuNulo(o.faltam_para_proxima ?? null, "faltam_para_proxima"),
+    ...validarAvisoDeVencimento(o),
     extrato: lista(o.extrato, "extrato").map((item, i) => {
       const m = objeto(item, `extrato.${i}`);
       return {

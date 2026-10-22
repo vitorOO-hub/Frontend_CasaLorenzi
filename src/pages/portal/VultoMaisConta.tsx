@@ -5,7 +5,7 @@ import { mensagemDeErro } from "@/api/erros";
 import { SinalMais } from "@/components/marca";
 import { cn } from "@/components/ui";
 import { dataBR } from "@/lib/dados";
-import { obterVultoMais, pontos, rotuloTipo, type VultoMais } from "@/lib/vultoMais";
+import { obterVultoMais, pontos, rotuloTipo, textoDoAviso, type VultoMais } from "@/lib/vultoMais";
 
 /** Vulto+ na área do cliente: o programa de pontos da Casa Lorenzi+ (uma conta, um login). */
 export function VultoMaisConta() {
@@ -27,6 +27,8 @@ export function VultoMaisConta() {
   if (!modoApi) return <p className="text-suave">O saldo de pontos aparece quando a loja está ligada ao sistema.</p>;
   if (erro) return <p className="text-suave">Não foi possível carregar seus pontos agora. {erro}</p>;
   if (!dados) return <p className="text-suave">Carregando seus pontos...</p>;
+
+  const aviso = textoDoAviso(dados);
 
   return (
     <div className="grid gap-10 md:grid-cols-[minmax(0,420px)_1fr]">
@@ -64,6 +66,11 @@ export function VultoMaisConta() {
             O programa de pontos da Casa Lorenzi+: vale nas lojas Casa Lorenzi e Vulto e no site. Uma conta, um login.
           </p>
         </section>
+        {aviso ? (
+          <p role="status" className="border border-ferrugem/40 bg-papel p-4 text-[14px] text-tinta">
+            <b className="font-medium">{aviso}.</b> Use antes que expirem.
+          </p>
+        ) : null}
         <p className="flex items-start gap-3 border border-linha bg-papel p-4 text-[14px] text-suave">
           <SinalMais className="mt-1 text-[16px]" />
           <span>
