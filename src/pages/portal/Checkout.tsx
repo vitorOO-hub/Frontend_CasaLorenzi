@@ -15,6 +15,10 @@ import * as acoes from "@/lib/acoes";
 import { useSessao } from "@/lib/sessao";
 import { useEstado } from "@/lib/store";
 import { useAcao } from "@/lib/useAcao";
+import { useLorenziMais } from "@/hooks/useLorenziMais";
+import { SinalMais } from "@/components/marca";
+import { descontoDosPontos, maximoResgatavel, pontosDaCompra } from "@/lib/regrasLorenziMais";
+import { pontos as fmtPontos } from "@/lib/vultoMais";
 import { freteDe } from "./Sacola";
 
 const estados = "AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO".split(" ");
@@ -80,10 +84,19 @@ export function Checkout() {
   // Uma chave por tentativa de compra: duplo clique ou reenvio não criam dois pedidos.
   const [chave] = useState(novaChaveIdempotencia);
   const { executar, ocupado, erro } = useAcao();
+  const lorenziMais = useLorenziMais();
+  const [pontosEscolhidos, setPontosEscolhidos] = useState(0);
 
   const subtotal = carrinho.reduce((s, i) => s + i.valor * i.quantidade, 0);
   const frete = entrega === "loja" ? 0 : freteDe(subtotal);
-  const total = subtotal + frete;
+  // Lorenzi+: o desconto sai das peças (nunca do frete) e não passa do saldo.
+  const regras = lorenziMais?.regras;
+  const maximoDePontos = lorenziMais ? maximoResgatavel(lorenziMais.saldo, subtotal, regras) : 0;
+  const pontosUsados = Math.min(pontosEscolhidos, maximoDePontos);
+  const desconto = descontoDosPontos(pontosUsados, regras);
+  const total = subtotal - desconto + frete;
+  const pontosGanhos = pontosDaCompra(total, true, regras);
+  const [ganhou, setGanhou] = useState<number | null>(null);
   const codigoPix = `00020126BR.GOV.BCB.PIX.CASALORENZI520400005303986540${total.toFixed(2)}5802BR5913CASA LORENZI6009SAO PAULO6304LRZI`;
   const lojasParaEscolher = lojasApi.length
     ? lojasApi.map((loja) => ({
@@ -157,6 +170,12 @@ export function Checkout() {
             ? `Suas peças ficam prontas em dois dias úteis na casa ${casa.nome}. O alfaiate faz o ajuste na hora da retirada.`
             : "Suas peças já estão sendo separadas no ateliê. Mandamos o código de rastreio assim que saírem."}
         </p>
+        {ganhou ? (
+          <p className="mt-5 flex items-center justify-center gap-2 text-[15px] text-suave">
+            <SinalMais className="text-[15px]" />
+            Esta compra rendeu {fmtPontos(ganhou)} pontos Lorenzi+.
+          </p>
+        ) : null}
         <p className="mt-6 font-mao text-[14px] leading-relaxed text-caramelo">— com carinho, Casa Lorenzi</p>
         <Link to="/conta/pedidos" className={cn(botaoLoja(), "mt-10")}>
           Acompanhar o pedido
@@ -203,9 +222,11 @@ export function Checkout() {
                         }
                       : null,
                   itens,
+                  pontos_resgatados: pontosUsados || undefined,
                 },
                 chave,
               );
+              setGanhou(lorenziMais ? pontosGanhos : null);
               setPedido(novo.numero_pedido);
               await acoes.limparCarrinho();
             } else {
@@ -335,11 +356,28 @@ export function Checkout() {
               <dt className="text-suave">Ajustes</dt>
               <dd>por nossa conta</dd>
             </div>
+            {desconto > 0 ? (
+              <div className="flex justify-between">
+                <dt className="text-suave">Pontos Lorenzi+ ({fmtPontos(pontosUsados)})</dt>
+                <dd>− {moeda(desconto)}</dd>
+              </div>
+            ) : null}
           </dl>
           <div className="alinhavo mt-4 flex items-baseline justify-between pt-4">
             <span>Total</span>
             <span className="font-display text-[34px]">{moeda(total)}</span>
           </div>
+          {lorenziMais ? (
+            <ResgateDePontos
+              saldo={lorenziMais.saldo}
+              maximo={maximoDePontos}
+              passo={lorenziMais.regras.multiplo_de_resgate}
+              reaisA100={lorenziMais.regras.reais_a_cada_100_pontos}
+              usados={pontosUsados}
+              onUsar={setPontosEscolhidos}
+              ganhos={pontosGanhos}
+            />
+          ) : null}
           {erroLojas ? <p role="alert" className="mt-6 text-sm text-perigo">{erroLojas}</p> : null}
           {erro ? <p role="alert" className="mt-6 text-sm text-perigo">{erro}</p> : null}
           <button type="submit" disabled={ocupado !== null || aguardandoLojas || Boolean(erroLojas)} className={cn(botaoLoja(), "mt-6 w-full")}>
@@ -349,5 +387,61 @@ export function Checkout() {
         </aside>
       </form>
     </div>
+  );
+}
+
+/** Lorenzi+ no fechamento: quanto usar do saldo (múltiplos de 100) e quanto a compra rende. */
+function ResgateDePontos({
+  saldo,
+  maximo,
+  passo,
+  reaisA100,
+  usados,
+  onUsar,
+  ganhos,
+}: {
+  saldo: number;
+  maximo: number;
+  passo: number;
+  reaisA100: number;
+  usados: number;
+  onUsar: (pontos: number) => void;
+  ganhos: number;
+}) {
+  return (
+    <section aria-label="Pontos Lorenzi+" className="alinhavo mt-5 space-y-3 pt-4 text-[14px]">
+      <p className="flex items-center gap-1.5 font-medium">
+        Lorenzi
+        <SinalMais className="text-[14px]" />
+        <span className="ml-auto font-normal text-suave">saldo {fmtPontos(saldo)} pts</span>
+      </p>
+      {maximo > 0 ? (
+        <label className="block">
+            <span className="mb-1 block text-suave">
+              Usar pontos (R$ {reaisA100} a cada 100)
+            </span>
+            <span className="flex items-center gap-2">
+              <input
+                type="number"
+                min={0}
+                max={maximo}
+                step={passo}
+                value={usados}
+                onChange={(e) => {
+                  const n = Math.floor(Number(e.target.value) / passo) * passo;
+                  onUsar(Number.isFinite(n) ? Math.max(0, Math.min(n, maximo)) : 0);
+                }}
+                className={cn(campoLoja, "w-32 py-2")}
+              />
+              <button type="button" onClick={() => onUsar(usados === maximo ? 0 : maximo)} className="text-sm underline underline-offset-4 hover:text-caramelo">
+                {usados === maximo ? "Não usar" : `Usar ${fmtPontos(maximo)}`}
+              </button>
+            </span>
+        </label>
+      ) : (
+        <p className="text-suave">Com {fmtPontos(passo)} pontos você já ganha R$ {reaisA100} de desconto.</p>
+      )}
+      <p className="text-suave">Esta compra rende {fmtPontos(ganhos)} pontos (no site, em dobro).</p>
+    </section>
   );
 }
