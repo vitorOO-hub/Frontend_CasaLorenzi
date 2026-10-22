@@ -104,7 +104,11 @@ export function Cliente() {
                   <td className={td}>{c.categoria.nome}</td>
                   <td className={td}>{dataBRdoIso(c.aberto_em)}</td>
                   <td className={td}>
-                    <Badge tom={tomStatus(c.status.codigo)}>{c.status.nome}</Badge>
+                    <span className="flex flex-wrap items-center gap-1.5">
+                      <Badge tom={tomStatus(c.status.codigo)}>{c.status.nome}</Badge>
+                      {/* Importado do histórico da Vulto: fica fora da fila até chegar mensagem nova. */}
+                      {c.historico_vulto ? <Badge>Histórico Vulto</Badge> : null}
+                    </span>
                   </td>
                 </tr>
               ))}
