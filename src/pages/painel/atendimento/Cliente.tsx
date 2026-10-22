@@ -5,7 +5,7 @@ import { useFichaCliente, useVultoMaisDaFicha } from "@/hooks/useClientes";
 import { ehUuid, type VultoMaisDaFicha } from "@/lib/clientesApi";
 import { tomStatusPedido } from "@/lib/clientesUi";
 import { dataBRdoIso, moedaBR, tomStatus } from "@/lib/chamadosUi";
-import { pontos as fmtPontos, rotuloTipo } from "@/lib/vultoMais";
+import { pontos as fmtPontos, rotuloTipo, textoDoAviso } from "@/lib/vultoMais";
 
 /** Ficha do cliente: contato, chamados do escopo e, só para gerente e admin, compras e valores. */
 export function Cliente() {
@@ -145,6 +145,7 @@ function CartaoVultoMais({ dados, erro }: { dados: VultoMaisDaFicha | null; erro
     );
   }
   const vemValor = dados.resgates.some((r) => r.desconto !== null);
+  const aviso = textoDoAviso(dados);
   return (
     <Card>
       <CardTitulo
@@ -169,6 +170,11 @@ function CartaoVultoMais({ dados, erro }: { dados: VultoMaisDaFicha | null; erro
         />
         <Metrica rotulo="Loja de cadastro" valor={dados.loja_cadastro ?? "—"} />
       </div>
+      {aviso ? (
+        <p role="status" className="mx-5 mb-4 border-l-2 border-alerta pl-3 text-sm text-alerta">
+          {aviso}
+        </p>
+      ) : null}
       <Tabela>
         <thead>
           <tr>
