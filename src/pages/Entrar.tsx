@@ -129,13 +129,13 @@ export function Entrar() {
           <h1 className="text-[44px] leading-none">
             {ativando ? "Ative sua conta" : criando ? "Crie sua conta" : "Entre na sua conta"}
           </h1>
-          <p className="mt-2 text-sm text-suave">
-            {ativando
-              ? "Já é cliente e ainda não tem senha? Informe seu CPF para criar o acesso."
-              : criando
-                ? "Cadastro para clientes. Seus dados e pedidos ficam só na sua conta."
-                : "Clientes e equipe Casa Lorenzi entram por aqui. Navegar pela coleção não exige login."}
-          </p>
+          {ativando || criando ? (
+            <p className="mt-2 text-sm text-suave">
+              {ativando
+                ? "Já é cliente e ainda não tem senha? Informe seu CPF para criar o acesso."
+                : "Cadastro para clientes. Seus dados e pedidos ficam só na sua conta."}
+            </p>
+          ) : null}
           {aviso ? <p className="mt-4 text-sm text-tabaco">{aviso}</p> : null}
 
           {ativando ? (

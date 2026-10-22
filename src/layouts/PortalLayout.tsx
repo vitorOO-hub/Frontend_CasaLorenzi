@@ -33,6 +33,12 @@ export function Marca({ claro = false, grande = false, className }: { claro?: bo
 
 type SecaoMenu = { id: string; rotulo: string; to: string; itens: [string, string][]; destaque: { foto: string; legenda: string; to: string } };
 
+/** /loja é das duas marcas: só marca Linha Lorenzi (ou Vulto) quando o filtro de marca diz qual. */
+const secaoDaLoja = (search: string) => {
+  const marca = new URLSearchParams(search).get("marca");
+  return marca === "casa-lorenzi" ? "lorenzi" : marca === "vulto" ? "vulto" : "destaques";
+};
+
 export function PortalLayout() {
   const sessao = useSessao();
   const estado = useEstado();
@@ -110,7 +116,7 @@ export function PortalLayout() {
     },
   ];
 
-  const secaoDaRota = secoesMenu.find((m) => m.itens.some(([, to]) => to.split("?")[0] === pathname && pathname !== "/loja"))?.id ?? (pathname === "/loja" ? "lorenzi" : null);
+  const secaoDaRota = secoesMenu.find((m) => m.itens.some(([, to]) => to.split("?")[0] === pathname && pathname !== "/loja"))?.id ?? (pathname === "/loja" ? secaoDaLoja(search) : null);
   const secaoPainel = secoesMenu.find((m) => m.id === painelAberto);
   const secaoMarcada = escolhida?.rota === rota ? escolhida.id : secaoDaRota;
   // Quem entra pela loja volta para a página onde estava, já logado (ver destinoAposLogin).
