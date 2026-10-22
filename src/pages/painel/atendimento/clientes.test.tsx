@@ -20,6 +20,11 @@ vi.mock("@/hooks/useClientes", () => {
     chamados_em_aberto: n === 1 ? 2 : 0,
     compras: gestao ? 4 : null,
     total_gasto: gestao ? 1234.5 : null,
+    // Cliente 2 veio da Vulto e está no Vulto+; o 1 está fora do programa.
+    id_loja_cadastro: n === 1 ? null : "l-9",
+    loja_cadastro: n === 1 ? null : "vulto pinheiros",
+    saldo_pontos: n === 1 ? null : 6200,
+    categoria_vulto_mais: n === 1 ? null : "ouro",
   });
   const ficha = (gestao: boolean) => ({
     cliente: { ...cliente(1, gestao) },
@@ -57,6 +62,14 @@ vi.mock("@/hooks/useClientes", () => {
         ? { dados: { total: 0, itens: [] }, carregando: false, erro: null, recarregar: () => undefined }
         : resposta({ total: 2, itens: [cliente(1, gestao), cliente(2, gestao)] });
     },
+    useOpcoesClientes: () =>
+      resposta({
+        lojas_cadastro: [{ id_loja: "l-9", nome: "vulto pinheiros" }],
+        categorias: [
+          { codigo: "ouro", nome: "Ouro" },
+          { codigo: "sem_pontos", nome: "Sem pontos" },
+        ],
+      }),
     useFichaCliente: () => resposta(ficha(estado.papel === "gerente_loja")),
     // Vulto+: o servidor manda o valor do resgate só para a gestão.
     useVultoMaisDaFicha: () =>
@@ -129,6 +142,11 @@ describe("lista de clientes", () => {
     expect(html).toContain("(2 em aberto)");
     expect(html).toContain("Barra"); // o admin pode filtrar por loja quando há mais de uma
     expect(erros).toEqual([]);
+  });
+
+  it("mostra loja de cadastro e Vulto+ e oferece os filtros", () => {
+    const html = tela(<Clientes />);
+    for (const t of ["Loja de cadastro", "vulto pinheiros", "Ouro", "6.200 pts", "Sem pontos"]) expect(html).toContain(t);
   });
 
   it("atendente não vê as colunas de compras nem valores", () => {

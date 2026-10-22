@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import {
   buscarFicha,
+  buscarOpcoesClientes,
   buscarVultoMaisDaFicha,
   ehUuid,
   listarClientes,
   type FichaCliente,
   type FiltrosClientes,
   type ListaClientes,
+  type OpcoesClientes,
   type VultoMaisDaFicha,
 } from "@/lib/clientesApi";
 import { useConsulta, type Consulta } from "./useChamados";
@@ -23,6 +25,10 @@ export function useAtraso<T>(valor: T, ms = 350): T {
 
 export const useListaClientes = (filtros: FiltrosClientes): Consulta<ListaClientes> =>
   useConsulta((sinal) => listarClientes(filtros, { sinal }), JSON.stringify(filtros));
+
+/** Lojas de cadastro e categorias Vulto+ para os filtros da lista. */
+export const useOpcoesClientes = (): Consulta<OpcoesClientes> =>
+  useConsulta((sinal) => buscarOpcoesClientes({ sinal }), "clientes:opcoes");
 
 /** Ficha do cliente. Id que não é um UUID nem chega a consultar o servidor. */
 export const useFichaCliente = (id: string | undefined): Consulta<FichaCliente> =>
