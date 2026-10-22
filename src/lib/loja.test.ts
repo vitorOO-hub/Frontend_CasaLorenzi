@@ -9,8 +9,8 @@ describe("conteúdo editorial da loja", () => {
     expect(detalheDe("CL-CAM-LIN-BR-P").tecido).toContain("linho");
   });
 
-  it("usa uma imagem segura para SKU ainda sem equivalência", () => {
+  it("SKU sem foto própria não ganha a foto de outra peça", () => {
     expect(tipoDe("produto-sem-imagem")).toBe("Outros");
-    expect(fotoEstudio("produto-sem-imagem")).toBe("/img/produtos/CL-0101.jpg");
+    expect(fotoEstudio("produto-sem-imagem")).toBeUndefined();
   });
 });

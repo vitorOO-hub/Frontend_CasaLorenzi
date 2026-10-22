@@ -35,11 +35,34 @@ export const FotoCampanha = ({ id, largura, ...props }: { id: string; largura?: 
   <Foto src={unsplash(id, largura)} {...props} />
 );
 
+/** Peça ainda sem foto: quadro neutro com a marca, em vez da foto de outra peça. */
+export function SemFoto({ produto, className }: { produto: Pick<Produto, "marca" | "nome">; className?: string }) {
+  return (
+    <div
+      role="img"
+      aria-label={`${produto.nome}: foto em breve`}
+      className={cn("flex h-full w-full flex-col items-center justify-center gap-2 bg-areia text-suave", className)}
+    >
+      {ehVulto(produto) ? (
+        <span className="text-[13px] font-semibold uppercase tracking-[0.22em] text-tinta">Vulto</span>
+      ) : (
+        <span className="font-display text-[18px] text-tinta">Casa Lorenzi</span>
+      )}
+      <span className="text-[11px] uppercase tracking-[0.14em]">foto em breve</span>
+    </div>
+  );
+}
+
 /** Foto de estúdio da peça (packshot), usada em listas compactas. */
 export function FotoProduto({ sku, src, alt, className }: { sku: string; src?: string | null; alt: string; className?: string }) {
+  const foto = src || fotoEstudio(sku);
   return (
     <div className={cn("overflow-hidden bg-areia", className)}>
-      <img src={src || fotoEstudio(sku)} alt={alt} loading="lazy" className="h-full w-full object-cover" />
+      {foto ? (
+        <img src={foto} alt={alt} loading="lazy" className="h-full w-full object-cover" />
+      ) : (
+        <SemFoto produto={{ nome: alt, marca: null }} />
+      )}
     </div>
   );
 }
@@ -82,7 +105,8 @@ export function Legenda({ destaque, children, className }: { destaque?: string; 
 
 /** Nome completo da peça: nome + tecido em itálico. */
 export function NomePeca({ produto, className }: { produto: Produto; className?: string }) {
-  const tecido = produto.tecido ?? detalheDe(produto.sku).tecido;
+  // Peça sem ficha (linha Vulto sem foto) não ganha tecido de exemplo.
+  const tecido = produto.tecido ?? (produto.semFoto ? undefined : detalheDe(produto.sku).tecido);
   return (
     <span className={cn("font-display leading-tight", className)}>
       {produto.nome} {tecido ? <em className="text-suave">{tecido}</em> : null}
@@ -102,19 +126,23 @@ export function CartaoProduto({
 }) {
   const cores = produto.cores?.length ? produto.cores : detalheDe(produto.sku).cores;
   const esgotado = !produtoTemEstoque(produto);
-  const estudio = produto.imagemUrl ?? fotoEstudio(produto.sku);
-  const vestida = produto.imagemVestidaUrl ?? fotoVestida(produto.sku, grande ? 1400 : 800);
+  const estudio = produto.imagemUrl ?? (produto.semFoto ? undefined : fotoEstudio(produto.sku));
+  const vestida = produto.imagemVestidaUrl ?? (produto.semFoto ? undefined : fotoVestida(produto.sku, grande ? 1400 : 800));
   return (
     <Link to={`/loja/${produto.sku}`} className={cn("group block", grande && "lg:row-span-2")}>
       {/* Como num catálogo: a peça sozinha em fundo liso; ao passar o mouse, a peça vestida. */}
       <div className={cn("relative aspect-[4/5] overflow-hidden bg-areia", grande && "lg:aspect-auto lg:h-[calc(100%-132px)] lg:min-h-[620px]")}>
         {/* No cartão grande do catálogo a ordem se inverte: primeiro a foto vestida. */}
-        <img
-          src={grande && vestida ? vestida : estudio}
-          alt={produto.imagemAlt ?? produto.nome}
-          loading="lazy"
-          className={cn("h-full w-full", grande && vestida ? "object-cover" : "object-contain")}
-        />
+        {estudio || vestida ? (
+          <img
+            src={grande && vestida ? vestida : estudio}
+            alt={produto.imagemAlt ?? produto.nome}
+            loading="lazy"
+            className={cn("h-full w-full", grande && vestida ? "object-cover" : "object-contain")}
+          />
+        ) : (
+          <SemFoto produto={produto} />
+        )}
         {vestida ? (
           <img
             src={grande ? estudio : vestida}
