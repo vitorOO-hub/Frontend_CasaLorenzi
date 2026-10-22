@@ -28,6 +28,7 @@ export function useFiltros() {
     lojaIds,
     categoria: params.get("categoria") ?? "",
     canal: params.get("canal") ?? "",
+    marca: params.get("marca") ?? "",
     motivo: params.get("motivo") ?? "",
     loja: params.get("loja") ?? "",
     intervalo: intervalos(periodo),
