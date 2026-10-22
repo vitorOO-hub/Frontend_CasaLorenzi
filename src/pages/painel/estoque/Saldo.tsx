@@ -154,7 +154,7 @@ export function Saldo() {
           <Tabela>
             <thead>
               <tr>
-                <th className={th}>Peça</th>
+                <th className={cn(th, "min-w-[260px]")}>Peça</th>
                 <th className={th}>Categoria</th>
                 <th className={th}>Preço</th>
                 {porUnidade ? lojas.map((l) => <th key={l.id_loja} className={cn(th, "text-right")}>{nomeDaLoja(l.nome)}</th>) : null}
@@ -169,9 +169,9 @@ export function Saldo() {
                   onClick={() => navigate(`/painel/estoque/peca/${encodeURIComponent(p.sku)}`)}
                   className={linhaClicavel}
                 >
-                  <td className={td}>
+                  <td className={cn(td, "min-w-[260px]")}>
                     <div className="flex items-center gap-3">
-                      <FotoProduto sku={p.sku} alt="" className="h-10 w-8 shrink-0" />
+                      <FotoProduto sku={p.sku} alt={p.produto} compacta className="h-10 w-8 shrink-0" />
                       <div>
                         <p className="font-medium">
                           {p.produto} <span className="font-normal text-suave">· {detalheDaPeca(p)}</span>
