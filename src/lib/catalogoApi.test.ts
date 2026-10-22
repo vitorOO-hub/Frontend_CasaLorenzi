@@ -87,3 +87,20 @@ describe("estoque do catálogo", () => {
     expect((init!.headers as Record<string, string>).Authorization).toBeUndefined();
   });
 });
+
+describe("busca compartilhada do catálogo", () => {
+  it("quem pede junto recebe a mesma busca; depois que termina, a próxima busca de novo", async () => {
+    const { carregarCatalogoCompartilhado } = await import("./catalogoApi");
+    let chamadas = 0;
+    const buscar = () => {
+      chamadas += 1;
+      return Promise.resolve([]);
+    };
+    const [a, b] = [carregarCatalogoCompartilhado(buscar), carregarCatalogoCompartilhado(buscar)];
+    expect(a).toBe(b);
+    await a;
+    expect(chamadas).toBe(1);
+    await carregarCatalogoCompartilhado(buscar);
+    expect(chamadas).toBe(2);
+  });
+});
