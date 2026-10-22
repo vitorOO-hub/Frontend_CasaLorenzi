@@ -37,6 +37,17 @@ export type PecaMaisVendida = {
   faturamento: number;
 };
 
+/** Vendas de uma marca, pela marca da peça vendida (pedido com as duas marcas conta para as duas). */
+export type VendasDaMarca = {
+  marca: string;
+  faturamento: number;
+  pedidos: number;
+  pecas: number;
+  faturamento_anterior: number;
+};
+
+export type MesDaMarca = { mes: string; marca: string; faturamento: number };
+
 export type DashboardGerente = {
   periodo: { inicio: string; fim: string };
   periodo_anterior: { inicio: string; fim: string };
@@ -45,10 +56,13 @@ export type DashboardGerente = {
   serie_diaria: VendaDia[];
   movimento_semana: MovimentoDiaSemana[];
   pecas_mais_vendidas: PecaMaisVendida[];
+  marcas: VendasDaMarca[];
+  evolucao_marcas: MesDaMarca[];
   opcoes: {
     lojas: { id_loja: string; nome: string }[];
     canais: { codigo: string; nome: string }[];
     categorias: string[];
+    marcas: string[];
   };
   escopo: { papel: string; id_loja: string | null; loja_nome: string | null; pode_escolher_loja: boolean };
 };
@@ -84,9 +98,36 @@ export type FiltrosGerente = {
   idLoja?: string;
   categoria?: string;
   canal?: string;
+  marca?: string;
 };
 
 // ---------- Validação ----------
+
+/** Vendas por marca e evolução mensal; API anterior sem esses campos vira lista vazia. */
+export function validarMarcas(valor: unknown, campo = "marcas"): VendasDaMarca[] {
+  if (valor === undefined) return [];
+  return lista(valor, campo).map((v, i) => {
+    const m = objeto(v, `${campo}[${i}]`);
+    return {
+      marca: texto(m.marca, "marca"),
+      faturamento: numero(m.faturamento, "faturamento"),
+      pedidos: numero(m.pedidos, "pedidos"),
+      pecas: numero(m.pecas, "pecas"),
+      faturamento_anterior: numero(m.faturamento_anterior, "faturamento_anterior"),
+    };
+  });
+}
+
+export function validarEvolucaoMarcas(valor: unknown, campo = "evolucao_marcas"): MesDaMarca[] {
+  if (valor === undefined) return [];
+  return lista(valor, campo).map((v, i) => {
+    const m = objeto(v, `${campo}[${i}]`);
+    return { mes: texto(m.mes, "mes"), marca: texto(m.marca, "marca"), faturamento: numero(m.faturamento, "faturamento") };
+  });
+}
+
+export const validarListaDeMarcas = (valor: unknown, campo: string): string[] =>
+  valor === undefined ? [] : lista(valor, campo).map((v, i) => texto(v, `${campo}[${i}]`));
 
 function resumo(valor: unknown, campo: string): ResumoVendas {
   const o = objeto(valor, campo);
@@ -143,6 +184,8 @@ export function validarDashboardGerente(dados: unknown): DashboardGerente {
         faturamento: numero(p.faturamento, "faturamento"),
       };
     }),
+    marcas: validarMarcas(o.marcas),
+    evolucao_marcas: validarEvolucaoMarcas(o.evolucao_marcas),
     opcoes: {
       lojas: lista(opcoes.lojas, "opcoes.lojas").map((v, i) => {
         const l = objeto(v, `opcoes.lojas[${i}]`);
@@ -153,6 +196,7 @@ export function validarDashboardGerente(dados: unknown): DashboardGerente {
         return { codigo: texto(c.codigo, "codigo"), nome: texto(c.nome, "nome") };
       }),
       categorias: lista(opcoes.categorias, "opcoes.categorias").map((v, i) => texto(v, `opcoes.categorias[${i}]`)),
+      marcas: validarListaDeMarcas(opcoes.marcas, "opcoes.marcas"),
     },
     escopo: {
       papel: texto(escopo.papel, "escopo.papel"),
@@ -206,7 +250,7 @@ export const buscarDashboardGerente = (f: FiltrosGerente, o?: OpcoesApi) =>
   api.get(
     `${BASE}/dashboard`,
     validarDashboardGerente,
-    { inicio: f.inicio, fim: f.fim, id_loja: f.idLoja, categoria: f.categoria, canal: f.canal },
+    { inicio: f.inicio, fim: f.fim, id_loja: f.idLoja, categoria: f.categoria, canal: f.canal, marca: f.marca },
     o,
   );
 

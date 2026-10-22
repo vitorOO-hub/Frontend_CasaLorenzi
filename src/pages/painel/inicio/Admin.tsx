@@ -13,6 +13,7 @@ import { useDashboardRede, type DadosRede } from "@/hooks/useDashboardRede";
 import { COR_MARCA, baldes, serie, variacao, type Periodo } from "@/lib/analise";
 import { moeda } from "@/lib/dados";
 import { pendenciasDoGerente } from "@/lib/gerenciaUi";
+import { PainelMarcas, nomeDaMarca } from "./marcas";
 import { BarraFiltros, Cabecalho, FiltroSelect, Pendencias, SeletorUnidades, useFiltros } from "./comum";
 
 const CANAIS_DE_VENDA = ["loja", "online"];
@@ -29,6 +30,7 @@ export function DashboardAdmin() {
     idsLoja: f.lojaIds,
     categoria: f.categoria || undefined,
     canal,
+    marca: f.marca || undefined,
   });
   const opcoes = dados?.rede.opcoes;
   const unidades = (opcoes?.lojas ?? []).map((l, i) => ({
@@ -49,6 +51,13 @@ export function DashboardAdmin() {
           valor={f.categoria}
           onChange={(v) => f.definir("categoria", v)}
           opcoes={opcoes?.categorias ?? []}
+          todos="Todas"
+        />
+        <FiltroSelect
+          rotulo="Marca"
+          valor={f.marca}
+          onChange={(v) => f.definir("marca", v)}
+          opcoes={(opcoes?.marcas ?? []).map((m) => ({ value: m, label: nomeDaMarca(m) }))}
           todos="Todas"
         />
         <FiltroSelect
@@ -149,6 +158,8 @@ function Painel({ dados, periodo, cores }: { dados: DadosRede; periodo: Periodo;
           extra={<Variacao valor={respostaAtual && respostaAnterior ? variacao(respostaAtual, respostaAnterior) : null} inverter />}
         />
       </div>
+
+      <PainelMarcas marcas={rede.marcas} evolucao={rede.evolucao_marcas} />
 
       <CartaoGrafico
         className="mb-6"

@@ -33,7 +33,7 @@ export type EstadoGerente = {
  * quando o filtro muda. Atualiza sozinho a cada 2 minutos enquanto a aba está à vista.
  */
 export function useDashboardGerente(filtros: FiltrosGerente): EstadoGerente {
-  const { inicio, fim, idLoja, categoria, canal } = filtros;
+  const { inicio, fim, idLoja, categoria, canal, marca } = filtros;
   const [dados, setDados] = useState<DadosGerente | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -50,7 +50,7 @@ export function useDashboardGerente(filtros: FiltrosGerente): EstadoGerente {
         setErro(null);
       }
       Promise.all([
-        buscarDashboardGerente({ inicio, fim, idLoja, categoria, canal }, opcoes),
+        buscarDashboardGerente({ inicio, fim, idLoja, categoria, canal, marca }, opcoes),
         buscarReposicao({ idLoja, categoria, limite: 6 }, opcoes),
         buscarPendencias(idLoja, opcoes),
         buscarDashboard({ inicio, fim, idLoja }, opcoes),
@@ -80,7 +80,7 @@ export function useDashboardGerente(filtros: FiltrosGerente): EstadoGerente {
       controle.abort();
       clearInterval(relogio);
     };
-  }, [inicio, fim, idLoja, categoria, canal, tentativa]);
+  }, [inicio, fim, idLoja, categoria, canal, marca, tentativa]);
 
   const recarregar = useCallback(() => setTentativa((n) => n + 1), []);
   return { dados, carregando, erro, recarregar };
