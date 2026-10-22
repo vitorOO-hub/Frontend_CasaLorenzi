@@ -19,6 +19,8 @@ type ChamadoLista = {
   status: keyof typeof situacao;
   abertoEm: string;
   detalhe: string;
+  /** Conversa trazida do atendimento da Vulto. */
+  historico?: boolean;
 };
 
 function motivoDaCategoria(codigo: string): string {
@@ -44,6 +46,7 @@ function chamadoApiParaTela(chamado: ChamadoClienteApi): ChamadoLista {
     status: statusDaApi(chamado.status.codigo),
     abertoEm: chamado.aberto_em.slice(0, 10),
     detalhe: `última atualização em ${dataBR(ultima.slice(0, 10))}`,
+    historico: chamado.historico_vulto,
   };
 }
 
@@ -107,6 +110,7 @@ export function MeusChamados() {
                 <p className="font-display text-[22px] leading-tight">{c.assunto}</p>
                 <p className="mt-1 text-sm text-suave">
                   {c.protocolo} · {c.motivo} · desde {dataBR(c.abertoEm)} · {c.detalhe}
+                  {c.historico ? " · histórico Vulto" : null}
                 </p>
               </div>
               <span className={cn("text-sm", c.status === "Resolvido" ? "text-suave" : "text-caramelo")}>{situacao[c.status]}</span>

@@ -1,5 +1,5 @@
 import { api, type OpcoesApi } from "./api";
-import { lista, numero, objeto, opcao, texto, textoOuNulo, type Opcao } from "./validacao";
+import { booleanoOuPadrao, lista, numero, objeto, opcao, texto, textoOuNulo, type Opcao } from "./validacao";
 
 /** Tipos e chamadas da área de clientes do painel (espelham app/clientes/schemas.py do backend). */
 
@@ -33,7 +33,16 @@ export type FichaCliente = {
     total_gasto: number | null;
     ticket_medio: number | null;
   };
-  chamados: { id_atendimento: string; protocolo: string; assunto: string; categoria: Opcao; status: Opcao; aberto_em: string }[];
+  /** `historico_vulto`: atendimento importado do histórico da Vulto (fora das filas da equipe). */
+  chamados: {
+    id_atendimento: string;
+    protocolo: string;
+    assunto: string;
+    categoria: Opcao;
+    status: Opcao;
+    aberto_em: string;
+    historico_vulto: boolean;
+  }[];
   /** Só gerente e admin; para o atendente vem nulo. */
   compras:
     | { id_pedido: string; numero_pedido: string; criado_em: string; loja_nome: string; valor_total: number; status: Opcao }[]
@@ -111,6 +120,7 @@ export function validarFicha(dados: unknown): FichaCliente {
         categoria: opcao(c.categoria, "categoria"),
         status: opcao(c.status, "status"),
         aberto_em: texto(c.aberto_em, "aberto_em"),
+        historico_vulto: booleanoOuPadrao(c.historico_vulto, "historico_vulto"),
       };
     }),
     compras:

@@ -22,6 +22,9 @@ export const numeroOuNulo = (valor: unknown, campo: string): number | null =>
   valor === null ? null : numero(valor, campo);
 export const textoOuNulo = (valor: unknown, campo: string): string | null =>
   valor === null || valor === undefined ? null : texto(valor, campo);
+/** Booleano que pode não vir (versão anterior da API): ausente vale `padrao`. */
+export const booleanoOuPadrao = (valor: unknown, campo: string, padrao = false): boolean =>
+  valor === undefined || valor === null ? padrao : booleano(valor, campo);
 export const booleano = (valor: unknown, campo: string): boolean =>
   typeof valor === "boolean" ? valor : falha(campo);
 

@@ -1,5 +1,5 @@
 import { api } from "@/api/http";
-import { lista, numero, objeto, opcao, texto, textoOuNulo, type Opcao } from "./validacao";
+import { booleanoOuPadrao, lista, numero, objeto, opcao, texto, textoOuNulo, type Opcao } from "./validacao";
 
 export type OpcaoChamadoClienteApi = Opcao;
 
@@ -37,6 +37,8 @@ export type ChamadoClienteApi = {
   aberto_em: string;
   atualizado_em: string;
   ultima_mensagem_em: string | null;
+  /** Atendimento importado do histórico da Vulto. */
+  historico_vulto: boolean;
 };
 
 export type DetalheChamadoClienteApi = ChamadoClienteApi & {
@@ -106,6 +108,7 @@ export function validarChamadoCliente(dados: unknown): ChamadoClienteApi {
     aberto_em: texto(o.aberto_em, "aberto_em"),
     atualizado_em: texto(o.atualizado_em, "atualizado_em"),
     ultima_mensagem_em: textoOuNulo(o.ultima_mensagem_em, "ultima_mensagem_em"),
+    historico_vulto: booleanoOuPadrao(o.historico_vulto, "historico_vulto"),
   };
 }
 

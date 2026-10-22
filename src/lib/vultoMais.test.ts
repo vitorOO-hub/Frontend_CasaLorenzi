@@ -49,3 +49,12 @@ describe("Vulto+ na área do cliente", () => {
     expect(rotuloTipo("vencimento")).toBe("Vencimento");
   });
 });
+
+describe("atendimento do histórico da Vulto", () => {
+  it("marca ausente (API anterior) vale falso; marca presente precisa ser booleana", async () => {
+    const { booleanoOuPadrao } = await import("./validacao");
+    expect(booleanoOuPadrao(undefined, "historico_vulto")).toBe(false);
+    expect(booleanoOuPadrao(true, "historico_vulto")).toBe(true);
+    expect(() => booleanoOuPadrao("sim", "historico_vulto")).toThrow();
+  });
+});
