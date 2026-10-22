@@ -140,6 +140,58 @@ export function validarFicha(dados: unknown): FichaCliente {
   };
 }
 
+/** Vulto+ do cliente na ficha (GET /painel/clientes/{id}/vulto-mais). */
+export type VultoMaisDaFicha = {
+  saldo: number;
+  categoria: string;
+  creditos_no_ano: number;
+  proxima_categoria: string | null;
+  faltam_para_proxima: number | null;
+  loja_cadastro: string | null;
+  extrato: { ocorrido_em: string; tipo: string; pontos: number; descricao: string }[];
+  /** `desconto` (R$) só para gerente e admin; para o atendente vem nulo. */
+  resgates: {
+    resgatado_em: string;
+    pontos: number;
+    desconto: number | null;
+    loja_nome: string | null;
+    atendente: string | null;
+    observacao: string | null;
+  }[];
+};
+
+export function validarVultoMaisDaFicha(dados: unknown): VultoMaisDaFicha {
+  const o = objeto(dados, "vulto_mais");
+  return {
+    saldo: numero(o.saldo, "saldo"),
+    categoria: texto(o.categoria, "categoria"),
+    creditos_no_ano: numero(o.creditos_no_ano, "creditos_no_ano"),
+    proxima_categoria: textoOuNulo(o.proxima_categoria, "proxima_categoria"),
+    faltam_para_proxima: inteiroOuNulo(o.faltam_para_proxima, "faltam_para_proxima"),
+    loja_cadastro: textoOuNulo(o.loja_cadastro, "loja_cadastro"),
+    extrato: lista(o.extrato, "extrato").map((v, i) => {
+      const m = objeto(v, `extrato[${i}]`);
+      return {
+        ocorrido_em: texto(m.ocorrido_em, "ocorrido_em"),
+        tipo: texto(m.tipo, "tipo"),
+        pontos: numero(m.pontos, "pontos"),
+        descricao: texto(m.descricao, "descricao"),
+      };
+    }),
+    resgates: lista(o.resgates, "resgates").map((v, i) => {
+      const r = objeto(v, `resgates[${i}]`);
+      return {
+        resgatado_em: texto(r.resgatado_em, "resgatado_em"),
+        pontos: numero(r.pontos, "pontos"),
+        desconto: dinheiro(r.desconto, "desconto"),
+        loja_nome: textoOuNulo(r.loja_nome, "loja_nome"),
+        atendente: textoOuNulo(r.atendente, "atendente"),
+        observacao: textoOuNulo(r.observacao, "observacao"),
+      };
+    }),
+  };
+}
+
 // ---------- Chamadas ----------
 
 export const listarClientes = (f: FiltrosClientes, o?: OpcoesApi) =>
@@ -152,3 +204,6 @@ export const listarClientes = (f: FiltrosClientes, o?: OpcoesApi) =>
 
 export const buscarFicha = (id: string, idLoja?: string, o?: OpcoesApi) =>
   api.get(`${BASE}/${id}`, validarFicha, { id_loja: idLoja }, o);
+
+export const buscarVultoMaisDaFicha = (id: string, idLoja?: string, o?: OpcoesApi) =>
+  api.get(`${BASE}/${id}/vulto-mais`, validarVultoMaisDaFicha, { id_loja: idLoja }, o);

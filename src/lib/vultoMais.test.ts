@@ -58,3 +58,25 @@ describe("atendimento do histórico da Vulto", () => {
     expect(() => booleanoOuPadrao("sim", "historico_vulto")).toThrow();
   });
 });
+
+describe("Vulto+ na ficha do painel", () => {
+  it("valida a resposta da equipe; desconto nulo para o atendente", async () => {
+    const { validarVultoMaisDaFicha } = await import("./clientesApi");
+    const r = validarVultoMaisDaFicha({
+      saldo: 2000,
+      categoria: "prata",
+      creditos_no_ano: 2500,
+      proxima_categoria: "ouro",
+      faltam_para_proxima: 2500,
+      loja_cadastro: "vulto pinheiros",
+      extrato: [{ ocorrido_em: "2026-10-12T15:00:00-03:00", tipo: "credito", pontos: 2500, descricao: "compra" }],
+      resgates: [
+        { resgatado_em: "2026-10-13T15:00:00-03:00", pontos: 500, desconto: "25.00", loja_nome: "vulto pinheiros", atendente: "camila duarte", observacao: null },
+        { resgatado_em: "2026-10-14T15:00:00-03:00", pontos: 300, desconto: null, loja_nome: null, atendente: null, observacao: null },
+      ],
+    });
+    expect(r.resgates[0].desconto).toBe(25);
+    expect(r.resgates[1].desconto).toBeNull();
+    expect(r.loja_cadastro).toBe("vulto pinheiros");
+  });
+});
