@@ -104,3 +104,40 @@ describe("busca compartilhada do catálogo", () => {
     expect(chamadas).toBe(2);
   });
 });
+
+describe("peças Vulto sem foto no catálogo", () => {
+  const vulto = {
+    id_produto: "p-vulto",
+    nome: "cinto nylon",
+    marca: "vulto",
+    categoria: "acessório",
+    colecao: "atemporais",
+    preco_base: 139.9,
+    ativo: true,
+    imagem_url: null,
+    imagem_alt: null,
+    imagem_vestida_url: null,
+    tipo: null,
+    tecido: null,
+    tecelagem: null,
+    costurado_em: null,
+    nota: null,
+    cores: ["cinza mescla"],
+    variacao_produto: [
+      { id_variacao: "v1", sku: "VLT-ACE-001-CIN-U", cor: "cinza mescla", tamanho: "U", preco_venda: 139.9, ativa: true },
+    ],
+  };
+
+  it("entram marcadas sem foto, sem tecido ou origem inventados, com a amostra da cor", async () => {
+    const { produtoCatalogoDeLinha } = await import("./catalogoApi");
+    const p = produtoCatalogoDeLinha(vulto)!;
+    expect(p.semFoto).toBe(true);
+    expect([p.imagemUrl, p.tecido, p.tecelagem, p.costuradoEm]).toEqual([undefined, undefined, undefined, undefined]);
+    expect(p.cores).toEqual([{ nome: "cinza mescla", hex: "#9a9a9a" }]);
+  });
+
+  it("peça Casa Lorenzi sem foto continua de fora", async () => {
+    const { produtoCatalogoDeLinha } = await import("./catalogoApi");
+    expect(produtoCatalogoDeLinha({ ...vulto, marca: "casa lorenzi" })).toBeNull();
+  });
+});

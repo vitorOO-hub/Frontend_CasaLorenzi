@@ -2,6 +2,7 @@ import { AvisoErro, Badge, Botao, Card, Select, Tabela, Titulo, td, th } from "@
 import { useEquipe } from "@/hooks/useEquipe";
 import { mudarUsuario, type Cargo, type MudancaDeUsuario, type UsuarioDaEquipe } from "@/lib/gestaoApi";
 import { useAcao } from "@/lib/useAcao";
+import { opcoesDeLojas } from "@/lib/lojasAgrupadas";
 
 /** Time interno vindo do banco: cargo, unidade e acesso de cada pessoa (só o admin chega aqui). */
 export function Usuarios() {
@@ -67,7 +68,7 @@ export function Usuarios() {
                         onChange={(e) => alterar(u, { idLoja: e.target.value })}
                         disabled={ocupado === u.id_usuario || !opcoes}
                         className="w-48"
-                        opcoes={(opcoes?.lojas ?? []).map((l) => ({ value: l.id_loja, label: l.nome }))}
+                        opcoes={opcoesDeLojas(opcoes?.lojas ?? [])}
                       />
                     )}
                   </td>

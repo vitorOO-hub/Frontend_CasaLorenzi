@@ -5,9 +5,9 @@ import { mensagemDeErro } from "@/api/erros";
 import { SinalMais } from "@/components/marca";
 import { cn } from "@/components/ui";
 import { dataBR } from "@/lib/dados";
-import { obterVultoMais, pontos, rotuloTipo, type VultoMais } from "@/lib/vultoMais";
+import { obterVultoMais, pontos, rotuloTipo, textoDoAviso, type VultoMais } from "@/lib/vultoMais";
 
-/** Vulto+ na área do cliente: o programa de pontos da Casa Lorenzi+ (uma conta, um login). */
+/** Lorenzi+ (antigo Vulto+) na área do cliente: o programa de pontos da casa (uma conta, um login). */
 export function VultoMaisConta() {
   const modoApi = usandoApi();
   const [dados, setDados] = useState<VultoMais | null>(null);
@@ -28,10 +28,12 @@ export function VultoMaisConta() {
   if (erro) return <p className="text-suave">Não foi possível carregar seus pontos agora. {erro}</p>;
   if (!dados) return <p className="text-suave">Carregando seus pontos...</p>;
 
+  const aviso = textoDoAviso(dados);
+
   return (
     <div className="grid gap-10 md:grid-cols-[minmax(0,420px)_1fr]">
       <div className="space-y-4">
-        <section className="relative overflow-hidden bg-marinho p-7 text-creme" aria-label="Cartão Vulto+">
+        <section className="relative overflow-hidden bg-marinho p-7 text-creme" aria-label="Cartão Lorenzi+">
           <div className="flex items-start justify-between gap-4">
             <span className="flex items-end gap-[0.1em] font-display text-[22px] leading-[0.9]">
               <span>
@@ -42,7 +44,7 @@ export function VultoMaisConta() {
               <SinalMais claro className="mb-[0.06em]" />
             </span>
             <span className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-vulto-neon">
-              Vulto
+              Lorenzi
               <SinalMais claro className="text-[13px]" />
             </span>
           </div>
@@ -61,13 +63,18 @@ export function VultoMaisConta() {
             )}
           </div>
           <p className="mt-5 text-[13px] leading-relaxed text-creme/75">
-            O programa de pontos da Casa Lorenzi+: vale nas lojas Casa Lorenzi e Vulto e no site. Uma conta, um login.
+            Lorenzi+, o programa de pontos da casa: cada R$ 1 em compra vale 1 ponto, e no site vale o dobro. Vale nas lojas Casa Lorenzi e Vulto. Uma conta, um login.
           </p>
         </section>
+        {aviso ? (
+          <p role="status" className="border border-ferrugem/40 bg-papel p-4 text-[14px] text-tinta">
+            <b className="font-medium">{aviso}.</b> Use antes que expirem.
+          </p>
+        ) : null}
         <p className="flex items-start gap-3 border border-linha bg-papel p-4 text-[14px] text-suave">
           <SinalMais className="mt-1 text-[16px]" />
           <span>
-            <b className="font-medium text-tinta">Seus pontos Vulto+ continuam valendo.</b> Mesmo saldo de quem já era cliente Vulto; cada
+            <b className="font-medium text-tinta">Pontos do Vulto+ continuam valendo no Lorenzi+.</b> Mesmo saldo de quem já era cliente Vulto; cada
             crédito vale por 365 dias.
           </span>
         </p>

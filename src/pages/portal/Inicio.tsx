@@ -66,7 +66,7 @@ export function Inicio() {
       />
 
       {carregando || erro ? (
-        <section className="mx-auto max-w-[1440px] px-5 py-24 text-sm text-suave md:px-12">{carregando ? "Carregando peças..." : erro}</section>
+        <section className="mx-auto max-w-[1440px] px-5 py-24 text-sm text-suave md:px-12">{carregando ? "Carregando produtos..." : erro}</section>
       ) : (
         <FileiraProdutos titulo={`Novidades da Edição ${EDICAO.numero}`} produtos={novidades} para="/loja" />
       )}
@@ -74,22 +74,27 @@ export function Inicio() {
       {/* Linha Vulto: as peças urbanas dentro da loja, com entrada própria no menu. */}
       {linhaVulto.length ? <FileiraProdutos titulo="Linha Vulto" produtos={linhaVulto} para="/vulto" /> : null}
 
-      {/* Vulto+: o programa de pontos agora é da casa inteira. */}
+      {/* Lorenzi+ (antigo Vulto+): o programa de pontos da casa inteira. */}
       <section className="border-y border-dashed border-linha">
         <div className="mx-auto flex max-w-[1360px] flex-col gap-6 px-5 py-12 md:flex-row md:items-center md:justify-between md:px-12">
           <div className="flex items-center gap-5">
             <span className="flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-[0.18em] text-tinta">
-              Vulto
+              Lorenzi
               <SinalMais className="text-[22px]" />
             </span>
             <p className="max-w-xl font-display text-[24px] leading-snug">
-              Os pontos agora valem nas lojas Casa Lorenzi e Vulto e no site.{" "}
-              <span className="text-suave">Quem já era Vulto+ continua com o mesmo saldo.</span>
+              Toda compra vale pontos, nas lojas Casa Lorenzi e Vulto e no site.{" "}
+              <span className="text-suave">Quem já era Vulto+ continua com o mesmo saldo no Lorenzi+.</span>
             </p>
           </div>
-          <Link to="/conta/vulto-mais" className="link-tracejado shrink-0 text-sm">
-            Ver meus pontos
-          </Link>
+          <span className="flex shrink-0 flex-col items-start gap-2 text-sm md:items-end">
+            <Link to="/conta/lorenzi-mais" className="link-tracejado">
+              Ver meus pontos
+            </Link>
+            <Link to="/entrar?ativar=1" className="text-suave hover:text-tinta">
+              Já é cliente e não tem senha? Ative sua conta
+            </Link>
+          </span>
         </div>
       </section>
 

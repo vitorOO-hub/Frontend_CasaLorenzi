@@ -20,6 +20,7 @@ import {
   pendenciasDoGerente,
   selosDaReposicao,
 } from "@/lib/gerenciaUi";
+import { PainelMarcas, nomeDaMarca } from "./marcas";
 import { BarraFiltros, Cabecalho, FiltroSelect, Pendencias, useFiltros } from "./comum";
 
 const CANAIS_DE_VENDA = ["loja", "online"];
@@ -35,6 +36,7 @@ export function DashboardGerente() {
     fim,
     categoria: f.categoria || undefined,
     canal,
+    marca: f.marca || undefined,
   });
   const opcoes = dados?.vendas.opcoes;
 
@@ -51,6 +53,13 @@ export function DashboardGerente() {
           valor={f.categoria}
           onChange={(v) => f.definir("categoria", v)}
           opcoes={opcoes?.categorias ?? []}
+          todos="Todas"
+        />
+        <FiltroSelect
+          rotulo="Marca"
+          valor={f.marca}
+          onChange={(v) => f.definir("marca", v)}
+          opcoes={(opcoes?.marcas ?? []).map((m) => ({ value: m, label: nomeDaMarca(m) }))}
           todos="Todas"
         />
         <FiltroSelect
@@ -112,6 +121,8 @@ function Painel({ dados, periodo }: { dados: DadosGerente; periodo: Periodo }) {
           extra={<Variacao valor={respostaAtual && respostaAnterior ? variacao(respostaAtual, respostaAnterior) : null} inverter />}
         />
       </div>
+
+      <PainelMarcas marcas={vendas.marcas} evolucao={vendas.evolucao_marcas} />
 
       <div className="mb-6 grid gap-6 lg:grid-cols-[2fr_1fr]">
         <CartaoGrafico

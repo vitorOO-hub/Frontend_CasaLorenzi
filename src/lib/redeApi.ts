@@ -1,6 +1,15 @@
 import { api, type OpcoesApi } from "./api";
 import { lista, numero, numeroOuNulo, objeto, opcao, texto, textoOuNulo, type Opcao } from "./validacao";
-import type { PecaMaisVendida, ResumoVendas, VendaDia } from "./gerenciaApi";
+import {
+  validarEvolucaoMarcas,
+  validarListaDeMarcas,
+  validarMarcas,
+  type MesDaMarca,
+  type PecaMaisVendida,
+  type ResumoVendas,
+  type VendaDia,
+  type VendasDaMarca,
+} from "./gerenciaApi";
 
 /** Tipos e chamada do início do admin (espelham `DashboardRede` em app/gerencia/schemas.py). */
 
@@ -50,7 +59,9 @@ export type DashboardRede = {
   /** `pecas` são SKUs (peça + cor + tamanho); `produtos` são as peças do catálogo. */
   estoque: { unidades: number; pecas: number; produtos: number; pecas_esgotadas: number };
   unidades: UnidadeDaRede[];
-  opcoes: { lojas: { id_loja: string; nome: string }[]; canais: Opcao[]; categorias: string[] };
+  marcas: VendasDaMarca[];
+  evolucao_marcas: MesDaMarca[];
+  opcoes: { lojas: { id_loja: string; nome: string }[]; canais: Opcao[]; categorias: string[]; marcas: string[] };
 };
 
 export type FiltrosRede = {
@@ -59,6 +70,7 @@ export type FiltrosRede = {
   idsLoja?: string[];
   categoria?: string;
   canal?: string;
+  marca?: string;
 };
 
 function resumoVendas(valor: unknown, campo: string): ResumoVendas {
@@ -170,7 +182,10 @@ export function validarDashboardRede(dados: unknown): DashboardRede {
       }),
       canais: lista(opcoes.canais, "opcoes.canais").map((v, i) => opcao(v, `opcoes.canais[${i}]`)),
       categorias: lista(opcoes.categorias, "opcoes.categorias").map((v, i) => texto(v, `opcoes.categorias[${i}]`)),
+      marcas: validarListaDeMarcas(opcoes.marcas, "opcoes.marcas"),
     },
+    marcas: validarMarcas(o.marcas),
+    evolucao_marcas: validarEvolucaoMarcas(o.evolucao_marcas),
   };
 }
 
@@ -178,6 +193,6 @@ export const buscarDashboardRede = (f: FiltrosRede, o?: OpcoesApi) =>
   api.get(
     `${BASE}/rede`,
     validarDashboardRede,
-    { inicio: f.inicio, fim: f.fim, ids_loja: f.idsLoja, categoria: f.categoria, canal: f.canal },
+    { inicio: f.inicio, fim: f.fim, ids_loja: f.idsLoja, categoria: f.categoria, canal: f.canal, marca: f.marca },
     o,
   );

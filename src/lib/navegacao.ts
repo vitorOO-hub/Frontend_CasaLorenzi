@@ -104,6 +104,7 @@ export const secoes: Secao[] = [
       { to: "/painel/gestao/usuarios", rotulo: "Usuários", papeis: ["admin"] },
       { to: "/painel/gestao/auditoria", rotulo: "Auditoria", papeis: ["admin"] },
       { to: "/painel/gestao/integracoes", rotulo: "Integrações", papeis: ["admin"] },
+      { to: "/painel/gestao/vendas-pendentes", rotulo: "Vendas pendentes", papeis: ["admin"] },
     ],
   },
 ];

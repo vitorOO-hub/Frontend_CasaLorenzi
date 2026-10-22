@@ -30,6 +30,7 @@ import {
   observacaoDaMovimentacao,
   responsavelDaMovimentacao,
 } from "@/lib/estoquePainelUi";
+import { opcoesDeLojas } from "@/lib/lojasAgrupadas";
 
 const POR_PAGINA = 25;
 
@@ -143,7 +144,7 @@ export function Movimentacoes() {
             <Select
               value={loja}
               onChange={(e) => filtrar(setLoja)(e.target.value)}
-              opcoes={[{ value: "", label: "Todas" }, ...(opcoes.dados?.lojas ?? []).map((l) => ({ value: l.id_loja, label: l.nome }))]}
+              opcoes={opcoesDeLojas(opcoes.dados?.lojas ?? [], "Todas")}
             />
           </Campo>
         ) : null}

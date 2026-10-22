@@ -122,9 +122,11 @@ export const fotoVestida = (sku: string, largura = 900) => {
   return d.foto ? unsplash(d.foto, largura) : undefined;
 };
 
-export const fotoEstudio = (sku: string) => {
+/** Foto de estúdio da peça; sem foto própria, nada (a tela mostra "foto em breve", nunca a foto
+ * de outra peça). */
+export const fotoEstudio = (sku: string): string | undefined => {
   const editorial = skuEditorial(sku);
-  return `/img/produtos/${detalhes[editorial] ? editorial : "CL-0101"}.jpg`;
+  return detalhes[editorial] ? `/img/produtos/${editorial}.jpg` : undefined;
 };
 
 // ===================== Edição atual =====================

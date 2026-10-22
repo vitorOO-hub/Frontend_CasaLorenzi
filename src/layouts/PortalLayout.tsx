@@ -7,6 +7,7 @@ import { CAMPANHA, EDICAO, unsplash } from "@/lib/loja";
 import { sair, useSessao } from "@/lib/sessao";
 import { useProdutosCatalogo } from "@/lib/catalogoApi";
 import { useEstado } from "@/lib/store";
+import { categoriasUnicas } from "@/lib/categorias";
 import { ehVulto } from "@/lib/vultoMais";
 
 /** Marca Casa Lorenzi+ empilhada, alinhada à esquerda: "Casa / Lorenzi" com o + da Vulto. */
@@ -32,6 +33,12 @@ export function Marca({ claro = false, grande = false, className }: { claro?: bo
 
 type SecaoMenu = { id: string; rotulo: string; to: string; itens: [string, string][]; destaque: { foto: string; legenda: string; to: string } };
 
+/** /loja é das duas marcas: só marca Linha Lorenzi (ou Vulto) quando o filtro de marca diz qual. */
+const secaoDaLoja = (search: string) => {
+  const marca = new URLSearchParams(search).get("marca");
+  return marca === "casa-lorenzi" ? "lorenzi" : marca === "vulto" ? "vulto" : "destaques";
+};
+
 export function PortalLayout() {
   const sessao = useSessao();
   const estado = useEstado();
@@ -45,7 +52,7 @@ export function PortalLayout() {
   const [menuEm, setMenuEm] = useState<string | null>(null);
   const [buscaEm, setBuscaEm] = useState<string | null>(null);
   const [painel, setPainel] = useState<{ id: string; rota: string } | null>(null);
-  // Várias abas levam à mesma página (Destaques e Pronta-entrega abrem /loja): a barra marca a aba em que a pessoa clicou.
+  // Várias abas levam à mesma página (Destaques e Linha Lorenzi abrem /loja): a barra marca a aba em que a pessoa clicou.
   const [escolhida, setEscolhida] = useState<{ id: string; rota: string } | null>(null);
   const [termo, setTermo] = useState("");
   const [rolou, setRolou] = useState(false);
@@ -71,9 +78,10 @@ export function PortalLayout() {
     setTermo("");
   }
 
-  const categorias = Array.from(new Set(produtos.map((p) => p.categoria))).sort();
+  // Cada linha lista só as categorias das peças dela, sem repetir ("calca" e "calça" são uma só).
+  const categorias = categoriasUnicas(produtos.filter((p) => !ehVulto(p)).map((p) => p.categoria));
   // A linha Vulto entra no menu como uma seção da casa (como a Kanui dentro da Dafiti).
-  const categoriasVulto = Array.from(new Set(produtos.filter(ehVulto).map((p) => p.categoria))).sort();
+  const categoriasVulto = categoriasUnicas(produtos.filter(ehVulto).map((p) => p.categoria));
   const secoesMenu: SecaoMenu[] = [
     {
       id: "destaques",
@@ -83,17 +91,20 @@ export function PortalLayout() {
       destaque: { foto: unsplash(CAMPANHA.edicaoGrande, 700), legenda: `Edição ${EDICAO.numero} · ${EDICAO.nome}`, to: "/loja" },
     },
     {
-      id: "pronta",
-      rotulo: "Pronta-entrega",
-      to: "/loja",
-      itens: [["Ver tudo", "/loja"], ...categorias.map((c): [string, string] => [c, `/loja?categoria=${c}`])],
+      id: "lorenzi",
+      rotulo: "Linha Lorenzi",
+      to: "/loja?marca=casa-lorenzi",
+      itens: [
+        ["Ver toda a linha", "/loja?marca=casa-lorenzi"],
+        ...categorias.map((c): [string, string] => [c.rotulo, `/loja?marca=casa-lorenzi&categoria=${encodeURIComponent(c.valor)}`]),
+      ],
       destaque: { foto: unsplash(CAMPANHA.prontaEntrega, 700), legenda: "Casacos da estação", to: "/loja?categoria=Outerwear" },
     },
     {
       id: "vulto",
       rotulo: "Vulto",
       to: "/vulto",
-      itens: [["Ver toda a linha", "/vulto"], ...categoriasVulto.map((c): [string, string] => [c, `/vulto?categoria=${c}`])],
+      itens: [["Ver toda a linha", "/vulto"], ...categoriasVulto.map((c): [string, string] => [c.rotulo, `/vulto?categoria=${encodeURIComponent(c.valor)}`])],
       destaque: { foto: unsplash(CAMPANHA.prontaEntrega, 700), legenda: "Linha Vulto", to: "/vulto" },
     },
     {
@@ -105,7 +116,7 @@ export function PortalLayout() {
     },
   ];
 
-  const secaoDaRota = secoesMenu.find((m) => m.itens.some(([, to]) => to.split("?")[0] === pathname && pathname !== "/loja"))?.id ?? (pathname === "/loja" ? "pronta" : null);
+  const secaoDaRota = secoesMenu.find((m) => m.itens.some(([, to]) => to.split("?")[0] === pathname && pathname !== "/loja"))?.id ?? (pathname === "/loja" ? secaoDaLoja(search) : null);
   const secaoPainel = secoesMenu.find((m) => m.id === painelAberto);
   const secaoMarcada = escolhida?.rota === rota ? escolhida.id : secaoDaRota;
   // Quem entra pela loja volta para a página onde estava, já logado (ver destinoAposLogin).
@@ -159,8 +170,8 @@ export function PortalLayout() {
               <Search className="h-[17px] w-[17px]" strokeWidth={1.5} />
               <span className="hidden md:inline">Buscar</span>
             </button>
-            <Link to={cliente ? "/conta/vulto-mais" : contaLink} className="hidden items-center gap-1 hover:opacity-70 lg:flex" aria-label="Vulto+, programa de pontos">
-              Vulto
+            <Link to={cliente ? "/conta/lorenzi-mais" : contaLink} className="hidden items-center gap-1 hover:opacity-70 lg:flex" aria-label="Lorenzi+, programa de pontos">
+              Lorenzi
               <SinalMais claro={transparente} className="text-[15px]" />
             </Link>
             <Link to={contaLink} className="hidden hover:opacity-70 md:inline">
@@ -344,9 +355,10 @@ function Rodape() {
       "Comprar",
       [
         ["Edição 64 · Garoa", "/loja"],
-        ["Pronta-entrega", "/loja"],
+        ["Linha Lorenzi", "/loja?marca=casa-lorenzi"],
         ["Linha Vulto", "/vulto"],
-        ["Vulto+, programa de pontos", "/conta/vulto-mais"],
+        ["Lorenzi+, programa de pontos", "/conta/lorenzi-mais"],
+        ["Já era cliente Vulto+? Ative sua conta", "/entrar?ativar=1"],
       ],
     ],
     [

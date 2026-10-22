@@ -5,6 +5,7 @@ import { useDashboardAtendimento } from "@/hooks/useDashboardAtendimento";
 import { COR_MARCA, baldes, serie, variacao } from "@/lib/analise";
 import type { DashboardAtendimento, ItemFila } from "@/lib/atendimentoApi";
 import { BarraFiltros, Cabecalho, FiltroSelect, useFiltros } from "./comum";
+import { opcoesDeLojas } from "@/lib/lojasAgrupadas";
 
 const tomPrioridade = { urgente: "perigo", alta: "perigo", media: "alerta", baixa: "neutro" } as const;
 
@@ -37,7 +38,7 @@ export function DashboardAtendente() {
             rotulo="Loja"
             valor={f.loja}
             onChange={(v) => f.definir("loja", v)}
-            opcoes={d.opcoes.lojas.map((l) => ({ value: l.id_loja, label: l.nome }))}
+            opcoes={opcoesDeLojas(d.opcoes.lojas)}
             todos="Todas"
           />
         ) : null}

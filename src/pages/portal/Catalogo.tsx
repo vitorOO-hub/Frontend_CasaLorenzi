@@ -6,9 +6,12 @@ import { produtoTemEstoque } from "@/lib/dados";
 import { useProdutosCatalogo } from "@/lib/catalogoApi";
 import { EDICAO } from "@/lib/loja";
 import { useEstado } from "@/lib/store";
+import { mesmaCategoria, rotuloDaCategoria } from "@/lib/categorias";
 import { MARCAS_FILTRO, daMarca, type MarcaFiltro } from "@/lib/vultoMais";
 
 type Ordem = "edicao" | "menor" | "maior";
+
+const CARREGANDO = "Carregando produtos...";
 
 export function Catalogo() {
   const estado = useEstado();
@@ -22,14 +25,14 @@ export function Catalogo() {
 
   // Dentro de uma categoria, o topo mostra só os subtipos dela; trocar de categoria é pelo menu.
   const tipos = useMemo(
-    () => Array.from(new Set(produtos.filter((p) => p.categoria === categoria && p.tipo).map((p) => p.tipo!))).sort(),
+    () => Array.from(new Set(produtos.filter((p) => mesmaCategoria(p.categoria, categoria) && p.tipo).map((p) => p.tipo!))).sort(),
     [produtos, categoria],
   );
 
   // A busca também procura no tecido e no nome das cores ("linho", "Areia de Ipanema").
   const lista = produtos
     .filter((p) => daMarca(p, marca))
-    .filter((p) => !categoria || p.categoria === categoria)
+    .filter((p) => !categoria || mesmaCategoria(p.categoria, categoria))
     .filter((p) => !tipo || p.tipo === tipo)
     .filter((p) => {
       if (!busca) return true;
@@ -51,14 +54,15 @@ export function Catalogo() {
   }
 
   const semFiltro = !categoria && !tipo && !busca && !marca && ordem === "edicao";
-  const titulo = busca ? <>“{busca}”</> : tipo || categoria || EDICAO.nome;
+  const titulo = busca ? <>“{busca}”</> : tipo || rotuloDaCategoria(categoria) || EDICAO.nome;
+  const linha = marca === "vulto" ? "Linha Vulto" : marca === "casa-lorenzi" ? "Linha Lorenzi" : "Casa Lorenzi+";
 
   return (
     <div className="mx-auto max-w-[1360px] px-5 pt-10 md:px-12">
       <div className="grid gap-6 border-b border-dashed border-linha pb-10 md:grid-cols-[1fr_1fr] md:items-end">
         <div>
           <p className="text-[15px] text-caramelo">
-            Pronta-entrega · {categoria && tipo ? categoria : `Edição ${EDICAO.numero}`}
+            {linha} · {categoria && tipo ? rotuloDaCategoria(categoria) : `Edição ${EDICAO.numero}`}
           </p>
           <h1 className="mt-2 text-[56px] leading-none md:text-[76px]">
             {titulo}
@@ -66,15 +70,11 @@ export function Catalogo() {
           </h1>
         </div>
         <p className="font-display text-[19px] leading-normal text-suave md:text-right">
-          {lista.length} {lista.length === 1 ? "peça" : "peças"}. Todas com a barra e as mangas ajustadas na hora, em qualquer uma das três casas.
+          {carregando ? CARREGANDO : `${lista.length} ${lista.length === 1 ? "peça" : "peças"}.`} Todas com a barra e as mangas ajustadas na hora, em qualquer uma das três casas.
         </p>
       </div>
 
-      {carregando || erro ? (
-        <p className="border-b border-dashed border-linha py-3 text-sm text-suave">
-          {carregando ? "Carregando peças..." : erro}
-        </p>
-      ) : null}
+      {erro ? <p className="border-b border-dashed border-linha py-3 text-sm text-suave">{erro}</p> : null}
 
       <div className="flex items-center justify-between gap-6 py-6">
         {tipos.length > 1 ? (
@@ -91,7 +91,7 @@ export function Catalogo() {
                   tipo === t ? "border-tinta text-tinta" : "border-transparent text-suave hover:text-tinta",
                 )}
               >
-                {t || `Ver tudo em ${categoria}`}
+                {t || `Ver tudo em ${rotuloDaCategoria(categoria)}`}
               </button>
             ))}
           </nav>
@@ -147,7 +147,10 @@ export function Catalogo() {
           />
         ))}
       </div>
-      {lista.length === 0 ? (
+      {/* Enquanto carrega, a lista ainda está vazia: não é "nada encontrado". */}
+      {carregando ? (
+        <p className="py-24 text-center font-display text-2xl text-suave">{CARREGANDO}</p>
+      ) : lista.length === 0 && !erro ? (
         <p className="py-24 text-center font-display text-2xl text-suave">
           Nada com esse nome nesta edição. Que tal procurar por um tecido — “linho”, “merino”, “couro”?
         </p>

@@ -3,7 +3,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn() }));
 vi.mock("./api", () => ({ api }));
 
-import { buscarFicha, ehUuid, listarClientes, validarFicha, validarItemCliente, validarListaClientes } from "./clientesApi";
+import {
+  buscarFicha,
+  buscarOpcoesClientes,
+  ehUuid,
+  listarClientes,
+  validarFicha,
+  validarItemCliente,
+  validarListaClientes,
+  validarOpcoesClientes,
+} from "./clientesApi";
 
 const op = (codigo: string, nome = codigo) => ({ codigo, nome });
 
@@ -61,6 +70,24 @@ describe("validação das respostas de clientes", () => {
     expect(v).not.toHaveProperty("documento");
   });
 
+  it("item com Vulto+: loja de cadastro, saldo e categoria", () => {
+    const v = validarItemCliente({ ...item(), id_loja_cadastro: "l-1", loja_cadastro: "Vulto Centro", saldo_pontos: 6200, categoria_vulto_mais: "ouro" });
+    expect([v.loja_cadastro, v.saldo_pontos, v.categoria_vulto_mais]).toEqual(["Vulto Centro", 6200, "ouro"]);
+  });
+
+  it("item sem Vulto+ e sem os campos novos fica com nulos", () => {
+    const v = validarItemCliente(item());
+    expect([v.id_loja_cadastro, v.loja_cadastro, v.saldo_pontos, v.categoria_vulto_mais]).toEqual([null, null, null, null]);
+  });
+
+  it("opções: lojas de cadastro e categorias", () => {
+    const o = validarOpcoesClientes({ lojas_cadastro: [{ id_loja: "l-1", nome: "Vulto Centro" }], categorias: [op("ouro", "Ouro")] });
+    expect(o.lojas_cadastro[0]!.nome).toBe("Vulto Centro");
+    expect(o.categorias).toEqual([{ codigo: "ouro", nome: "Ouro" }]);
+    expect(o.marcas).toEqual([]); // backend antigo sem marcas
+    expect(() => validarOpcoesClientes({ lojas_cadastro: [{ nome: "x" }], categorias: [] })).toThrow();
+  });
+
   it("lista", () => {
     const l = validarListaClientes({ total: 1, itens: [item()] });
     expect(l.total).toBe(1);
@@ -108,6 +135,21 @@ describe("chamadas", () => {
     expect(caminho).toBe("/api/v1/painel/clientes");
     expect(validar).toBe(validarListaClientes);
     expect(parametros).toEqual({ busca: "helena", secao: "meus", id_loja: undefined, limit: 20, offset: 40 });
+  });
+
+  it("lista: manda os filtros do Vulto+", () => {
+    listarClientes({ secao: "todos", categoria: "ouro", idLojaCadastro: "6f1c3a52-6a4e-4c8e-9a39-0f1f2b6f2f10", marca: "vulto", limit: 20, offset: 0 });
+    const parametros = api.get.mock.calls[0]![2];
+    expect(parametros.categoria).toBe("ouro");
+    expect(parametros.marca).toBe("vulto");
+    expect(parametros.id_loja_cadastro).toBe("6f1c3a52-6a4e-4c8e-9a39-0f1f2b6f2f10");
+  });
+
+  it("opções dos filtros usam GET em /opcoes", () => {
+    buscarOpcoesClientes();
+    const [caminho, validar] = api.get.mock.calls[0]!;
+    expect(caminho).toBe("/api/v1/painel/clientes/opcoes");
+    expect(validar).toBe(validarOpcoesClientes);
   });
 
   it("busca só com espaços não é enviada", () => {

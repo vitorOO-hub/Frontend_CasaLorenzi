@@ -20,6 +20,11 @@ vi.mock("@/hooks/useClientes", () => {
     chamados_em_aberto: n === 1 ? 2 : 0,
     compras: gestao ? 4 : null,
     total_gasto: gestao ? 1234.5 : null,
+    // Cliente 2 veio da Vulto e está no Vulto+; o 1 está fora do programa.
+    id_loja_cadastro: n === 1 ? null : "l-9",
+    loja_cadastro: n === 1 ? null : "vulto pinheiros",
+    saldo_pontos: n === 1 ? null : 6200,
+    categoria_vulto_mais: n === 1 ? null : "ouro",
   });
   const ficha = (gestao: boolean) => ({
     cliente: { ...cliente(1, gestao) },
@@ -57,7 +62,42 @@ vi.mock("@/hooks/useClientes", () => {
         ? { dados: { total: 0, itens: [] }, carregando: false, erro: null, recarregar: () => undefined }
         : resposta({ total: 2, itens: [cliente(1, gestao), cliente(2, gestao)] });
     },
+    useOpcoesClientes: () =>
+      resposta({
+        lojas_cadastro: [{ id_loja: "l-9", nome: "vulto pinheiros" }],
+        categorias: [
+          { codigo: "ouro", nome: "Ouro" },
+          { codigo: "sem_pontos", nome: "Sem pontos" },
+        ],
+        marcas: [
+          { codigo: "casa_lorenzi", nome: "Casa Lorenzi" },
+          { codigo: "vulto", nome: "Vulto" },
+        ],
+      }),
     useFichaCliente: () => resposta(ficha(estado.papel === "gerente_loja")),
+    // Vulto+: o servidor manda o valor do resgate só para a gestão.
+    useVultoMaisDaFicha: () =>
+      resposta({
+        saldo: 2000,
+        categoria: "prata",
+        creditos_no_ano: 2500,
+        proxima_categoria: "ouro",
+        faltam_para_proxima: 2500,
+        loja_cadastro: "vulto pinheiros",
+        pontos_a_vencer: 800,
+        proximos_vencimentos: [{ vence_em: "2026-11-05T15:00:00Z", pontos: 800 }],
+        extrato: [{ ocorrido_em: "2026-10-12T15:00:00Z", tipo: "credito", pontos: 2500, descricao: "compra" }],
+        resgates: [
+          {
+            resgatado_em: "2026-10-13T15:00:00Z",
+            pontos: 500,
+            desconto: estado.papel === "gerente_loja" ? 25 : null,
+            loja_nome: "vulto pinheiros",
+            atendente: "camila duarte",
+            observacao: null,
+          },
+        ],
+      }),
   };
 });
 
@@ -110,6 +150,11 @@ describe("lista de clientes", () => {
     expect(erros).toEqual([]);
   });
 
+  it("mostra loja de cadastro e Vulto+ e oferece os filtros", () => {
+    const html = tela(<Clientes />);
+    for (const t of ["Loja de cadastro", "Marca do cadastro", "vulto pinheiros", "Ouro", "6.200 pts", "Sem pontos"]) expect(html).toContain(t);
+  });
+
   it("atendente não vê as colunas de compras nem valores", () => {
     const html = tela(<Clientes />);
     expect(html).not.toContain("Total gasto");
@@ -136,13 +181,15 @@ describe("ficha do cliente", () => {
     expect(html).toContain("Cliente 1");
     expect(html).toContain("AT-2026-0001");
     for (const proibido of ["Total gasto", "Ticket médio", "Compras", "PD-1", "R$"]) expect(html).not.toContain(proibido);
+    // Vulto+ aparece para o atendente, sem o valor dos resgates.
+    for (const t of ["Lorenzi+", "2.000 pts", "vulto pinheiros", "camila duarte", "800 pontos vencem nos próximos 30 dias (em 05/11)"]) expect(html).toContain(t);
     expect(erros).toEqual([]);
   });
 
   it("gerente vê as compras e os valores", () => {
     estado.papel = "gerente_loja";
     const html = ficha();
-    for (const t of ["Total gasto", "Ticket médio", "PD-1", "R$"]) expect(html).toContain(t);
+    for (const t of ["Total gasto", "Ticket médio", "PD-1", "R$", "Desconto"]) expect(html).toContain(t);
     expect(erros).toEqual([]);
   });
 

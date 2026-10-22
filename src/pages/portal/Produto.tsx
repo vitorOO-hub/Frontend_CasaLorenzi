@@ -3,12 +3,14 @@ import { useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { mensagemDeErro } from "@/api/erros";
 import { cn } from "@/components/ui";
-import { CartaoProduto, FichaTecnica, Foto, Legenda, NomePeca, Preco, botaoLoja, parcela } from "@/components/vitrine";
+import { CartaoProduto, FichaTecnica, Foto, Legenda, NomePeca, Preco, SemFoto, botaoLoja, parcela } from "@/components/vitrine";
 import { produtoTemEstoque, skuVariacao, tamanhosPorCategoria, totalProduto, totalVariacao } from "@/lib/dados";
 import { detalheDe, fotoEstudio, fotoVestida, type CorDaCasa } from "@/lib/loja";
 import { useProdutosCatalogo } from "@/lib/catalogoApi";
 import * as acoes from "@/lib/acoes";
 import { useEstado } from "@/lib/store";
+import { rotuloDaCategoria } from "@/lib/categorias";
+import { ehVulto } from "@/lib/vultoMais";
 
 export function Produto() {
   const { sku = "" } = useParams();
@@ -45,7 +47,7 @@ function DetalheProduto({ sku }: { sku: string }) {
 
   if (!produto) {
     if (carregando) {
-      return <p className="px-5 py-24 text-center font-display text-2xl text-suave">Carregando peça...</p>;
+      return <p className="px-5 py-24 text-center font-display text-2xl text-suave">Carregando...</p>;
     }
     return <Navigate to="/loja" replace />;
   }
@@ -64,9 +66,10 @@ function DetalheProduto({ sku }: { sku: string }) {
   const restantes = tamanhoSelecionado ? estoqueDo(tamanhoSelecionado) : disponivel;
   const variacaoSelecionada = variacoes.find((item) => item.tamanho === tamanhoSelecionado && item.cor === corSelecionada.nome);
   const podeAdicionar = tamanhoSelecionado && restantes > 0 && quantidade <= restantes;
-  const fotoPrincipal = produto.imagemUrl ?? fotoEstudio(produto.sku);
+  // Peça sem foto (linha Vulto) mostra "foto em breve", nunca a foto de outra peça.
+  const fotoPrincipal = produto.imagemUrl ?? (produto.semFoto ? undefined : fotoEstudio(produto.sku));
   const fotoPrincipalAlt = produto.imagemAlt ?? produto.nome;
-  const vestida = produto.imagemVestidaUrl ?? fotoVestida(produto.sku, 1400);
+  const vestida = produto.imagemVestidaUrl ?? (produto.semFoto ? undefined : fotoVestida(produto.sku, 1400));
   const combina = produtos
     .filter((p) => p.sku !== produto.sku && p.categoria !== produto.categoria && produtoTemEstoque(p))
     .slice(0, 3);
@@ -101,15 +104,20 @@ function DetalheProduto({ sku }: { sku: string }) {
       .catch((erro: unknown) => setErroSacola(mensagemDeErro(erro)));
   }
 
+  const vulto = ehVulto(produto);
+
   return (
     <div className="mx-auto max-w-[1360px] px-5 pt-8 md:px-12">
       <nav className="mb-6 text-sm text-suave">
-        <Link to="/loja" className="link-tracejado">
-          Pronta-entrega
+        <Link to={vulto ? "/vulto" : "/loja?marca=casa-lorenzi"} className="link-tracejado">
+          {vulto ? "Linha Vulto" : "Linha Lorenzi"}
         </Link>
         <span className="mx-2">·</span>
-        <Link to={`/loja?categoria=${produto.categoria}`} className="hover:text-tinta">
-          {produto.categoria}
+        <Link
+          to={vulto ? `/vulto?categoria=${encodeURIComponent(produto.categoria)}` : `/loja?marca=casa-lorenzi&categoria=${encodeURIComponent(produto.categoria)}`}
+          className="hover:text-tinta"
+        >
+          {rotuloDaCategoria(produto.categoria)}
         </Link>
       </nav>
 
@@ -117,7 +125,11 @@ function DetalheProduto({ sku }: { sku: string }) {
         {/* Fotos: a peça sozinha, a peça vestida e um detalhe */}
         <div className="grid grid-cols-2 gap-3">
           <div className="col-span-2 aspect-[4/5] overflow-hidden bg-areia">
-            <img src={fotoPrincipal} alt={fotoPrincipalAlt} className="h-full w-full object-contain" />
+            {fotoPrincipal ? (
+              <img src={fotoPrincipal} alt={fotoPrincipalAlt} className="h-full w-full object-contain" />
+            ) : (
+              <SemFoto produto={produto} />
+            )}
           </div>
           {vestida ? (
             <>
@@ -248,7 +260,7 @@ function DetalheProduto({ sku }: { sku: string }) {
           </ul>
 
           <div className="mt-10">
-            <FichaTecnica produto={produto} tamanho={tamanhoSelecionado || undefined} />
+            {produto.semFoto ? null : <FichaTecnica produto={produto} tamanho={tamanhoSelecionado || undefined} />}
           </div>
 
           <Link to={`/conta/atendimento/novo?sku=${produto.sku}`} className="link-tracejado mt-8 inline-block text-sm">

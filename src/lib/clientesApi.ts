@@ -1,4 +1,5 @@
 import { api, type OpcoesApi } from "./api";
+import { validarAvisoDeVencimento, type AvisoDeVencimento } from "./vencimentoPontos";
 import { booleanoOuPadrao, lista, numero, objeto, opcao, texto, textoOuNulo, type Opcao } from "./validacao";
 
 /** Tipos e chamadas da área de clientes do painel (espelham app/clientes/schemas.py do backend). */
@@ -20,6 +21,12 @@ export type ItemCliente = {
   /** Só gerente e admin; para o atendente vem nulo. */
   compras: number | null;
   total_gasto: number | null;
+  /** Loja em que o cliente se cadastrou (clientes vindos da Vulto trazem a loja de origem). */
+  id_loja_cadastro: string | null;
+  loja_cadastro: string | null;
+  /** Nulos quando o cliente não tem movimento de pontos (sem movimento no Lorenzi+). */
+  saldo_pontos: number | null;
+  categoria_vulto_mais: string | null;
 };
 
 export type ListaClientes = { total: number; itens: ItemCliente[] };
@@ -53,6 +60,11 @@ export type FiltrosClientes = {
   busca?: string;
   secao: SecaoClientes;
   idLoja?: string;
+  /** ouro, prata, bronze ou sem_pontos. */
+  categoria?: string;
+  idLojaCadastro?: string;
+  /** Marca do cadastro: casa_lorenzi ou vulto. */
+  marca?: string;
   limit: number;
   offset: number;
 };
@@ -91,6 +103,25 @@ export function validarItemCliente(dados: unknown): ItemCliente {
     chamados_em_aberto: numero(o.chamados_em_aberto, "chamados_em_aberto"),
     compras: inteiroOuNulo(o.compras, "compras"),
     total_gasto: dinheiro(o.total_gasto, "total_gasto"),
+    id_loja_cadastro: textoOuNulo(o.id_loja_cadastro, "id_loja_cadastro"),
+    loja_cadastro: textoOuNulo(o.loja_cadastro, "loja_cadastro"),
+    saldo_pontos: inteiroOuNulo(o.saldo_pontos, "saldo_pontos"),
+    categoria_vulto_mais: textoOuNulo(o.categoria_vulto_mais, "categoria_vulto_mais"),
+  };
+}
+
+/** Opções dos filtros da lista (GET /painel/clientes/opcoes). */
+export type OpcoesClientes = { lojas_cadastro: { id_loja: string; nome: string }[]; categorias: Opcao[]; marcas: Opcao[] };
+
+export function validarOpcoesClientes(dados: unknown): OpcoesClientes {
+  const o = objeto(dados, "opcoes");
+  return {
+    lojas_cadastro: lista(o.lojas_cadastro, "lojas_cadastro").map((v, i) => {
+      const l = objeto(v, `lojas_cadastro[${i}]`);
+      return { id_loja: texto(l.id_loja, "id_loja"), nome: texto(l.nome, "nome") };
+    }),
+    categorias: lista(o.categorias, "categorias").map((v, i) => opcao(v, `categorias[${i}]`)),
+    marcas: (o.marcas === undefined ? [] : lista(o.marcas, "marcas")).map((v, i) => opcao(v, `marcas[${i}]`)),
   };
 }
 
@@ -140,15 +171,82 @@ export function validarFicha(dados: unknown): FichaCliente {
   };
 }
 
+/** Lorenzi+ do cliente na ficha (GET /painel/clientes/{id}/vulto-mais). */
+export type VultoMaisDaFicha = AvisoDeVencimento & {
+  saldo: number;
+  categoria: string;
+  creditos_no_ano: number;
+  proxima_categoria: string | null;
+  faltam_para_proxima: number | null;
+  loja_cadastro: string | null;
+  extrato: { ocorrido_em: string; tipo: string; pontos: number; descricao: string }[];
+  /** `desconto` (R$) só para gerente e admin; para o atendente vem nulo. */
+  resgates: {
+    resgatado_em: string;
+    pontos: number;
+    desconto: number | null;
+    loja_nome: string | null;
+    atendente: string | null;
+    observacao: string | null;
+  }[];
+};
+
+export function validarVultoMaisDaFicha(dados: unknown): VultoMaisDaFicha {
+  const o = objeto(dados, "vulto_mais");
+  return {
+    saldo: numero(o.saldo, "saldo"),
+    categoria: texto(o.categoria, "categoria"),
+    creditos_no_ano: numero(o.creditos_no_ano, "creditos_no_ano"),
+    proxima_categoria: textoOuNulo(o.proxima_categoria, "proxima_categoria"),
+    faltam_para_proxima: inteiroOuNulo(o.faltam_para_proxima, "faltam_para_proxima"),
+    loja_cadastro: textoOuNulo(o.loja_cadastro, "loja_cadastro"),
+    ...validarAvisoDeVencimento(o),
+    extrato: lista(o.extrato, "extrato").map((v, i) => {
+      const m = objeto(v, `extrato[${i}]`);
+      return {
+        ocorrido_em: texto(m.ocorrido_em, "ocorrido_em"),
+        tipo: texto(m.tipo, "tipo"),
+        pontos: numero(m.pontos, "pontos"),
+        descricao: texto(m.descricao, "descricao"),
+      };
+    }),
+    resgates: lista(o.resgates, "resgates").map((v, i) => {
+      const r = objeto(v, `resgates[${i}]`);
+      return {
+        resgatado_em: texto(r.resgatado_em, "resgatado_em"),
+        pontos: numero(r.pontos, "pontos"),
+        desconto: dinheiro(r.desconto, "desconto"),
+        loja_nome: textoOuNulo(r.loja_nome, "loja_nome"),
+        atendente: textoOuNulo(r.atendente, "atendente"),
+        observacao: textoOuNulo(r.observacao, "observacao"),
+      };
+    }),
+  };
+}
+
 // ---------- Chamadas ----------
 
 export const listarClientes = (f: FiltrosClientes, o?: OpcoesApi) =>
   api.get(
     BASE,
     validarListaClientes,
-    { busca: f.busca?.trim() || undefined, secao: f.secao, id_loja: f.idLoja, limit: f.limit, offset: f.offset },
+    {
+      busca: f.busca?.trim() || undefined,
+      secao: f.secao,
+      id_loja: f.idLoja,
+      categoria: f.categoria,
+      id_loja_cadastro: f.idLojaCadastro,
+      marca: f.marca,
+      limit: f.limit,
+      offset: f.offset,
+    },
     o,
   );
 
+export const buscarOpcoesClientes = (o?: OpcoesApi) => api.get(`${BASE}/opcoes`, validarOpcoesClientes, undefined, o);
+
 export const buscarFicha = (id: string, idLoja?: string, o?: OpcoesApi) =>
   api.get(`${BASE}/${id}`, validarFicha, { id_loja: idLoja }, o);
+
+export const buscarVultoMaisDaFicha = (id: string, idLoja?: string, o?: OpcoesApi) =>
+  api.get(`${BASE}/${id}/vulto-mais`, validarVultoMaisDaFicha, { id_loja: idLoja }, o);

@@ -7,6 +7,7 @@ import type { OpcoesEstoque } from "@/lib/estoquePainelApi";
 import { quantidadeValida } from "@/lib/transferenciasUi";
 import { useAcao } from "@/lib/useAcao";
 import { AvisoErro, Botao, Campo, Modal, Select, inputClasses } from "./ui";
+import { opcoesDeLojas } from "@/lib/lojasAgrupadas";
 
 type Props = {
   aberto: boolean;
@@ -44,7 +45,7 @@ function useCamposComuns(opcoes: OpcoesEstoque, skuInicial?: string) {
       <Select
         value={lojaQuePede}
         onChange={(e) => setLojaQuePede(e.target.value)}
-        opcoes={opcoes.lojas.map((l) => ({ value: l.id_loja, label: l.nome }))}
+        opcoes={opcoesDeLojas(opcoes.lojas)}
       />
     </Campo>
   ) : (
@@ -127,7 +128,7 @@ export function ModalTransferenciaEstoque({ aberto, onFechar, opcoes, skuInicial
         {campos.campoPeca}
         <div className="grid grid-cols-2 gap-4">
           <Campo label="Trazer de">
-            <Select value={origem} onChange={(e) => setOrigemEscolhida(e.target.value)} opcoes={origens.map((l) => ({ value: l.id_loja, label: l.nome }))} />
+            <Select value={origem} onChange={(e) => setOrigemEscolhida(e.target.value)} opcoes={opcoesDeLojas(origens)} />
           </Campo>
           {campos.campoLoja}
         </div>
