@@ -78,7 +78,9 @@ export default function App() {
             <Route path="atendimento" element={<MeusChamados />} />
             <Route path="atendimento/novo" element={<NovoChamado />} />
             <Route path="atendimento/:id" element={<MeuChamado />} />
-            <Route path="vulto-mais" element={<VultoMaisConta />} />
+            <Route path="lorenzi-mais" element={<VultoMaisConta />} />
+            {/* Endereço antigo do programa (Vulto+), mantido para links já enviados. */}
+            <Route path="vulto-mais" element={<Navigate to="/conta/lorenzi-mais" replace />} />
             <Route path="perfil" element={<Perfil />} />
           </Route>
         </Route>

@@ -19,7 +19,7 @@ export function tomStatusPedido(codigo: string): Tom {
 
 export const POR_PAGINA_CLIENTES = 20;
 
-/** Categoria Vulto+ na lista (ouro, prata, bronze). */
+/** Categoria Lorenzi+ na lista (ouro, prata, bronze). */
 export const NOMES_CATEGORIA_VULTO: Record<string, string> = { ouro: "Ouro", prata: "Prata", bronze: "Bronze" };
 
 export function tomCategoriaVulto(codigo: string): Tom {

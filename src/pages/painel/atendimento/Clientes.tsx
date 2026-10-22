@@ -116,7 +116,7 @@ export function Clientes() {
           </Campo>
         ) : null}
         {categorias.length > 0 ? (
-          <Campo label="Vulto+" className="flex-1">
+          <Campo label="Lorenzi+" className="flex-1">
             <Select
               value={categoria}
               onChange={(e) => {
@@ -140,7 +140,7 @@ export function Clientes() {
                 <th className={th}>Telefone</th>
                 <th className={th}>Cidade</th>
                 <th className={th}>Loja de cadastro</th>
-                <th className={th}>Vulto+</th>
+                <th className={th}>Lorenzi+</th>
                 {gestor ? <th className={th}>Compras</th> : null}
                 {gestor ? <th className={th}>Total gasto</th> : null}
                 <th className={th}>Chamados</th>

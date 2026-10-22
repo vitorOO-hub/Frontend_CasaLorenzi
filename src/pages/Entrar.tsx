@@ -153,7 +153,7 @@ export function Entrar() {
               <Campo label="CPF">
                 <input {...campo("cpf", formatarCpf)} inputMode="numeric" placeholder="000.000.000-00" required />
                 <span className="mt-1 block text-xs text-suave">
-                  Já é cliente Vulto+?{" "}
+                  Já era cliente Vulto+?{" "}
                   <button type="button" onClick={abrirAtivacao} className="underline hover:text-tinta">
                     Ative sua conta
                   </button>{" "}

@@ -5,7 +5,7 @@ import { useSessao } from "@/lib/sessao";
 
 const abas = [
   { to: "/conta/pedidos", rotulo: "Meus pedidos" },
-  { to: "/conta/vulto-mais", rotulo: "Vulto+" },
+  { to: "/conta/lorenzi-mais", rotulo: "Lorenzi+" },
   { to: "/conta/atendimento", rotulo: "Conversas com a casa" },
   { to: "/conta/perfil", rotulo: "Meus dados" },
 ];
