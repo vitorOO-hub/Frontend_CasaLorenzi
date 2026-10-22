@@ -9,6 +9,8 @@ import { detalheDe, fotoEstudio, fotoVestida, type CorDaCasa } from "@/lib/loja"
 import { useProdutosCatalogo } from "@/lib/catalogoApi";
 import * as acoes from "@/lib/acoes";
 import { useEstado } from "@/lib/store";
+import { rotuloDaCategoria } from "@/lib/categorias";
+import { ehVulto } from "@/lib/vultoMais";
 
 export function Produto() {
   const { sku = "" } = useParams();
@@ -102,15 +104,20 @@ function DetalheProduto({ sku }: { sku: string }) {
       .catch((erro: unknown) => setErroSacola(mensagemDeErro(erro)));
   }
 
+  const vulto = ehVulto(produto);
+
   return (
     <div className="mx-auto max-w-[1360px] px-5 pt-8 md:px-12">
       <nav className="mb-6 text-sm text-suave">
-        <Link to="/loja" className="link-tracejado">
-          Pronta-entrega
+        <Link to={vulto ? "/vulto" : "/loja?marca=casa-lorenzi"} className="link-tracejado">
+          {vulto ? "Linha Vulto" : "Linha Lorenzi"}
         </Link>
         <span className="mx-2">·</span>
-        <Link to={`/loja?categoria=${produto.categoria}`} className="hover:text-tinta">
-          {produto.categoria}
+        <Link
+          to={vulto ? `/vulto?categoria=${encodeURIComponent(produto.categoria)}` : `/loja?marca=casa-lorenzi&categoria=${encodeURIComponent(produto.categoria)}`}
+          className="hover:text-tinta"
+        >
+          {rotuloDaCategoria(produto.categoria)}
         </Link>
       </nav>
 
