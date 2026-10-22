@@ -142,7 +142,8 @@ export function Campo({
 export const inputClasses =
   "w-full rounded-sm border border-linha bg-papel px-3 py-2 text-sm text-tinta outline-none transition-colors placeholder:text-suave/70 hover:border-marinho/40 focus:border-marinho focus:ring-2 focus:ring-marinho/10 [&[readonly]]:bg-areia/50 [&[readonly]]:text-suave";
 
-export type OpcaoSelect = { value: string; label: string };
+/** `grupo`: opções seguidas com o mesmo grupo ganham um título na lista (ex.: lojas por marca). */
+export type OpcaoSelect = { value: string; label: string; grupo?: string };
 
 /** Mesmo formato do evento do <select> nativo, para as telas lerem `e.target.value`. */
 export type MudancaSelect = { target: { value: string } };
@@ -243,8 +244,8 @@ export function Select({
   }, [aberto, fechar]);
 
   useEffect(() => {
-    if (aberto) lista.current?.children[ativa]?.scrollIntoView({ block: "nearest" });
-  }, [aberto, ativa]);
+    if (aberto) document.getElementById(`${base}-${ativa}`)?.scrollIntoView({ block: "nearest" });
+  }, [aberto, ativa, base]);
 
   function teclas(e: EventoTeclado<HTMLButtonElement>) {
     const ultimo = opcoes.length - 1;
@@ -290,7 +291,13 @@ export function Select({
     >
       {opcoes.map((o, i) => {
         const escolhida = i === indiceAtual;
-        return (
+        const novoGrupo = o.grupo && o.grupo !== opcoes[i - 1]?.grupo;
+        return [
+          novoGrupo ? (
+            <li key={`grupo-${o.grupo}`} role="presentation" className="rotulo px-4 pb-1 pt-3 text-[10px] first:pt-1">
+              {o.grupo}
+            </li>
+          ) : null,
           <li
             key={o.value}
             id={`${base}-${i}`}
@@ -308,8 +315,8 @@ export function Select({
           >
             {o.label}
             {escolhida ? <Check className={cn("h-3.5 w-3.5 shrink-0", v.marca)} strokeWidth={2} /> : null}
-          </li>
-        );
+          </li>,
+        ];
       })}
     </ul>
   );

@@ -25,6 +25,7 @@ import { NOMES_CATEGORIA_VULTO, POR_PAGINA_CLIENTES, SECOES_CLIENTES, tomCategor
 import { dataBRdoIso, moedaBR } from "@/lib/chamadosUi";
 import { podeAprovar, usePapel } from "@/lib/sessao";
 import { pontos } from "@/lib/vultoMais";
+import { opcoesDeLojas } from "@/lib/lojasAgrupadas";
 
 /**
  * Clientes do atendimento. As seções separam o trabalho de cada atendente: todos os clientes do
@@ -99,7 +100,7 @@ export function Clientes() {
                 setLoja(e.target.value);
                 setPagina(0);
               }}
-              opcoes={[{ value: "", label: "Todas" }, ...lojas.map((l) => ({ value: l.id_loja, label: l.nome }))]}
+              opcoes={opcoesDeLojas(lojas, "Todas")}
             />
           </Campo>
         ) : null}
@@ -111,7 +112,7 @@ export function Clientes() {
                 setLojaCadastro(e.target.value);
                 setPagina(0);
               }}
-              opcoes={[{ value: "", label: "Todas" }, ...lojasCadastro.map((l) => ({ value: l.id_loja, label: l.nome }))]}
+              opcoes={opcoesDeLojas(lojasCadastro, "Todas")}
             />
           </Campo>
         ) : null}

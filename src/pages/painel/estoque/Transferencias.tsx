@@ -27,6 +27,7 @@ import {
 import { FILTROS_DA_LISTA, TOM_STATUS, rotuloDaAcao, rotuloDoStatus, textoSemAcao } from "@/lib/transferenciasUi";
 import { detalheDaPeca } from "@/lib/estoquePainelUi";
 import { useAcao } from "@/lib/useAcao";
+import { opcoesDeLojas } from "@/lib/lojasAgrupadas";
 
 /** Transferências e reposições da loja, direto do servidor: quem pode agir e quando vem calculado lá. */
 export function Transferencias() {
@@ -65,7 +66,7 @@ export function Transferencias() {
             value={escolhida ?? ""}
             onChange={(e) => setLojaQueAtende((m) => ({ ...m, [t.id_transferencia]: e.target.value }))}
             className="w-40"
-            opcoes={candidatas.map((l) => ({ value: l.id_loja, label: l.nome }))}
+            opcoes={opcoesDeLojas(candidatas)}
           />
         ) : null}
         {t.acoes.map((acao) => (
