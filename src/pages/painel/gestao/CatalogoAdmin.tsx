@@ -9,6 +9,7 @@ import {
   Modal,
   Tabela,
   Titulo,
+  cn,
   inputClasses,
   td,
   th,
@@ -69,7 +70,7 @@ export function CatalogoAdmin() {
           <Tabela>
             <thead>
               <tr>
-                <th className={th}>Peça</th>
+                <th className={cn(th, "min-w-[260px]")}>Peça</th>
                 <th className={th}>Categoria</th>
                 <th className={th}>Preço</th>
                 <th className={th}>Estoque na rede</th>
@@ -79,9 +80,9 @@ export function CatalogoAdmin() {
             <tbody>
               {itens.map((p) => (
                 <tr key={p.id_produto}>
-                  <td className={td}>
+                  <td className={cn(td, "min-w-[260px]")}>
                     <div className="flex items-center gap-3">
-                      <FotoProduto sku={p.skus[0] ?? p.nome} alt="" className="h-10 w-8 shrink-0" />
+                      <FotoProduto sku={p.skus[0] ?? p.nome} alt={p.nome} compacta className="h-10 w-8 shrink-0" />
                       <div>
                         <p className="font-medium">{p.nome}</p>
                         <p className="font-mono text-[11px] text-suave">
