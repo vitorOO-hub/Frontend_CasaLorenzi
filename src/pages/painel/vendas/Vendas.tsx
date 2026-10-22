@@ -12,7 +12,7 @@ const tomDoStatus = (codigo: string): Tom => (codigo === "cancelado" ? "perigo" 
 const rotuloDoCanal = (canal: string) => (canal === "loja" ? "Loja" : "Online");
 
 /**
- * Vendas do vendedor: todas as vendas registradas (loja e online) e o lançamento de venda nova
+ * Vendas do vendedor: as vendas da loja dele (loja e online) e o lançamento de venda nova
  * para um cliente já cadastrado, achado pelo CPF.
  */
 export function Vendas() {
@@ -32,7 +32,7 @@ export function Vendas() {
     <div>
       <Titulo
         titulo="Vendas"
-        descricao="Todas as vendas registradas. Lance uma venda nova buscando o cliente pelo CPF."
+        descricao="Vendas da sua loja. Lance uma venda nova buscando o cliente pelo CPF."
         acao={<Botao onClick={() => { setLancada(null); setNova(true); }}>Nova venda</Botao>}
       />
 
@@ -66,7 +66,6 @@ export function Vendas() {
               <tr>
                 <th className={th}>Venda</th>
                 <th className={th}>Cliente</th>
-                <th className={th}>Loja</th>
                 <th className={th}>Vendedor</th>
                 <th className={th}>Peças</th>
                 <th className={th}>Total</th>
@@ -83,7 +82,6 @@ export function Vendas() {
                     </p>
                   </td>
                   <td className={td}>{v.cliente}</td>
-                  <td className={td}>{v.loja}</td>
                   <td className={td}>{v.vendedor ?? "—"}</td>
                   <td className={`${td} tabular-nums`}>{v.pecas}</td>
                   <td className={`${td} tabular-nums`}>{moedaBR(v.valor_total)}</td>
@@ -93,7 +91,7 @@ export function Vendas() {
                 </tr>
               ))}
               {itens.length === 0 ? (
-                <LinhaVazia colunas={7} texto={lista.carregando ? "Carregando as vendas…" : "Nenhuma venda encontrada."} />
+                <LinhaVazia colunas={6} texto={lista.carregando ? "Carregando as vendas…" : "Nenhuma venda encontrada."} />
               ) : null}
             </tbody>
           </Tabela>

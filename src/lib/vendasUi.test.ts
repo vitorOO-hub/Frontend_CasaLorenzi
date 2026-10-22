@@ -62,6 +62,13 @@ describe("carrinho da venda em loja", () => {
     });
   });
 
+  it("manda a observação (troca) só quando preenchida, sem espaços nas pontas", () => {
+    const c = adicionarPeca([], peca("a", 100, 5));
+    expect(montarVenda("1", c, "pix", "  troca ")).toMatchObject({ observacao: "troca" });
+    expect(montarVenda("1", c, "pix", "   ")).not.toHaveProperty("observacao");
+    expect(montarVenda("1", c, "pix", "x".repeat(400)).observacao).toHaveLength(300);
+  });
+
   it("descreve a peça sem sobras quando falta cor ou tamanho", () => {
     expect(rotuloDaPeca({ produto: "Bolsa", cor: null, tamanho: "U" })).toBe("Bolsa · U");
   });

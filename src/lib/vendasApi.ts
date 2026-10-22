@@ -72,6 +72,8 @@ export type NovaVenda = {
   cpf: string;
   metodo_pagamento: MetodoDePagamento;
   itens: { id_variacao: string; quantidade: number }[];
+  /** Ex.: "troca" (regra da operação: troca na loja entra como venda nova com essa observação). */
+  observacao?: string;
 };
 
 export type FiltrosVendas = { busca?: string; limit: number; offset: number };

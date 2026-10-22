@@ -4,6 +4,7 @@ import type { MetodoDePagamento, NovaVenda, PecaNoEstoque } from "./vendasApi";
 
 export const POR_PAGINA_VENDAS = 20;
 export const QUANTIDADE_MAXIMA = 99;
+export const OBSERVACAO_MAXIMA = 300;
 
 export type LinhaDoCarrinho = { peca: PecaNoEstoque; quantidade: number };
 
@@ -45,11 +46,18 @@ export function validarVenda(
   return erros;
 }
 
-export function montarVenda(cpf: string, carrinho: LinhaDoCarrinho[], metodo: MetodoDePagamento): NovaVenda {
+export function montarVenda(
+  cpf: string,
+  carrinho: LinhaDoCarrinho[],
+  metodo: MetodoDePagamento,
+  observacao = "",
+): NovaVenda {
+  const obs = observacao.trim().slice(0, OBSERVACAO_MAXIMA);
   return {
     cpf,
     metodo_pagamento: metodo,
     itens: carrinho.map((l) => ({ id_variacao: l.peca.id_variacao, quantidade: l.quantidade })),
+    ...(obs ? { observacao: obs } : {}),
   };
 }
 

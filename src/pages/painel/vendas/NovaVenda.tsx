@@ -9,6 +9,7 @@ import { moedaBR } from "@/lib/chamadosUi";
 import {
   adicionarPeca,
   montarVenda,
+  OBSERVACAO_MAXIMA,
   mudarQuantidade,
   rotuloDaPeca,
   totalDePecas,
@@ -42,6 +43,7 @@ export function NovaVenda({
   const [termo, setTermo] = useState("");
   const [carrinho, setCarrinho] = useState<LinhaDoCarrinho[]>([]);
   const [metodo, setMetodo] = useState<MetodoDePagamento | "">("");
+  const [observacao, setObservacao] = useState("");
   const [erros, setErros] = useState<ErrosVenda>({});
   const acao = useAcao();
   const opcoes = useOpcoesDeVenda(aberto);
@@ -52,7 +54,7 @@ export function NovaVenda({
   // Venda diferente = chave diferente: repetir a mesma chave devolveria a venda anterior.
   useEffect(() => {
     chave.current = novaChave();
-  }, [cliente, carrinho, metodo]);
+  }, [cliente, carrinho, metodo, observacao]);
 
   useEffect(() => {
     if (aberto) return;
@@ -62,6 +64,7 @@ export function NovaVenda({
     setTermo("");
     setCarrinho([]);
     setMetodo("");
+    setObservacao("");
     setErros({});
     acao.limparErro();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -86,7 +89,7 @@ export function NovaVenda({
     setErros(encontrados);
     if (Object.keys(encontrados).length || !metodo) return;
     await acao.executar("lancar", async () => {
-      aoLancar(await lancarVenda(montarVenda(cpf, carrinho, metodo), chave.current));
+      aoLancar(await lancarVenda(montarVenda(cpf, carrinho, metodo, observacao), chave.current));
     });
   }
 
@@ -198,6 +201,15 @@ export function NovaVenda({
             opcoes={[{ value: "", label: "Escolha a forma de pagamento" }, ...(opcoes.dados?.metodos ?? []).map((m) => ({ value: m.codigo, label: m.nome }))]}
           />
           {erros.pagamento ? <p className="text-xs text-perigo">{erros.pagamento}</p> : null}
+          <Campo label="Observação (opcional)" ajuda="Troca na loja: escreva “troca”. A peça nova sai do estoque como venda.">
+            <input
+              value={observacao}
+              onChange={(e) => setObservacao(e.target.value)}
+              maxLength={OBSERVACAO_MAXIMA}
+              placeholder="ex.: troca"
+              className={inputClasses}
+            />
+          </Campo>
         </section>
 
         <AvisoErro erro={acao.erro} />

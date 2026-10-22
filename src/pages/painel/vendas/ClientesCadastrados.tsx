@@ -6,7 +6,7 @@ import { useClientesCadastrados } from "@/hooks/useVendas";
 import { dataBRdoIso } from "@/lib/chamadosUi";
 import { POR_PAGINA_VENDAS } from "@/lib/vendasUi";
 
-/** Todos os clientes cadastrados, para consulta do vendedor (o CPF aparece mascarado). */
+/** Clientes da loja do vendedor, para consulta (o CPF aparece mascarado). */
 export function ClientesCadastrados() {
   const [busca, setBusca] = useState("");
   const [pagina, setPagina] = useState(0);
@@ -16,7 +16,7 @@ export function ClientesCadastrados() {
 
   return (
     <div>
-      <Titulo titulo="Clientes" descricao="Todos os clientes cadastrados. Para vender, use o CPF na aba Vendas." />
+      <Titulo titulo="Clientes" descricao="Clientes da sua loja: cadastrados nela ou com compra nela. Para vender, use o CPF na aba Vendas." />
 
       <Filtros>
         <Campo label="Buscar" className="flex-1">
