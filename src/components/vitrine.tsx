@@ -6,6 +6,7 @@ import { detalheDe, fotoEstudio, fotoVestida, unsplash } from "@/lib/loja";
 import { ehVulto } from "@/lib/vultoMais";
 import { SeloVulto } from "./marca";
 import { cn } from "./ui";
+import { nomeDeVitrine } from "@/lib/nomes";
 
 /** Foto com o tratamento da casa (tom quente + grão de filme). */
 export function Foto({
@@ -192,6 +193,62 @@ export function CartaoProduto({
         <Preco valor={produto.preco} />
       </div>
       {legenda ? <Legenda>{legenda}</Legenda> : null}
+    </Link>
+  );
+}
+
+/**
+ * Cartão das páginas das linhas (Linha Lorenzi e Vulto): o mesmo modelo para as duas marcas. Selo da
+ * marca no canto, categoria no rodapé da foto, nome com maiúsculas, preço simples e a parcela
+ * embaixo. Foto e "foto em breve" são as mesmas do cartão da vitrine.
+ */
+export function CartaoDaLinha({ produto }: { produto: Produto }) {
+  const cores = produto.cores?.length ? produto.cores : detalheDe(produto.sku).cores;
+  const esgotado = !produtoTemEstoque(produto);
+  const estudio = produto.imagemUrl ?? (produto.semFoto ? undefined : fotoEstudio(produto.sku));
+  const vestida = produto.imagemVestidaUrl ?? (produto.semFoto ? undefined : fotoVestida(produto.sku, 800));
+  const vulto = ehVulto(produto);
+  return (
+    <Link to={`/loja/${produto.sku}`} className="group block">
+      <div className="relative aspect-[4/5] overflow-hidden bg-areia">
+        {estudio || vestida ? (
+          <img src={estudio ?? vestida} alt={produto.imagemAlt ?? produto.nome} loading="lazy" className="h-full w-full object-contain" />
+        ) : (
+          <SemFoto produto={produto} />
+        )}
+        {vestida && estudio ? (
+          <img
+            src={vestida}
+            alt=""
+            loading="lazy"
+            className="absolute inset-0 z-[1] h-full w-full bg-areia object-cover opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+          />
+        ) : null}
+        <span
+          className={cn(
+            "absolute left-2.5 top-2.5 z-[2] px-1.5 pb-[3px] pt-[5px] font-mao text-[9px] uppercase leading-none tracking-[0.14em]",
+            vulto ? "bg-vulto-preto text-vulto-neon" : "bg-ferrugem text-creme",
+          )}
+        >
+          {vulto ? "Vulto" : "Lorenzi"}
+        </span>
+        {produto.categoria ? (
+          <span className="absolute bottom-2.5 left-2.5 z-[2] font-mao text-[9px] uppercase tracking-[0.12em] text-suave">
+            {produto.categoria}
+          </span>
+        ) : null}
+        {esgotado ? (
+          <span className="absolute bottom-2 right-2.5 z-[2] border border-linha bg-papel px-1.5 pb-[3px] pt-1 font-mao text-[9px] uppercase tracking-[0.12em] text-tinta">
+            Esgotado
+          </span>
+        ) : null}
+      </div>
+      <h3 className="mt-3.5 font-sans text-[15px] font-medium leading-snug text-tinta [text-wrap:balance] group-hover:underline group-hover:underline-offset-[3px]">
+        {nomeDeVitrine(produto.nome)}
+      </h3>
+      {cores.length ? <p className="mt-0.5 text-[12px] text-suave">{cores.map((c) => nomeDeVitrine(c.nome)).join(" · ")}</p> : null}
+      <p className="mt-2 text-[14px] tabular-nums text-tinta">{moeda(produto.preco)}</p>
+      <p className="mt-0.5 font-mao text-[10.5px] text-suave">{parcela(produto.preco)}</p>
     </Link>
   );
 }
