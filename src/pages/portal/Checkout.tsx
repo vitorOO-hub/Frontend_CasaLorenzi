@@ -14,6 +14,9 @@ import { novaChaveIdempotencia } from "@/api/http";
 import * as acoes from "@/lib/acoes";
 import { useSessao } from "@/lib/sessao";
 import { useEstado } from "@/lib/store";
+import { useProdutosCatalogo } from "@/lib/catalogoApi";
+import { grupoDaLoja, nomeDaLoja } from "@/lib/lojasAgrupadas";
+import { lojaFisica, temTudo } from "@/lib/retirada";
 import { useAcao } from "@/lib/useAcao";
 import { useLorenziMais } from "@/hooks/useLorenziMais";
 import { SinalMais } from "@/components/marca";
@@ -68,7 +71,9 @@ function Opcao({ ativa, onClick, titulo, nota }: { ativa: boolean; onClick: () =
 }
 
 export function Checkout() {
-  const { carrinho } = useEstado();
+  const estado = useEstado();
+  const { carrinho } = estado;
+  const { produtos: produtosCatalogo } = useProdutosCatalogo(estado.produtos);
   const sessao = useSessao();
   const modoApi = usandoApi();
   const [entrega, setEntrega] = useState<"casa" | "loja">("casa");
@@ -98,14 +103,24 @@ export function Checkout() {
   const pontosGanhos = pontosDaCompra(total, true, regras);
   const [ganhou, setGanhou] = useState<number | null>(null);
   const codigoPix = `00020126BR.GOV.BCB.PIX.CASALORENZI520400005303986540${total.toFixed(2)}5802BR5913CASA LORENZI6009SAO PAULO6304LRZI`;
+  // Retirada: só lojas físicas que têm todas as peças da sacola, na quantidade pedida.
   const lojasParaEscolher = lojasApi.length
-    ? lojasApi.map((loja) => ({
-        id: loja.id_loja,
-        nome: loja.nome,
-        nota: [loja.cidade, loja.uf].filter(Boolean).join(", ") || loja.endereco || "Retirada na loja",
-      }))
+    ? lojasApi
+        .filter((loja) => lojaFisica(loja.nome) && temTudo(loja.id_loja, carrinho, produtosCatalogo))
+        .map((loja) => ({
+          id: loja.id_loja,
+          nome: nomeDaLoja(loja.nome),
+          nota: [loja.cidade, loja.uf].filter(Boolean).join(", ") || loja.endereco || "Retirada na loja",
+        }))
     : lojas.map((loja) => ({ id: loja.id, nome: loja.nome, nota: casas[loja.id]?.provas ?? loja.cidade }));
-  const idLojaSeparacao = lojasApi[0]?.id_loja ?? lojas[0]!.id;
+  const lojaDeRetirada = lojasParaEscolher.find((l) => l.id === lojaRetirada)?.id ?? lojasParaEscolher[0]?.id ?? "";
+  // Entrega em casa: o pedido sai do E-commerce Casa Lorenzi, o canal online das duas marcas.
+  const idLojaSeparacao =
+    lojasApi.find((loja) => grupoDaLoja(loja.nome) === "Online · as duas marcas")?.id_loja ?? lojasApi[0]?.id_loja ?? lojas[0]!.id;
+  const semLojaParaRetirada = entrega === "loja" && modoApi && lojasApi.length > 0 && lojasParaEscolher.length === 0;
+  // Peça sem estoque no e-commerce (hoje, as da Casa Lorenzi) só sai por retirada na loja.
+  const semEstoqueOnline =
+    entrega === "casa" && modoApi && lojasApi.length > 0 && produtosCatalogo.length > 0 && !temTudo(idLojaSeparacao, carrinho, produtosCatalogo);
   const aguardandoLojas = modoApi && lojasApi.length === 0 && !erroLojas;
 
   useEffect(() => {
@@ -147,8 +162,7 @@ export function Checkout() {
       .then((lista) => {
         if (!ativo) return;
         setLojasApi(lista);
-        if (lista[0]) setLojaRetirada(lista[0].id_loja);
-        else setErroLojas("Nenhuma loja ativa foi encontrada para separar este pedido.");
+        if (!lista[0]) setErroLojas("Nenhuma loja ativa foi encontrada para separar este pedido.");
       })
       .catch(() => {
         if (!ativo) return;
@@ -160,7 +174,7 @@ export function Checkout() {
   }, [modoApi, sessao?.tipo]);
 
   if (pedido) {
-    const casa = entrega === "loja" ? lojasParaEscolher.find((l) => l.id === lojaRetirada) : null;
+    const casa = entrega === "loja" ? lojasParaEscolher.find((l) => l.id === lojaDeRetirada) : null;
     return (
       <div className="mx-auto max-w-xl px-5 py-20 text-center">
         <p className="text-[15px] text-caramelo">Pedido {pedido}</p>
@@ -196,7 +210,7 @@ export function Checkout() {
           e.preventDefault();
           if (sessao?.tipo !== "cliente") return;
           void executar("pedido", async () => {
-            const idLoja = entrega === "loja" ? lojaRetirada : idLojaSeparacao;
+            const idLoja = entrega === "loja" ? lojaDeRetirada : idLojaSeparacao;
             if (modoApi) {
               const itens = carrinho.map((item) => {
                 if (!item.idVariacao) {
@@ -253,6 +267,11 @@ export function Checkout() {
                 nota="Pronto em 2 dias úteis, ajuste na hora"
               />
             </div>
+            {semEstoqueOnline ? (
+              <p role="alert" className="mb-6 border border-ferrugem/40 bg-pergaminho p-4 text-sm text-tinta">
+                Algumas peças da sua sacola não estão disponíveis para entrega agora. Escolha retirar na loja.
+              </p>
+            ) : null}
             {entrega === "casa" ? (
               <div className="grid gap-4 sm:grid-cols-6">
                 {doCadastro ? (
@@ -284,8 +303,13 @@ export function Checkout() {
             ) : (
               <div className="grid gap-3 sm:grid-cols-3">
                 {lojasParaEscolher.map((l) => (
-                  <Opcao key={l.id} ativa={lojaRetirada === l.id} onClick={() => setLojaRetirada(l.id)} titulo={l.nome} nota={l.nota} />
+                  <Opcao key={l.id} ativa={lojaDeRetirada === l.id} onClick={() => setLojaRetirada(l.id)} titulo={l.nome} nota={l.nota} />
                 ))}
+                {semLojaParaRetirada ? (
+                  <p className="text-sm text-suave sm:col-span-3">
+                    Nenhuma loja tem todas as peças da sua sacola para retirada agora. Escolha receber em casa.
+                  </p>
+                ) : null}
               </div>
             )}
           </Etapa>
@@ -380,7 +404,7 @@ export function Checkout() {
           ) : null}
           {erroLojas ? <p role="alert" className="mt-6 text-sm text-perigo">{erroLojas}</p> : null}
           {erro ? <p role="alert" className="mt-6 text-sm text-perigo">{erro}</p> : null}
-          <button type="submit" disabled={ocupado !== null || aguardandoLojas || Boolean(erroLojas)} className={cn(botaoLoja(), "mt-6 w-full")}>
+          <button type="submit" disabled={ocupado !== null || aguardandoLojas || Boolean(erroLojas) || semLojaParaRetirada || semEstoqueOnline} className={cn(botaoLoja(), "mt-6 w-full")}>
             {ocupado || aguardandoLojas ? "Confirmando…" : "Confirmar o pedido"}
           </button>
           <p className="mt-3 text-center text-xs text-suave">O pagamento fica registrado no pedido para acompanhamento da loja.</p>
