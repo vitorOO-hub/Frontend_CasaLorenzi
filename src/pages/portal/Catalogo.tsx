@@ -9,12 +9,22 @@ import { EDICAO } from "@/lib/loja";
 import { useEstado } from "@/lib/store";
 import { mesmaCategoria, rotuloDaCategoria } from "@/lib/categorias";
 import { MARCAS_FILTRO, daMarca, type MarcaFiltro } from "@/lib/vultoMais";
+import { PaginaDaLinha } from "./PaginaDaLinha";
 
 type Ordem = "edicao" | "menor" | "maior";
 
 const CARREGANDO = "Carregando produtos...";
 
+/** /loja com uma marca escolhida é a página daquela linha; sem marca (ou com busca), o catálogo geral. */
 export function Catalogo() {
+  const [params] = useSearchParams();
+  const marca = params.get("marca");
+  const busca = (params.get("busca") ?? "").trim();
+  if (!busca && (marca === "casa-lorenzi" || marca === "vulto")) return <PaginaDaLinha linha={marca} />;
+  return <CatalogoGeral />;
+}
+
+function CatalogoGeral() {
   const estado = useEstado();
   const { produtos, carregando, erro } = useProdutosCatalogo(estado.produtos);
   const [params, setParams] = useSearchParams();
