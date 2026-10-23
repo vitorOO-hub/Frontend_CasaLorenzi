@@ -11,6 +11,7 @@ import * as acoes from "@/lib/acoes";
 import { useEstado } from "@/lib/store";
 import { rotuloDaCategoria } from "@/lib/categorias";
 import { ehVulto } from "@/lib/vultoMais";
+import { ordenarTamanhos } from "@/lib/tamanhos";
 
 export function Produto() {
   const { sku = "" } = useParams();
@@ -25,7 +26,7 @@ function DetalheProduto({ sku }: { sku: string }) {
   const variacoes = useMemo(() => produto?.variacoes ?? [], [produto?.variacoes]);
   const d = detalheDe(produto?.sku ?? sku);
   const tamanhos = useMemo(() => {
-    const tamanhosApi = Array.from(new Set(variacoes.map((variacao) => variacao.tamanho).filter(Boolean))).sort();
+    const tamanhosApi = ordenarTamanhos(Array.from(new Set(variacoes.map((variacao) => variacao.tamanho).filter(Boolean))));
     return tamanhosApi.length ? tamanhosApi : ((produto && tamanhosPorCategoria[produto.categoria]) ?? ["Único"]);
   }, [produto, variacoes]);
   const cores = useMemo<CorDaCasa[]>(() => {

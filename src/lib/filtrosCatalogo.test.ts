@@ -27,8 +27,8 @@ const produtos: Produto[] = [
 ];
 
 describe("filtros do catálogo", () => {
-  it("lista tamanhos distintos em ordem natural", () => {
-    expect(tamanhosDoCatalogo(produtos)).toEqual(["42", "M", "P"]);
+  it("lista tamanhos distintos do menor para o maior: letras e depois números", () => {
+    expect(tamanhosDoCatalogo(produtos)).toEqual(["P", "M", "42"]);
   });
 
   it("mantém produtos que possuem a variação do tamanho", () => {

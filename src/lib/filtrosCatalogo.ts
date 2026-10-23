@@ -1,4 +1,5 @@
 import { produtoTemEstoque, type Produto } from "@/lib/dados";
+import { compararTamanhos } from "@/lib/tamanhos";
 
 export type FiltrosCatalogo = {
   tamanho?: string;
@@ -10,7 +11,7 @@ export type FiltrosCatalogo = {
 export function tamanhosDoCatalogo(produtos: Produto[]) {
   return Array.from(new Set(produtos.flatMap((produto) => produto.variacoes?.map((variacao) => variacao.tamanho) ?? [])))
     .filter(Boolean)
-    .sort((a, b) => a.localeCompare(b, "pt-BR", { numeric: true }));
+    .sort(compararTamanhos);
 }
 
 export function filtrarProdutosCatalogo(produtos: Produto[], filtros: FiltrosCatalogo) {
