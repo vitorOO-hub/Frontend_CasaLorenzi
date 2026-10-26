@@ -93,3 +93,13 @@ describe("rotas do vendedor", () => {
     }
   });
 });
+
+describe("gestão da equipe", () => {
+  it("admin e gerente acessam a equipe; os demais cargos não", () => {
+    expect(podeAcessar("admin", "/painel/gestao/usuarios")).toBe(true);
+    expect(podeAcessar("gerente_loja", "/painel/gestao/usuarios")).toBe(true);
+    for (const papel of ["atendente", "operador_estoque", "vendedor"] as Papel[]) {
+      expect(podeAcessar(papel, "/painel/gestao/usuarios")).toBe(false);
+    }
+  });
+});

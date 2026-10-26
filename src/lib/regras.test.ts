@@ -20,9 +20,11 @@ describe("permissões da área interna", () => {
     expect(podeAcessar("gerente_loja", "/painel/estoque/aprovacoes")).toBe(true);
   });
 
-  it("catálogo, usuários e auditoria são exclusivos do administrador", () => {
+  it("usuários ficam disponíveis à gestão, e telas administrativas ao administrador", () => {
+    expect(podeAcessar("gerente_loja", "/painel/gestao/usuarios")).toBe(true);
+    expect(podeAcessar("admin", "/painel/gestao/usuarios")).toBe(true);
     for (const tela of ["catalogo", "usuarios", "auditoria", "integracoes", "vendas-pendentes"]) {
-      expect(podeAcessar("gerente_loja", `/painel/gestao/${tela}`)).toBe(false);
+      if (tela !== "usuarios") expect(podeAcessar("gerente_loja", `/painel/gestao/${tela}`)).toBe(false);
       expect(podeAcessar("admin", `/painel/gestao/${tela}`)).toBe(true);
     }
     expect(podeAcessar("gerente_loja", "/painel/gestao")).toBe(true);
