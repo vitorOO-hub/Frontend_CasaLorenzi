@@ -6,6 +6,7 @@ import { PainelLayout } from "./layouts/PainelLayout";
 import { PortalLayout } from "./layouts/PortalLayout";
 import { SecaoLayout } from "./layouts/SecaoLayout";
 import { Entrar } from "./pages/Entrar";
+import { DefinirSenha } from "./pages/DefinirSenha";
 import { Dashboard } from "./pages/painel/Dashboard";
 import { Chamado } from "./pages/painel/atendimento/Chamado";
 import { Conversas } from "./pages/painel/atendimento/Conversas";
@@ -87,6 +88,7 @@ export default function App() {
         </Route>
 
         <Route path="entrar" element={<Entrar />} />
+        <Route path="definir-senha" element={<DefinirSenha />} />
 
         {/* Área interna: 4 seções, cada uma com abas (ver lib/navegacao.ts) */}
         <Route path="painel" element={<PainelLayout />}>

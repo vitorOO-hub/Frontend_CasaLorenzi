@@ -38,6 +38,13 @@ export type Equipe = {
 
 export type MudancaDeUsuario = { cargo?: Cargo; idLoja?: string; ativo?: boolean };
 
+export type NovoUsuarioDaEquipe = {
+  nome: string;
+  email: string;
+  cargo: Cargo;
+  id_loja: string | null;
+};
+
 export function validarUsuario(valor: unknown, campo = "usuario"): UsuarioDaEquipe {
   const o = objeto(valor, campo);
   return {
@@ -72,6 +79,10 @@ export function validarEquipe(dados: unknown): Equipe {
 }
 
 export const buscarEquipe = (o?: OpcoesApi) => api.get(`${BASE}/usuarios`, validarEquipe, undefined, o);
+
+/** Cria o cadastro interno e solicita ao Supabase o convite para definir a senha. */
+export const criarUsuario = (dados: NovoUsuarioDaEquipe, o?: OpcoesApi) =>
+  api.post(`${BASE}/usuarios`, validarUsuario, dados, o);
 
 /** Só vai o que mudou; o servidor confere cargo, loja ativa e se não deixa a rede sem administrador. */
 export const mudarUsuario = (id: string, m: MudancaDeUsuario, o?: OpcoesApi) =>

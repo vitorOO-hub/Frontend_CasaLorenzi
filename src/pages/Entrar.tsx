@@ -31,7 +31,9 @@ export function Entrar() {
   const [ativando, setAtivando] = useState(() => params.get("ativar") === "1");
   const [form, setForm] = useState<FormCadastro>(FORM_VAZIO);
   const [errosForm, setErrosForm] = useState<ErrosCadastro>({});
-  const [aviso, setAviso] = useState<string | null>(null);
+  const [aviso, setAviso] = useState<string | null>(() =>
+    params.get("convite") === "concluido" ? "Senha criada. Entre com seu e-mail e a nova senha." : null,
+  );
 
   const campo = (k: keyof FormCadastro, formatar?: (v: string) => string) => ({
     value: form[k],
