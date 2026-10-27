@@ -99,6 +99,8 @@ export type PecaDoCatalogo = {
   id_produto: string;
   nome: string;
   categoria: string | null;
+  imagem_url: string | null;
+  imagem_alt: string | null;
   preco: number;
   skus: string[];
   variacoes: number;
@@ -113,6 +115,8 @@ export function validarPeca(valor: unknown, campo = "peca"): PecaDoCatalogo {
     id_produto: texto(o.id_produto, `${campo}.id_produto`),
     nome: texto(o.nome, `${campo}.nome`),
     categoria: textoOuNulo(o.categoria, `${campo}.categoria`),
+    imagem_url: textoOuNulo(o.imagem_url, `${campo}.imagem_url`),
+    imagem_alt: textoOuNulo(o.imagem_alt, `${campo}.imagem_alt`),
     preco: numero(o.preco, `${campo}.preco`),
     skus: lista(o.skus, `${campo}.skus`).map((v, i) => texto(v, `${campo}.skus[${i}]`)),
     variacoes: numero(o.variacoes, `${campo}.variacoes`),
@@ -134,7 +138,11 @@ export const buscarCatalogo = (busca: string | undefined, o?: OpcoesApi) =>
 export const criarPeca = (d: { sku: string; nome: string; categoria: string; preco: number }, o?: OpcoesApi) =>
   api.post(`${BASE}/catalogo`, (dados) => validarPeca(dados), d, o);
 
-export const editarPeca = (id: string, d: { nome?: string; categoria?: string; preco?: number }, o?: OpcoesApi) =>
+export const editarPeca = (
+  id: string,
+  d: { nome?: string; categoria?: string; preco?: number; imagem_url?: string | null; imagem_alt?: string | null },
+  o?: OpcoesApi,
+) =>
   api.patch(`${BASE}/catalogo/${encodeURIComponent(id)}`, (dados) => validarPeca(dados), d, o);
 
 export const excluirPeca = (id: string, o?: OpcoesApi) =>

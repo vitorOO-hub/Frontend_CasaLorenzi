@@ -34,7 +34,7 @@ const catalogo = (): Catalogo =>
   validarCatalogo({
     total: 2,
     itens: [
-      { id_produto: "p1", nome: "Blazer Modena", categoria: "Alfaiataria", preco: 1290, skus: ["CL-BLA-G", "CL-BLA-M"], variacoes: 2, estoque_rede: 53 },
+      { id_produto: "p1", nome: "Blazer Modena", categoria: "Alfaiataria", imagem_url: "https://images.example.com/blazer.webp", imagem_alt: "Blazer Modena", preco: 1290, skus: ["CL-BLA-G", "CL-BLA-M"], variacoes: 2, estoque_rede: 53 },
       { id_produto: "p2", nome: "Cinto Siena", categoria: null, preco: 279.9, skus: ["CL-CIN-U"], variacoes: 1, estoque_rede: 0 },
     ],
   });
@@ -74,6 +74,7 @@ describe("gestão do admin vinda da API", () => {
     expect(tela).toContain("+1 variações");
     expect(tela).toContain("53");
     expect(tela).toContain("Nova peça");
+    expect(tela).toContain("https://images.example.com/blazer.webp");
   });
 
   it("auditoria mostra quem fez o quê e avisa quando há mais registros", () => {

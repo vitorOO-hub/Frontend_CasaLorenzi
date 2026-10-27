@@ -45,7 +45,7 @@ export type Produto = {
   colecao?: string | null;
   /** Marca da peça no catálogo ("Vulto" nas peças da linha Vulto). */
   marca?: string | null;
-  /** Peça sem foto e sem ficha técnica no catálogo (linha Vulto, até as fotos chegarem). */
+  /** Sem ficha editorial completa: não usa imagens ou detalhes de exemplo de outra peça. */
   semFoto?: boolean;
   variacoes?: VariacaoProdutoCatalogo[];
   imagemUrl?: string;

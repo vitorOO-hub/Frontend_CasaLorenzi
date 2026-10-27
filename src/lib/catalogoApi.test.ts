@@ -136,6 +136,19 @@ describe("peças Vulto sem foto no catálogo", () => {
     expect(p.cores).toEqual([{ nome: "cinza mescla", hex: "#9a9a9a" }]);
   });
 
+  it("mostra a foto real da Vulto mesmo quando a ficha editorial ainda está incompleta", async () => {
+    const { produtoCatalogoDeLinha } = await import("./catalogoApi");
+    const p = produtoCatalogoDeLinha({
+      ...vulto,
+      imagem_url: "https://projeto.supabase.co/storage/v1/object/public/catalogo-produtos/p-vulto/foto.webp",
+      imagem_alt: "Cinto nylon cinza",
+    })!;
+    expect(p.semFoto).toBe(true);
+    expect(p.imagemUrl).toContain("catalogo-produtos/p-vulto/foto.webp");
+    expect(p.imagemAlt).toBe("Cinto nylon cinza");
+    expect(p.tecido).toBeUndefined();
+  });
+
   it("peça Casa Lorenzi sem foto continua de fora", async () => {
     const { produtoCatalogoDeLinha } = await import("./catalogoApi");
     expect(produtoCatalogoDeLinha({ ...vulto, marca: "casa lorenzi" })).toBeNull();
