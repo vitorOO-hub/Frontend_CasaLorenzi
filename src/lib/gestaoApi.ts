@@ -1,4 +1,5 @@
 import { api, type OpcoesApi } from "./api";
+import { validarHorario, type HorarioFuncionamento } from "./horarioLoja";
 import { booleano, lista, numero, objeto, texto, textoOuNulo } from "./validacao";
 
 /** Tipos e chamadas da gestão do admin (espelham app/gestao/schemas.py do backend). */
@@ -90,6 +91,17 @@ export const mudarUsuario = (id: string, m: MudancaDeUsuario, o?: OpcoesApi) =>
     `${BASE}/usuarios/${encodeURIComponent(id)}`,
     (dados) => validarUsuario(dados),
     { cargo: m.cargo, id_loja: m.idLoja, ativo: m.ativo },
+    o,
+  );
+
+// ---------------------------------------------------------------- lojas
+
+/** Grava o horário de funcionamento (só admin); `null` apaga. O servidor registra na auditoria. */
+export const alterarHorarioDaLoja = (idLoja: string, horario: HorarioFuncionamento | null, o?: OpcoesApi) =>
+  api.patch(
+    `${BASE}/lojas/${encodeURIComponent(idLoja)}/horario`,
+    (dados) => validarHorario(objeto(dados, "horario").horario_funcionamento),
+    { horario_funcionamento: horario },
     o,
   );
 

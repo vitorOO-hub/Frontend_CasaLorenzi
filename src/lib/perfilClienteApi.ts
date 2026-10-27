@@ -1,5 +1,5 @@
 import { api } from "@/api/http";
-import { numero, objeto, texto, textoOuNulo } from "./validacao";
+import { booleano, booleanoOuPadrao, numero, objeto, texto, textoOuNulo } from "./validacao";
 
 export type PerfilClienteApi = {
   id_cliente: string;
@@ -19,6 +19,8 @@ export type PerfilClienteApi = {
   bairro: string | null;
   numero_endereco: string | null;
   complemento: string | null;
+  /** Aceita receber avisos (pontos a vencer) por e-mail e WhatsApp. */
+  aceita_mensagens: boolean;
 };
 
 function decimal(valor: unknown, campo: string): string {
@@ -46,8 +48,17 @@ export function validarPerfilCliente(dados: unknown): PerfilClienteApi {
     bairro: textoOuNulo(o.bairro, "bairro"),
     numero_endereco: textoOuNulo(o.numero_endereco, "numero_endereco"),
     complemento: textoOuNulo(o.complemento, "complemento"),
+    aceita_mensagens: booleanoOuPadrao(o.aceita_mensagens, "aceita_mensagens", true),
   };
 }
 
 export const obterPerfilCliente = async () =>
   validarPerfilCliente(await api.get<unknown>("/cliente/perfil"));
+
+/** O cliente aceita ou recusa os avisos; a escolha dele vale sobre o padrão e sobre a planilha da Vulto. */
+export const alterarAceitaMensagens = async (aceita: boolean) =>
+  booleano(
+    objeto(await api.patch<unknown>("/cliente/preferencias", { aceita_mensagens: aceita }), "preferencias")
+      .aceita_mensagens,
+    "aceita_mensagens",
+  );
