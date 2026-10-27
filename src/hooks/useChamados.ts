@@ -22,6 +22,47 @@ export type Consulta<T> = {
   recarregar: () => void;
 };
 
+type EntradaCacheConsulta = { dados: unknown; salvaEm: number };
+const cacheConsultas = new Map<string, EntradaCacheConsulta>();
+
+function lerCacheConsulta<T>(chave: string, ttlMs: number): T | null {
+  if (ttlMs <= 0) return null;
+  const entrada = cacheConsultas.get(chave);
+  if (!entrada) return null;
+  if (Date.now() - entrada.salvaEm > ttlMs) {
+    cacheConsultas.delete(chave);
+    return null;
+  }
+  return entrada.dados as T;
+}
+
+function guardarCacheConsulta<T>(chave: string, dados: T) {
+  if (cacheConsultas.size >= 20 && !cacheConsultas.has(chave)) {
+    const maisAntiga = cacheConsultas.keys().next().value;
+    if (maisAntiga) cacheConsultas.delete(maisAntiga);
+  }
+  cacheConsultas.set(chave, { dados, salvaEm: Date.now() });
+}
+
+function aguardar(ms: number, sinal: AbortSignal): Promise<void> {
+  return new Promise((resolver, rejeitar) => {
+    const cancelar = () => {
+      clearTimeout(temporizador);
+      rejeitar(sinal.reason ?? new DOMException("Consulta cancelada", "AbortError"));
+    };
+    const temporizador = setTimeout(() => {
+      sinal.removeEventListener("abort", cancelar);
+      resolver();
+    }, ms);
+    if (sinal.aborted) cancelar();
+    else sinal.addEventListener("abort", cancelar, { once: true });
+  });
+}
+
+function falhaTransitoria(erro: unknown): boolean {
+  return erro instanceof ErroApi && (erro.codigo === "rede" || [502, 503, 504].includes(erro.status));
+}
+
 /**
  * Consulta que cancela a anterior quando o filtro muda, mantém os últimos dados na tela durante a
  * nova busca. Sessão que não renova mais (401) volta ao login pelo cliente HTTP (`lib/api.ts`).
@@ -30,10 +71,15 @@ export type Consulta<T> = {
 export function useConsulta<T>(
   buscar: (sinal: AbortSignal) => Promise<T>,
   chave: string,
-  { ativa = true, intervaloMs }: { ativa?: boolean; intervaloMs?: number } = {},
+  {
+    ativa = true,
+    intervaloMs,
+    cacheMs = 0,
+    repeticoesAutomaticas = 0,
+  }: { ativa?: boolean; intervaloMs?: number; cacheMs?: number; repeticoesAutomaticas?: number } = {},
 ): Consulta<T> {
-  const [dados, setDados] = useState<T | null>(null);
-  const [carregando, setCarregando] = useState(ativa);
+  const [dados, setDados] = useState<T | null>(() => lerCacheConsulta<T>(chave, cacheMs));
+  const [carregando, setCarregando] = useState(ativa && lerCacheConsulta<T>(chave, cacheMs) === null);
   const [erro, setErro] = useState<string | null>(null);
   const [tentativa, setTentativa] = useState(0);
   // A função muda a cada render; a chave é quem diz quando a consulta mudou de verdade.
@@ -43,29 +89,51 @@ export function useConsulta<T>(
   useEffect(() => {
     if (!ativa) return;
     const controle = new AbortController();
-    let primeira = true;
+    const dadosEmCache = lerCacheConsulta<T>(chave, cacheMs);
+    let primeira = dadosEmCache === null;
+    let emAndamento = false;
+    if (dadosEmCache !== null) {
+      setDados(dadosEmCache);
+      setCarregando(false);
+    }
 
-    const executar = () => {
+    const executar = async () => {
+      if (emAndamento) return;
+      emAndamento = true;
       if (primeira) {
         setCarregando(true);
-        setErro(null);
       }
-      buscarRef
-        .current(controle.signal)
-        .then((resultado) => {
-          if (controle.signal.aborted) return;
-          setDados(resultado);
-          setErro(null);
-          setCarregando(false);
-        })
-        .catch((e: unknown) => {
-          if (controle.signal.aborted) return;
-          setErro(e instanceof ErroApi ? e.message : "Não foi possível carregar os dados.");
-          setCarregando(false);
-        })
-        .finally(() => {
-          primeira = false;
-        });
+      setErro(null);
+      try {
+        let resultado: T;
+        for (let tentativaAtual = 0; ; tentativaAtual += 1) {
+          try {
+            resultado = await buscarRef.current(controle.signal);
+            break;
+          } catch (erro) {
+            if (
+              controle.signal.aborted ||
+              tentativaAtual >= repeticoesAutomaticas ||
+              !falhaTransitoria(erro)
+            ) {
+              throw erro;
+            }
+            await aguardar(1500 * (tentativaAtual + 1), controle.signal);
+          }
+        }
+        if (controle.signal.aborted) return;
+        setDados(resultado);
+        if (cacheMs > 0) guardarCacheConsulta(chave, resultado);
+        setErro(null);
+        setCarregando(false);
+      } catch (erro: unknown) {
+        if (controle.signal.aborted) return;
+        setErro(erro instanceof ErroApi ? erro.message : "Não foi possível carregar os dados.");
+        setCarregando(false);
+      } finally {
+        primeira = false;
+        emAndamento = false;
+      }
     };
 
     executar();
@@ -78,7 +146,7 @@ export function useConsulta<T>(
       controle.abort();
       if (relogio) clearInterval(relogio);
     };
-  }, [chave, ativa, intervaloMs, tentativa]);
+  }, [chave, ativa, intervaloMs, cacheMs, repeticoesAutomaticas, tentativa]);
 
   const recarregar = useCallback(() => setTentativa((n) => n + 1), []);
   return { dados, carregando, erro, recarregar };

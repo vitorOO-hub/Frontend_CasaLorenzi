@@ -78,7 +78,7 @@ export function DashboardAdmin() {
       ) : null}
 
       {!dados ? (
-        erro ? null : <p className="py-16 text-center text-sm text-suave">Carregando os dados da rede…</p>
+        erro ? null : <p className="py-16 text-center text-sm text-suave">Conectando ao servidor e carregando os dados da rede. A primeira resposta pode levar até um minuto…</p>
       ) : (
         <div aria-busy={carregando} className={carregando ? "opacity-60 transition-opacity" : "transition-opacity"}>
           <Painel dados={dados} periodo={f.periodo} cores={Object.fromEntries(unidades.map((u) => [u.id, u.cor]))} />
