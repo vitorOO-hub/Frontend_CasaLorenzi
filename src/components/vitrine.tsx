@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Image } from "lucide-react";
 import { Link } from "react-router-dom";
 import { moeda, produtoTemEstoque, type Produto } from "@/lib/dados";
 import { detalheDe, fotoEstudio, fotoVestida, unsplash } from "@/lib/loja";
@@ -55,12 +56,32 @@ export function SemFoto({ produto, className }: { produto: Pick<Produto, "marca"
 }
 
 /** Foto de estúdio da peça (packshot), usada em listas compactas. */
-export function FotoProduto({ sku, src, alt, className }: { sku: string; src?: string | null; alt: string; className?: string }) {
+export function FotoProduto({
+  sku,
+  src,
+  alt,
+  className,
+  compacta = false,
+}: {
+  sku: string;
+  src?: string | null;
+  alt: string;
+  className?: string;
+  compacta?: boolean;
+}) {
   const foto = src || fotoEstudio(sku);
   return (
     <div className={cn("overflow-hidden bg-areia", className)}>
       {foto ? (
         <img src={foto} alt={alt} loading="lazy" className="h-full w-full object-cover" />
+      ) : compacta ? (
+        <div
+          role="img"
+          aria-label={`${alt || "Peça"}: foto não cadastrada`}
+          className="flex h-full w-full items-center justify-center border border-linha/60 bg-pergaminho text-suave"
+        >
+          <Image aria-hidden="true" className="h-4 w-4" strokeWidth={1.5} />
+        </div>
       ) : (
         <SemFoto produto={{ nome: alt, marca: null }} />
       )}
