@@ -85,6 +85,9 @@ vi.mock("@/hooks/useClientes", () => {
         faltam_para_proxima: 2500,
         loja_cadastro: "vulto pinheiros",
         pontos_a_vencer: 800,
+        beneficios: [{ codigo: "frete_600", titulo: "Frete grátis acima de R$ 600", descricao: "Entrega em casa sem custo a partir de R$ 600." }],
+        proximos_beneficios: [],
+        frete_gratis_a_partir: 600,
         proximos_vencimentos: [{ vence_em: "2026-11-05T15:00:00Z", pontos: 800 }],
         extrato: [{ ocorrido_em: "2026-10-12T15:00:00Z", tipo: "credito", pontos: 2500, descricao: "compra" }],
         resgates: [
@@ -180,9 +183,12 @@ describe("ficha do cliente", () => {
     const html = ficha();
     expect(html).toContain("Cliente 1");
     expect(html).toContain("AT-2026-0001");
-    for (const proibido of ["Total gasto", "Ticket médio", "Compras", "PD-1", "R$"]) expect(html).not.toContain(proibido);
+    for (const proibido of ["Total gasto", "Ticket médio", "Compras", "PD-1"]) expect(html).not.toContain(proibido);
+    // Nenhum valor em dinheiro (o "R$ 600" do benefício de frete é regra do programa, não valor do cliente).
+    const semBeneficio = html.replaceAll("Frete grátis acima de R$ 600", "").replaceAll("a partir de R$ 600", "");
+    expect(semBeneficio).not.toContain("R$");
     // Vulto+ aparece para o atendente, sem o valor dos resgates.
-    for (const t of ["Lorenzi+", "2.000 pts", "vulto pinheiros", "camila duarte", "800 pontos vencem nos próximos 30 dias (em 05/11)"]) expect(html).toContain(t);
+    for (const t of ["Lorenzi+", "2.000 pts", "vulto pinheiros", "camila duarte", "800 pontos vencem nos próximos 30 dias (em 05/11)", "Prata", "Frete grátis acima de R$ 600"]) expect(html).toContain(t);
     expect(erros).toEqual([]);
   });
 
