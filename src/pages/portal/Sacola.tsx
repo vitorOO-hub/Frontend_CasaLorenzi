@@ -10,6 +10,7 @@ import { useSessao } from "@/lib/sessao";
 import { useEstado } from "@/lib/store";
 import { SinalMais } from "@/components/marca";
 import { useLorenziMais } from "@/hooks/useLorenziMais";
+import { nomeDaCategoria } from "@/lib/beneficiosLorenziMais";
 import { descontoDosPontos, maximoResgatavel, pontosDaCompra } from "@/lib/regrasLorenziMais";
 import { pontos as fmtPontos } from "@/lib/vultoMais";
 
@@ -17,15 +18,20 @@ const alterarQuantidadeCarrinho = (sku: string, quantidade: number) => void acoe
 
 export const FRETE_GRATIS_A_PARTIR = 1000;
 export const FRETE_PADRAO = 49;
-export const freteDe = (subtotal: number) => (subtotal >= FRETE_GRATIS_A_PARTIR ? 0 : FRETE_PADRAO);
+/** Frete da entrega em casa. `gratisAPartir` vem da categoria Lorenzi+ (0 = sempre grátis). */
+export const freteDe = (subtotal: number, gratisAPartir: number = FRETE_GRATIS_A_PARTIR) =>
+  subtotal >= gratisAPartir ? 0 : FRETE_PADRAO;
 
 export function Sacola() {
   const { carrinho } = useEstado();
   const sessao = useSessao();
   const subtotal = carrinho.reduce((s, i) => s + i.valor * i.quantidade, 0);
-  const frete = freteDe(subtotal);
-  const falta = FRETE_GRATIS_A_PARTIR - subtotal;
   const lorenziMais = useLorenziMais();
+  const gratisAPartir = lorenziMais?.frete_gratis_a_partir ?? FRETE_GRATIS_A_PARTIR;
+  const frete = freteDe(subtotal, gratisAPartir);
+  const falta = gratisAPartir - subtotal;
+  // Frete grátis pela categoria (prata acima de R$ 600; ouro e black sempre).
+  const freteDaCategoria = gratisAPartir < FRETE_GRATIS_A_PARTIR && frete === 0;
   const regras = lorenziMais?.regras;
   const rende = pontosDaCompra(subtotal + frete, true, regras);
   const resgatavel = lorenziMais ? maximoResgatavel(lorenziMais.saldo, subtotal, regras) : 0;
@@ -112,6 +118,10 @@ export function Sacola() {
           </dl>
           {falta > 0 ? (
             <p className="mt-4 font-mao text-[14px] leading-relaxed text-caramelo">Faltam {moeda(falta)} para a entrega sair por nossa conta.</p>
+          ) : freteDaCategoria && lorenziMais ? (
+            <p className="mt-4 font-mao text-[14px] leading-relaxed text-caramelo">
+              Frete grátis pelo seu Lorenzi+ {nomeDaCategoria(lorenziMais.categoria)}.
+            </p>
           ) : null}
           <div className="alinhavo mt-5 flex items-baseline justify-between pt-5">
             <span>Total</span>

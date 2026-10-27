@@ -6,6 +6,7 @@ import { ehUuid, type VultoMaisDaFicha } from "@/lib/clientesApi";
 import { tomStatusPedido } from "@/lib/clientesUi";
 import { dataBRdoIso, moedaBR, tomStatus } from "@/lib/chamadosUi";
 import { pontos as fmtPontos, rotuloTipo, textoDoAviso } from "@/lib/vultoMais";
+import { nomeDaCategoria } from "@/lib/beneficiosLorenziMais";
 
 /** Ficha do cliente: contato, chamados do escopo e, só para gerente e admin, compras e valores. */
 export function Cliente() {
@@ -161,15 +162,27 @@ function CartaoVultoMais({ dados, erro }: { dados: VultoMaisDaFicha | null; erro
         <Metrica rotulo="Saldo" valor={`${fmtPontos(dados.saldo)} pts`} />
         <Metrica
           rotulo="Categoria"
-          valor={dados.categoria}
+          valor={nomeDaCategoria(dados.categoria)}
           nota={
             dados.proxima_categoria && dados.faltam_para_proxima
-              ? `faltam ${fmtPontos(dados.faltam_para_proxima)} para ${dados.proxima_categoria}`
+              ? `faltam ${fmtPontos(dados.faltam_para_proxima)} para ${nomeDaCategoria(dados.proxima_categoria)}`
               : "categoria mais alta"
           }
         />
         <Metrica rotulo="Loja de cadastro" valor={dados.loja_cadastro ?? "—"} />
       </div>
+      {dados.beneficios.length ? (
+        <div className="mx-5 mb-4">
+          <p className="rotulo mb-1.5">Benefícios da categoria</p>
+          <ul className="flex flex-wrap gap-1.5">
+            {dados.beneficios.map((b) => (
+              <li key={b.codigo} title={b.descricao}>
+                <Badge tom="destaque">{b.titulo}</Badge>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       {aviso ? (
         <p role="status" className="mx-5 mb-4 border-l-2 border-alerta pl-3 text-sm text-alerta">
           {aviso}

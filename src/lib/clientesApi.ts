@@ -1,4 +1,5 @@
 import { api, type OpcoesApi } from "./api";
+import { validarBeneficios, type BeneficiosLorenziMais } from "./beneficiosLorenziMais";
 import { validarAvisoDeVencimento, type AvisoDeVencimento } from "./vencimentoPontos";
 import { booleanoOuPadrao, lista, numero, objeto, opcao, texto, textoOuNulo, type Opcao } from "./validacao";
 
@@ -172,7 +173,7 @@ export function validarFicha(dados: unknown): FichaCliente {
 }
 
 /** Lorenzi+ do cliente na ficha (GET /painel/clientes/{id}/vulto-mais). */
-export type VultoMaisDaFicha = AvisoDeVencimento & {
+export type VultoMaisDaFicha = AvisoDeVencimento & BeneficiosLorenziMais & {
   saldo: number;
   categoria: string;
   creditos_no_ano: number;
@@ -201,6 +202,7 @@ export function validarVultoMaisDaFicha(dados: unknown): VultoMaisDaFicha {
     faltam_para_proxima: inteiroOuNulo(o.faltam_para_proxima, "faltam_para_proxima"),
     loja_cadastro: textoOuNulo(o.loja_cadastro, "loja_cadastro"),
     ...validarAvisoDeVencimento(o),
+    ...validarBeneficios(o),
     extrato: lista(o.extrato, "extrato").map((v, i) => {
       const m = objeto(v, `extrato[${i}]`);
       return {

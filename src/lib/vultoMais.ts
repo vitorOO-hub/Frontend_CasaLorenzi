@@ -1,6 +1,7 @@
 import { api } from "@/api/http";
 import type { Produto } from "./dados";
 import { lista, numero, numeroOuNulo, objeto, texto, textoOuNulo } from "./validacao";
+import { validarBeneficios, type BeneficiosLorenziMais } from "./beneficiosLorenziMais";
 import { validarRegras, type RegrasLorenziMais } from "./regrasLorenziMais";
 import { validarAvisoDeVencimento, type AvisoDeVencimento } from "./vencimentoPontos";
 
@@ -53,7 +54,7 @@ export const daMarca = (produto: Pick<Produto, "marca">, marca: MarcaFiltro) =>
 
 export type MovimentoPontos = { ocorrido_em: string; tipo: string; pontos: number; descricao: string };
 
-export type VultoMais = AvisoDeVencimento & {
+export type VultoMais = AvisoDeVencimento & BeneficiosLorenziMais & {
   saldo: number;
   categoria: string;
   creditos_no_ano: number;
@@ -73,6 +74,7 @@ export function validarVultoMais(dados: unknown): VultoMais {
     faltam_para_proxima: numeroOuNulo(o.faltam_para_proxima ?? null, "faltam_para_proxima"),
     ...validarAvisoDeVencimento(o),
     regras: validarRegras(o.regras),
+    ...validarBeneficios(o),
     extrato: lista(o.extrato, "extrato").map((item, i) => {
       const m = objeto(item, `extrato.${i}`);
       return {
