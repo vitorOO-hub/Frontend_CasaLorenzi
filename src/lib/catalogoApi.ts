@@ -81,8 +81,7 @@ export function produtoCatalogoDeLinha(linha: LinhaProdutoCatalogo): Produto | n
   const nota = textoObrigatorio(linha.nota);
   const cores = coresCatalogo(linha.cores);
   const fichaCompleta = Boolean(imagemUrl && imagemAlt && tipo && tecido && tecelagem && costuradoEm && nota && cores);
-  // Peça Casa Lorenzi só entra com foto e ficha completas. Peça da linha Vulto entra sem elas
-  // (foram importadas sem foto): a tela mostra "foto em breve" e não inventa tecido nem origem.
+  // Casa Lorenzi exige foto e ficha completas; Vulto pode entrar sem ficha e usar sua foto real.
   const semFoto = !fichaCompleta && ehVulto({ marca: linha.marca });
   if (!fichaCompleta && !semFoto) return null;
 
@@ -108,10 +107,11 @@ export function produtoCatalogoDeLinha(linha: LinhaProdutoCatalogo): Produto | n
       colecao: linha.colecao,
       marca: textoObrigatorio(linha.marca),
       semFoto: true,
+      imagemUrl: imagemUrl ?? undefined,
+      imagemAlt: imagemAlt ?? linha.nome,
       saldos: [],
       movimentacoes: [],
       variacoes,
-      imagemAlt: linha.nome,
       cores: nomesDeCor.map((nome) => ({ nome, hex: corPeloNome(nome) })),
     };
   }
