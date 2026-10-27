@@ -1,4 +1,5 @@
 import { api, type OpcoesApi } from "./api";
+import { validarHorario, type HorarioFuncionamento } from "./horarioLoja";
 import { lista, numero, numeroOuNulo, objeto, texto, textoOuNulo } from "./validacao";
 
 /** Tipos e chamadas do início do gerente (espelham app/gerencia/schemas.py do backend). */
@@ -267,6 +268,8 @@ export type LojaDaRede = {
   cidade: string | null;
   uf: string | null;
   endereco: string | null;
+  telefone: string | null;
+  horario_funcionamento: HorarioFuncionamento | null;
   gerente: string | null;
   equipe: number;
   unidades_em_estoque: number;
@@ -286,6 +289,8 @@ export function validarLojas(dados: unknown): LojaDaRede[] {
       cidade: textoOuNulo(l.cidade, "cidade"),
       uf: textoOuNulo(l.uf, "uf"),
       endereco: textoOuNulo(l.endereco, "endereco"),
+      telefone: textoOuNulo(l.telefone, "telefone"),
+      horario_funcionamento: validarHorario(l.horario_funcionamento),
       gerente: textoOuNulo(l.gerente, "gerente"),
       equipe: numero(l.equipe, "equipe"),
       unidades_em_estoque: numero(l.unidades_em_estoque, "unidades_em_estoque"),

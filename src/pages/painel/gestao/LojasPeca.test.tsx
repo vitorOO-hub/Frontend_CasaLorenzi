@@ -6,9 +6,19 @@ import { validarLojas } from "@/lib/gerenciaApi";
 import { validarOpcoes, validarMovimentacoes, validarSaldo } from "@/lib/estoquePainelApi";
 
 type Consulta<T> = { dados: T | null; carregando: boolean; erro: string | null; recarregar: () => void };
-const estado = vi.hoisted(() => ({ lojas: null as unknown, saldo: null as unknown, mov: null as unknown, opcoes: null as unknown }));
+const estado = vi.hoisted(() => ({
+  lojas: null as unknown,
+  saldo: null as unknown,
+  mov: null as unknown,
+  opcoes: null as unknown,
+  papel: "gerente_loja",
+}));
 
 vi.mock("@/hooks/useDashboardGerente", () => ({ useLojasDaRede: () => estado.lojas }));
+vi.mock("@/lib/sessao", async (original) => ({
+  ...(await original<typeof import("@/lib/sessao")>()),
+  usePapel: () => estado.papel,
+}));
 vi.mock("@/hooks/useEstoquePainel", () => ({
   useOpcoesEstoque: () => estado.opcoes,
   useSaldoEstoque: () => estado.saldo,
@@ -114,6 +124,7 @@ function renderizar(elemento: React.ReactNode, rota = "/", caminho = "/") {
 }
 
 beforeEach(() => {
+  estado.papel = "gerente_loja";
   estado.lojas = consulta(validarLojas({ itens: [loja()] }));
   estado.opcoes = consulta(opcoes);
   estado.saldo = consulta(saldoComPeca());
@@ -146,6 +157,24 @@ describe("Gestão > Lojas", () => {
     const html = renderizar(<Lojas />);
     expect(html).toContain("As casas da rede lado a lado.");
     expect(html).toContain("Sem gerente");
+  });
+
+  it("mostra o horário; só o admin tem o botão de editar", () => {
+    const horario = { seg: { abre: "10:00", fecha: "22:00" }, ter: { abre: "10:00", fecha: "22:00" } };
+    estado.lojas = consulta(validarLojas({ itens: [loja({ horario_funcionamento: horario, telefone: "(11) 3000-0000" })] }));
+    const doGerente = renderizar(<Lojas />);
+    expect(doGerente).toContain("Seg a Ter 10:00–22:00 · Qua a Dom fechada");
+    expect(doGerente).toContain("(11) 3000-0000");
+    expect(doGerente).not.toContain("editar");
+    estado.papel = "admin";
+    expect(renderizar(<Lojas />)).toContain("editar");
+  });
+
+  it("loja sem horário avisa e o admin pode cadastrar", () => {
+    estado.papel = "admin";
+    const html = renderizar(<Lojas />);
+    expect(html).toContain("Horário não cadastrado");
+    expect(html).toContain("cadastrar");
   });
 
   it("carregando e erro", () => {
