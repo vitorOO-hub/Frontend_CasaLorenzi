@@ -94,6 +94,7 @@ export const ROTULO_FERRAMENTA: Record<string, string> = {
   consultar_pecas: "estoque da loja",
   resumo_do_estoque: "resumo do estoque",
   pecas_em_alerta: "peças em alerta",
+  guia_do_painel: "guia das telas",
   lojas_e_horarios: "lojas e horários",
   formas_de_pagamento: "formas de pagamento",
 };
