@@ -186,6 +186,31 @@
     transform: none;
   }
 }
+/* Janela do assistente do vendedor saindo da bolinha e voltando para ela (a origem da escala
+   aponta para a bolinha, então funciona com a janela em qualquer lugar e de qualquer tamanho). */
+@keyframes assistente-entrar {
+  from {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  60% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes assistente-sair {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+}
 @keyframes progresso {
   from {
     transform: scaleX(0);
