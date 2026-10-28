@@ -11,28 +11,62 @@ import {
 } from "./assistenteConversa";
 
 describe("assistente do cliente: respostas da API", () => {
-  it("valida a resposta e mantém os sinais de sacola e de chamado", () => {
+  it("valida a resposta com as peças oferecidas e o chamado", () => {
     const r = validarRespostaAssistente({
       id_conversa: "c1",
       status: "com_atendente",
-      resposta: "Passei para a equipe.",
+      resposta: "Aqui está o blazer.",
       sem_resposta: false,
-      carrinho_alterado: true,
+      carrinho_alterado: false,
       id_atendimento: "a1",
       modelo: "nao deveria passar",
+      ofertas: [
+        {
+          id_variacao: "v1",
+          sku: "CL-BLZ-AZ-M",
+          produto: "blazer alfaiataria",
+          cor: "azul marinho",
+          tamanho: "M",
+          preco: "899.00",
+          imagem_url: "/img/blazer.jpg",
+          imagem_alt: null,
+          tecido: "lã fria",
+          quantidade: 1,
+          estoque: 3,
+        },
+      ],
     });
     expect(r).toEqual({
       id_conversa: "c1",
       status: "com_atendente",
-      resposta: "Passei para a equipe.",
+      resposta: "Aqui está o blazer.",
       sem_resposta: false,
-      carrinho_alterado: true,
       id_atendimento: "a1",
+      ofertas: [
+        {
+          id_variacao: "v1",
+          sku: "CL-BLZ-AZ-M",
+          produto: "blazer alfaiataria",
+          cor: "azul marinho",
+          tamanho: "M",
+          preco: 899,
+          imagem_url: "/img/blazer.jpg",
+          imagem_alt: null,
+          tecido: "lã fria",
+          quantidade: 1,
+        },
+      ],
     });
   });
 
+  it("backend anterior sem ofertas continua valendo; oferta incompleta é recusada", () => {
+    const base = { id_conversa: "c1", status: "ativa", resposta: "x", sem_resposta: false, id_atendimento: null };
+    expect(validarRespostaAssistente(base).ofertas).toEqual([]);
+    expect(() => validarRespostaAssistente({ ...base, ofertas: [{ sku: "X" }] })).toThrow();
+  });
+
   it("recusa status ou autor fora do combinado", () => {
-    const base = { id_conversa: "c1", resposta: "x", sem_resposta: false, carrinho_alterado: false, id_atendimento: null };
+    const base = { id_conversa: "c1", resposta: "x", sem_resposta: false, id_atendimento: null };
     expect(() => validarRespostaAssistente({ ...base, status: "encerrada" })).toThrow();
     expect(() =>
       validarConversaAssistente({
