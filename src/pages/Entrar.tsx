@@ -15,14 +15,15 @@ import {
   type ErrosCadastro,
   type FormCadastro,
 } from "@/lib/cadastro";
-import { criarConta, entrar } from "@/lib/sessao";
+import { criarConta, entrarComEmailOuCpf, tipoDoIdentificador } from "@/lib/sessao";
 import { AtivarConta } from "./AtivarConta";
 
 export function Entrar() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const voltar = params.get("voltar");
-  const [email, setEmail] = useState("");
+  // E-mail ou CPF (o cliente pode entrar com qualquer um dos dois; a equipe entra por e-mail).
+  const [identificador, setIdentificador] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
@@ -75,7 +76,7 @@ export function Entrar() {
       const r = await criarConta(dadosDoCadastro(form));
       if (!r.ok) return setErro(r.detalhe);
       if ("confirmar" in r) {
-        setEmail(form.email.trim().toLowerCase());
+        setIdentificador(form.email.trim().toLowerCase());
         setForm(FORM_VAZIO);
         setCriando(false);
         return setAviso("Conta criada! Confirme seu e-mail (veja a caixa de entrada) e depois entre por aqui.");
@@ -88,14 +89,16 @@ export function Entrar() {
 
   async function enviar(ev: FormEvent) {
     ev.preventDefault();
+    const tipo = tipoDoIdentificador(identificador);
+    if (!tipo) return setErro("Informe seu e-mail ou CPF.");
     setEnviando(true);
     setErro(null);
     try {
-      const r = await entrar(email, senha);
+      const r = await entrarComEmailOuCpf(identificador, senha);
       // Cliente ou equipe: o tipo de conta vem do token e decide para onde ir.
       if (r.ok) return navigate(destinoAposLogin(r.sessao, voltar), { replace: true });
       setSenha("");
-      if (r.motivo === "credenciais") return setErro("E-mail ou senha inválidos.");
+      if (r.motivo === "credenciais") return setErro(tipo === "cpf" ? "CPF ou senha inválidos." : "E-mail ou senha inválidos.");
       setErro(r.detalhe ?? "Não foi possível entrar agora. Tente de novo em instantes.");
     } finally {
       setEnviando(false);
@@ -207,14 +210,16 @@ export function Entrar() {
           ) : (
             <>
           <form onSubmit={enviar} className="mt-8 space-y-4">
-            <Campo label="E-mail">
+            <Campo label="E-mail ou CPF">
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="text"
+                value={identificador}
+                onChange={(e) => setIdentificador(e.target.value)}
                 className={inputClasses}
-                placeholder="seu@email.com"
+                placeholder="seu@email.com ou 000.000.000-00"
                 autoComplete="username"
+                autoCapitalize="none"
+                spellCheck={false}
                 required
               />
             </Campo>
