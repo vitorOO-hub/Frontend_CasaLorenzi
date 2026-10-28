@@ -214,8 +214,13 @@ export function AssistenteCliente({ conta }: { conta: string }) {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              {mensagens.length && (!comEquipe || encerrado) ? (
-                <button onClick={recomecar} className="text-[11px] uppercase tracking-[0.12em] text-suave hover:text-tinta">
+              {/* Sempre disponível: um atendimento em andamento continua na área Atendimento. */}
+              {mensagens.length || comEquipe ? (
+                <button
+                  onClick={recomecar}
+                  title={comEquipe && !encerrado ? "O atendimento com a equipe continua na área Atendimento" : undefined}
+                  className="text-[11px] uppercase tracking-[0.12em] text-suave hover:text-tinta"
+                >
                   Nova conversa
                 </button>
               ) : null}
