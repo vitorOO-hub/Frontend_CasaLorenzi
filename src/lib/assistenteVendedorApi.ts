@@ -92,6 +92,8 @@ export const ROTULO_FERRAMENTA: Record<string, string> = {
   buscar_clientes: "clientes",
   clientes_que_mais_compram: "melhores clientes",
   consultar_pecas: "estoque da loja",
+  resumo_do_estoque: "resumo do estoque",
+  pecas_em_alerta: "peças em alerta",
   lojas_e_horarios: "lojas e horários",
   formas_de_pagamento: "formas de pagamento",
 };
