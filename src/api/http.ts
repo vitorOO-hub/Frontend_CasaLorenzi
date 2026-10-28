@@ -17,6 +17,8 @@ export type OpcoesRequisicao = {
   idempotencia?: string;
   /** Rotas públicas (ex.: catálogo) não mandam token. */
   semToken?: boolean;
+  /** Tempo máximo desta chamada (ex.: o assistente, que espera o modelo de IA responder). */
+  timeoutMs?: number;
 };
 
 /** Como o cliente HTTP obtém e renova o JWT do Supabase (trocável nos testes). */
@@ -46,7 +48,7 @@ export async function requisitar<T>(metodo: Metodo, caminho: string, op: OpcoesR
   });
   const url = `/api/v1${caminho}`;
   const validar = (dados: unknown) => dados as T;
-  const opcoes = { idempotencia: op.idempotencia, semToken: op.semToken, timeoutMs: config.timeoutMs };
+  const opcoes = { idempotencia: op.idempotencia, semToken: op.semToken, timeoutMs: op.timeoutMs ?? config.timeoutMs };
   switch (metodo) {
     case "GET":
       return cliente.get(url, validar, comoParametros(op.params), opcoes);

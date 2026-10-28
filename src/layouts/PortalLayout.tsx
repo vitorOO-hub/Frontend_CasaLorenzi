@@ -276,7 +276,7 @@ export function PortalLayout() {
       <CartaMensal />
       <Rodape />
       {/* Assistente virtual: só para o cliente logado, falando com o backend de verdade. */}
-      {cliente && usandoApi() ? <AssistenteCliente key={cliente.clienteId} clienteId={cliente.clienteId} /> : null}
+      {cliente && usandoApi() ? <AssistenteCliente key={cliente.email} conta={cliente.email} /> : null}
     </div>
   );
 }
