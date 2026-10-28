@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 import {
   cadastrarCliente,
   entrar as entrarNoSupabase,
+  entrarPorCpf as entrarNoSupabasePorCpf,
   ouvirSessao,
   sairDaConta,
   sessaoAtual as sessaoDoSupabase,
@@ -131,10 +132,28 @@ export type ResultadoLogin =
  * Login pelo Supabase Auth (a função pronta `signInWithPassword`). O front não guarda senha nem
  * conhece nenhuma conta: o tipo de usuário (cliente ou cargo da equipe) vem do token.
  */
-export async function entrar(email: string, senha: string): Promise<ResultadoLogin> {
+export const entrar = (email: string, senha: string) => concluirLogin(() => entrarNoSupabase(email, senha));
+
+/** Login do cliente por CPF e senha (a equipe entra por e-mail). */
+export const entrarPorCpf = (cpf: string, senha: string) => concluirLogin(() => entrarNoSupabasePorCpf(cpf, senha));
+
+/** E-mail ou CPF no mesmo campo: com "@" é e-mail; com 11 números, CPF. */
+export function tipoDoIdentificador(valor: string): "email" | "cpf" | null {
+  const limpo = valor.trim();
+  if (limpo.includes("@")) return "email";
+  return limpo.replace(/\D/g, "").length === 11 && /^[\d.\-\s]+$/.test(limpo) ? "cpf" : null;
+}
+
+export function entrarComEmailOuCpf(identificador: string, senha: string): Promise<ResultadoLogin> {
+  return tipoDoIdentificador(identificador) === "cpf"
+    ? entrarPorCpf(identificador.replace(/\D/g, ""), senha)
+    : entrar(identificador, senha);
+}
+
+async function concluirLogin(obterConta: () => Promise<SessaoApi>): Promise<ResultadoLogin> {
   let conta: SessaoApi;
   try {
-    conta = await entrarNoSupabase(email, senha);
+    conta = await obterConta();
   } catch (erro) {
     const credenciais = erro instanceof ErroApi && erro.codigo === "nao_autenticado";
     if (credenciais) return { ok: false, motivo: "credenciais" };
