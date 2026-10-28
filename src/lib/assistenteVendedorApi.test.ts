@@ -38,6 +38,15 @@ describe("assistente do vendedor: texto da resposta", () => {
     expect(trechosDe("<script>x</script>")).toEqual([{ texto: "<script>x</script>", negrito: false }]);
   });
 
+  it("não come os asteriscos da máscara de CPF", () => {
+    expect(trechosDe("CPF ***.***.***-01")).toEqual([{ texto: "CPF ***.***.***-01", negrito: false }]);
+    expect(trechosDe("sem CPF: ***.***.***-**")).toEqual([{ texto: "sem CPF: ***.***.***-**", negrito: false }]);
+    expect(trechosDe("**Ana** ***.***.***-01")).toEqual([
+      { texto: "Ana", negrito: true },
+      { texto: " ***.***.***-01", negrito: false },
+    ]);
+  });
+
   it("reconhece listas e ignora linhas vazias", () => {
     const linhas = linhasDaResposta("Mais vendidas:\n\n1. Camisa\n- **Calça** (6)\n### Dica\nOfereça o cinto.");
     expect(linhas.map((l) => l.tipo)).toEqual(["paragrafo", "item", "item", "paragrafo", "paragrafo"]);

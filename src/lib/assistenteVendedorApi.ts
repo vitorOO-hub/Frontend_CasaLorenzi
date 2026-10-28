@@ -105,15 +105,19 @@ export const rotuloFerramenta = (nome: string) => ROTULO_FERRAMENTA[nome] ?? nul
 export type Trecho = { texto: string; negrito: boolean };
 export type Linha = { tipo: "paragrafo" | "item"; trechos: Trecho[] };
 
+// Negrito só em volta de texto com letra ou número: "***.***.***-01" (máscara de CPF) fica como está.
+const NEGRITO = /(?<!\*)\*\*(?!\s)([^*]*[\p{L}\p{N}][^*]*?)(?<!\s)\*\*(?!\*)/gu;
+
 export function trechosDe(linha: string): Trecho[] {
-  return linha
-    .split(/(\*\*[^*]+\*\*)/g)
-    .filter(Boolean)
-    .map((parte) =>
-      parte.startsWith("**") && parte.endsWith("**") && parte.length > 4
-        ? { texto: parte.slice(2, -2), negrito: true }
-        : { texto: parte, negrito: false },
-    );
+  const trechos: Trecho[] = [];
+  let resto = 0;
+  for (const achado of linha.matchAll(NEGRITO)) {
+    if (achado.index > resto) trechos.push({ texto: linha.slice(resto, achado.index), negrito: false });
+    trechos.push({ texto: achado[1]!, negrito: true });
+    resto = achado.index + achado[0].length;
+  }
+  if (resto < linha.length) trechos.push({ texto: linha.slice(resto), negrito: false });
+  return trechos;
 }
 
 /** Quebra a resposta em parágrafos e itens de lista; nada vira HTML cru (sem risco de injeção). */
