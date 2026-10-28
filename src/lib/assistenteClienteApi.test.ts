@@ -48,6 +48,7 @@ describe("assistente do cliente: respostas da API", () => {
           id_variacao: "v1",
           sku: "CL-BLZ-AZ-M",
           produto: "blazer alfaiataria",
+          marca: null,
           cor: "azul marinho",
           tamanho: "M",
           preco: 899,
