@@ -365,6 +365,9 @@ function CartaoOferta({ oferta, aoAdicionar }: { oferta: OfertaAssistenteApi; ao
   const navigate = useNavigate();
   const [adicionando, setAdicionando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  // Opção de um pedido vago: o cliente escolhe cor e tamanho aqui (só o que tem em estoque).
+  const [skuEscolhido, setSkuEscolhido] = useState(oferta.variacoes[0]?.sku ?? oferta.sku);
+  const escolhida = oferta.variacoes.find((v) => v.sku === skuEscolhido) ?? oferta;
   const nome = nomeDeVitrine(oferta.produto);
 
   async function adicionar() {
@@ -372,14 +375,14 @@ function CartaoOferta({ oferta, aoAdicionar }: { oferta: OfertaAssistenteApi; ao
     setErro(null);
     try {
       await adicionarAoCarrinho({
-        idVariacao: oferta.id_variacao,
-        sku: oferta.sku,
-        skuBase: oferta.sku,
+        idVariacao: escolhida.id_variacao,
+        sku: escolhida.sku,
+        skuBase: escolhida.sku,
         nome,
         quantidade: oferta.quantidade,
-        valor: oferta.preco,
-        cor: oferta.cor,
-        tamanho: oferta.tamanho,
+        valor: escolhida.preco,
+        cor: escolhida.cor,
+        tamanho: escolhida.tamanho,
         imagemUrl: oferta.imagem_url,
         imagemAlt: oferta.imagem_alt ?? nome,
         tecido: oferta.tecido,
@@ -397,15 +400,32 @@ function CartaoOferta({ oferta, aoAdicionar }: { oferta: OfertaAssistenteApi; ao
       <Foto src={oferta.imagem_url ?? fotoEstudio(oferta.sku)} alt={oferta.imagem_alt ?? nome} className="aspect-[4/5] w-16 shrink-0" />
       <div className="flex min-w-0 flex-1 flex-col">
         <p className="truncate text-sm font-medium">{nome}</p>
-        <p className="text-[12px] text-suave">
-          {oferta.cor} · {oferta.tamanho}
-          {oferta.quantidade > 1 ? ` · ${oferta.quantidade} peças` : ""}
-        </p>
-        <p className="mt-0.5 text-sm">{moeda(oferta.preco)}</p>
+        {oferta.variacoes.length > 1 ? (
+          <label className="mt-1 block">
+            <span className="sr-only">Cor e tamanho de {nome}</span>
+            <select
+              value={skuEscolhido}
+              onChange={(ev) => setSkuEscolhido(ev.target.value)}
+              className="w-full border border-linha bg-papel px-1.5 py-1 text-[12px]"
+            >
+              {oferta.variacoes.map((v) => (
+                <option key={v.sku} value={v.sku}>
+                  {v.cor} · {v.tamanho}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <p className="text-[12px] text-suave">
+            {escolhida.cor} · {escolhida.tamanho}
+            {oferta.quantidade > 1 ? ` · ${oferta.quantidade} peças` : ""}
+          </p>
+        )}
+        <p className="mt-0.5 text-sm">{moeda(escolhida.preco)}</p>
         <button
           onClick={() => void adicionar()}
           disabled={adicionando}
-          className="mt-auto self-start bg-marinho px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.12em] text-white disabled:opacity-50"
+          className="mt-1.5 self-start bg-marinho px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.12em] text-white disabled:opacity-50"
         >
           {adicionando ? "Adicionando…" : "Adicionar à sacola"}
         </button>

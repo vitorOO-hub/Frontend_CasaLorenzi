@@ -54,9 +54,32 @@ describe("assistente do cliente: respostas da API", () => {
           imagem_alt: null,
           tecido: "lã fria",
           quantidade: 1,
+          variacoes: [{ id_variacao: "v1", sku: "CL-BLZ-AZ-M", cor: "azul marinho", tamanho: "M", preco: 899 }],
         },
       ],
     });
+  });
+
+  it("opção de pedido vago traz as variações para escolher no cartão", () => {
+    const [opcao] = validarRespostaAssistente({
+      id_conversa: "c1",
+      status: "ativa",
+      resposta: "Separei algumas opções.",
+      sem_resposta: false,
+      id_atendimento: null,
+      ofertas: [
+        {
+          id_variacao: "v1", sku: "BLZ-AZ-M", produto: "blazer azul", cor: "azul", tamanho: "M", preco: "899.00",
+          imagem_url: null, imagem_alt: null, tecido: null, quantidade: 1,
+          variacoes: [
+            { id_variacao: "v1", sku: "BLZ-AZ-M", cor: "azul", tamanho: "M", preco: "899.00" },
+            { id_variacao: "v2", sku: "BLZ-AZ-G", cor: "azul", tamanho: "G", preco: 899 },
+          ],
+        },
+      ],
+    }).ofertas;
+    expect(opcao.variacoes.map((v) => v.tamanho)).toEqual(["M", "G"]);
+    expect(opcao.variacoes[0].preco).toBe(899);
   });
 
   it("backend anterior sem ofertas continua valendo; oferta incompleta é recusada", () => {

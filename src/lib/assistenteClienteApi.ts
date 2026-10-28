@@ -5,7 +5,13 @@ import { booleano, lista, numero, objeto, texto, textoOuNulo } from "./validacao
 
 export type StatusConversaAssistente = "ativa" | "com_atendente" | "encerrada";
 
-/** Peça que o assistente mostra com o botão "Adicionar à sacola" (quem põe na sacola é o cliente). */
+/** Cor e tamanho em estoque que o cliente pode escolher no cartão. */
+export type VariacaoOfertaApi = { id_variacao: string; sku: string; cor: string; tamanho: string; preco: number };
+
+/**
+ * Peça que o assistente mostra com o botão "Adicionar à sacola" (quem põe na sacola é o cliente).
+ * Peça exata: uma variação. Opção de um pedido vago: várias, para escolher no cartão.
+ */
 export type OfertaAssistenteApi = {
   id_variacao: string;
   sku: string;
@@ -17,6 +23,7 @@ export type OfertaAssistenteApi = {
   imagem_alt: string | null;
   tecido: string | null;
   quantidade: number;
+  variacoes: VariacaoOfertaApi[];
 };
 
 export type MensagemAssistenteApi = {
@@ -60,19 +67,36 @@ function preco(valor: unknown, campo: string): number {
   return numero(n, campo);
 }
 
-export function validarOferta(dados: unknown): OfertaAssistenteApi {
-  const o = objeto(dados, "oferta");
+function validarVariacao(dados: unknown): VariacaoOfertaApi {
+  const o = objeto(dados, "variacao");
   return {
     id_variacao: texto(o.id_variacao, "id_variacao"),
     sku: texto(o.sku, "sku"),
-    produto: texto(o.produto, "produto"),
     cor: texto(o.cor, "cor"),
     tamanho: texto(o.tamanho, "tamanho"),
     preco: preco(o.preco, "preco"),
+  };
+}
+
+export function validarOferta(dados: unknown): OfertaAssistenteApi {
+  const o = objeto(dados, "oferta");
+  const base = {
+    id_variacao: texto(o.id_variacao, "id_variacao"),
+    sku: texto(o.sku, "sku"),
+    cor: texto(o.cor, "cor"),
+    tamanho: texto(o.tamanho, "tamanho"),
+    preco: preco(o.preco, "preco"),
+  };
+  // Backend anterior (sem a lista): a própria peça é a única variação.
+  const variacoes = o.variacoes === undefined || o.variacoes === null ? [] : lista(o.variacoes, "variacoes").map(validarVariacao);
+  return {
+    ...base,
+    produto: texto(o.produto, "produto"),
     imagem_url: textoOuNulo(o.imagem_url, "imagem_url"),
     imagem_alt: textoOuNulo(o.imagem_alt, "imagem_alt"),
     tecido: textoOuNulo(o.tecido, "tecido"),
     quantidade: o.quantidade === undefined ? 1 : numero(o.quantidade, "quantidade"),
+    variacoes: variacoes.length ? variacoes : [base],
   };
 }
 
