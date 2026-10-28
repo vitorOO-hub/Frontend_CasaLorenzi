@@ -22,7 +22,7 @@ import { useLorenziMais } from "@/hooks/useLorenziMais";
 import { SinalMais } from "@/components/marca";
 import { descontoDosPontos, maximoResgatavel, pontosDaCompra } from "@/lib/regrasLorenziMais";
 import { pontos as fmtPontos } from "@/lib/vultoMais";
-import { freteDe } from "./Sacola";
+import { FRETE_GRATIS_A_PARTIR, freteDe } from "./Sacola";
 
 const estados = "AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO".split(" ");
 
@@ -93,7 +93,10 @@ export function Checkout() {
   const [pontosEscolhidos, setPontosEscolhidos] = useState(0);
 
   const subtotal = carrinho.reduce((s, i) => s + i.valor * i.quantidade, 0);
-  const frete = entrega === "loja" ? 0 : freteDe(subtotal);
+  // Frete pela categoria Lorenzi+ (o back aplica a mesma regra ao gravar o pedido).
+  const gratisAPartir = lorenziMais?.frete_gratis_a_partir ?? FRETE_GRATIS_A_PARTIR;
+  const freteEmCasa = freteDe(subtotal, gratisAPartir);
+  const frete = entrega === "loja" ? 0 : freteEmCasa;
   // Lorenzi+: o desconto sai das peças (nunca do frete) e não passa do saldo.
   const regras = lorenziMais?.regras;
   const maximoDePontos = lorenziMais ? maximoResgatavel(lorenziMais.saldo, subtotal, regras) : 0;
@@ -258,7 +261,7 @@ export function Checkout() {
                 ativa={entrega === "casa"}
                 onClick={() => setEntrega("casa")}
                 titulo="Receber em casa"
-                nota={freteDe(subtotal) === 0 ? "Entrega por nossa conta" : `Entrega por ${moeda(freteDe(subtotal))}`}
+                nota={freteEmCasa === 0 ? "Entrega por nossa conta" : `Entrega por ${moeda(freteEmCasa)}`}
               />
               <Opcao
                 ativa={entrega === "loja"}

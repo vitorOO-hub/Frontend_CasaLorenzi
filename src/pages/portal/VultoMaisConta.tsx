@@ -5,6 +5,7 @@ import { mensagemDeErro } from "@/api/erros";
 import { SinalMais } from "@/components/marca";
 import { cn } from "@/components/ui";
 import { dataBR } from "@/lib/dados";
+import { nomeDaCategoria, type Beneficio } from "@/lib/beneficiosLorenziMais";
 import { obterVultoMais, pontos, rotuloTipo, textoDoAviso, type VultoMais } from "@/lib/vultoMais";
 
 /** Lorenzi+ (antigo Vulto+) na área do cliente: o programa de pontos da casa (uma conta, um login). */
@@ -53,10 +54,10 @@ export function VultoMaisConta() {
             <span className="ml-2 text-[15px] uppercase tracking-[0.12em]">pts</span>
           </p>
           <div className="mt-4 flex flex-wrap items-center gap-3 text-[13px] text-creme/70">
-            <span className="border border-creme/40 px-2.5 py-1 text-[11px] uppercase tracking-[0.14em] text-creme">{dados.categoria}</span>
+            <span className="border border-creme/40 px-2.5 py-1 text-[11px] uppercase tracking-[0.14em] text-creme">{nomeDaCategoria(dados.categoria)}</span>
             {dados.proxima_categoria && dados.faltam_para_proxima ? (
               <span>
-                faltam {pontos(dados.faltam_para_proxima)} pontos no ano para {dados.proxima_categoria}
+                faltam {pontos(dados.faltam_para_proxima)} pontos no ano para {nomeDaCategoria(dados.proxima_categoria)}
               </span>
             ) : (
               <span>a categoria mais alta do programa</span>
@@ -66,6 +67,7 @@ export function VultoMaisConta() {
             Lorenzi+, o programa de pontos da casa: cada R$ 1 em compra vale 1 ponto, e no site vale o dobro. Vale nas lojas Casa Lorenzi e Vulto. Uma conta, um login.
           </p>
         </section>
+        <Beneficios dados={dados} />
         {aviso ? (
           <p role="status" className="border border-ferrugem/40 bg-papel p-4 text-[14px] text-tinta">
             <b className="font-medium">{aviso}.</b> Use antes que expirem.
@@ -111,3 +113,42 @@ export function VultoMaisConta() {
     </div>
   );
 }
+
+/** Os benefícios da categoria do cliente e o que ele ganha ao subir para a próxima. */
+export function Beneficios({ dados }: { dados: VultoMais }) {
+  const atuais = new Set(dados.beneficios.map((b) => b.codigo));
+  const novos = dados.proximos_beneficios.filter((b) => !atuais.has(b.codigo));
+  return (
+    <section aria-label="Seus benefícios" className="border border-linha bg-papel p-5">
+      <h2 className="text-[11px] uppercase tracking-[0.16em] text-suave">Seus benefícios · {nomeDaCategoria(dados.categoria)}</h2>
+      {dados.beneficios.length ? (
+        <ListaDeBeneficios itens={dados.beneficios} />
+      ) : (
+        <p className="mt-3 text-[14px] text-suave">Os benefícios começam na categoria Prata.</p>
+      )}
+      {dados.proxima_categoria && novos.length ? (
+        <div className="mt-5 border-t border-dashed border-linha pt-4">
+          <h3 className="text-[11px] uppercase tracking-[0.16em] text-suave">Na categoria {nomeDaCategoria(dados.proxima_categoria)}</h3>
+          <ListaDeBeneficios itens={novos} apagado />
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function ListaDeBeneficios({ itens, apagado = false }: { itens: Beneficio[]; apagado?: boolean }) {
+  return (
+    <ul className="mt-3 space-y-3">
+      {itens.map((b) => (
+        <li key={b.codigo} className="flex items-start gap-3 text-[14px]">
+          <SinalMais className={cn("mt-[3px] shrink-0 text-[14px]", apagado && "opacity-40")} />
+          <span>
+            <b className={cn("block font-medium", apagado ? "text-suave" : "text-tinta")}>{b.titulo}</b>
+            <span className="text-[13px] text-suave">{b.descricao}</span>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
