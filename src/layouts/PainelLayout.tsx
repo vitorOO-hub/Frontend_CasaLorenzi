@@ -1,6 +1,7 @@
 import { LogOut, Store } from "lucide-react";
 import { Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Bloqueio } from "@/components/acesso";
+import { AssistenteVendedor } from "@/components/AssistenteVendedor";
 import { MenuUsuario } from "@/components/MenuUsuario";
 import { SinalMais } from "@/components/marca";
 import { cn } from "@/components/ui";
@@ -220,6 +221,8 @@ export function PainelLayout() {
           {podeAcessar(papel, pathname) ? <Outlet /> : <Bloqueio papel={papel} />}
         </main>
       </div>
+      {/* Assistente de vendas com IA: só para o vendedor (o servidor confere o papel de novo). */}
+      {papel === "vendedor" ? <AssistenteVendedor /> : null}
     </div>
   );
 }
