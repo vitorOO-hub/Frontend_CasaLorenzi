@@ -1,14 +1,19 @@
 import { MessageCircle, Send, X } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ErroApi, mensagemDeErro } from "@/api/erros";
-import { sincronizarCarrinho } from "@/lib/acoes";
+import { adicionarAoCarrinho } from "@/lib/acoes";
+import { moeda } from "@/lib/dados";
+import { fotoEstudio } from "@/lib/loja";
+import { nomeDeVitrine } from "@/lib/nomes";
+import { Foto } from "./vitrine";
 import {
   LIMITE_TEXTO_ASSISTENTE,
   enviarMensagemAssistente,
   iniciarConversaAssistente,
   obterConversaAssistente,
   type MensagemAssistenteApi,
+  type OfertaAssistenteApi,
 } from "@/lib/assistenteClienteApi";
 import {
   SAUDACAO_ASSISTENTE,
@@ -28,13 +33,13 @@ import {
 import { manterConversaEmDia, ouvirMensagensDoChamado } from "@/lib/conversaClienteAoVivo";
 import { cn } from "./ui";
 
-type Mensagem = Pick<MensagemAssistenteApi, "autor" | "texto"> & { id: string; sacola?: boolean };
+type Mensagem = Pick<MensagemAssistenteApi, "autor" | "texto" | "ofertas"> & { id: string };
 
-const novaMensagem = (autor: Mensagem["autor"], texto: string, sacola = false): Mensagem => ({
+const novaMensagem = (autor: Mensagem["autor"], texto: string, ofertas: OfertaAssistenteApi[] = []): Mensagem => ({
   id: crypto.randomUUID(),
   autor,
   texto,
-  sacola,
+  ofertas,
 });
 
 type Equipe = { mensagens: MensagemChamadoClienteApi[]; encerrado: boolean };
@@ -74,7 +79,7 @@ export function AssistenteCliente({ conta }: { conta: string }) {
     obterConversaAssistente(idConversa)
       .then((conversa) => {
         if (!ativo) return;
-        setMensagens(conversa.mensagens.map((m) => novaMensagem(m.autor, m.texto)));
+        setMensagens(conversa.mensagens.map((m) => novaMensagem(m.autor, m.texto, m.ofertas)));
         setIdAtendimento(conversa.status === "ativa" ? null : conversa.id_atendimento);
       })
       .catch(() => {
@@ -156,11 +161,8 @@ export function AssistenteCliente({ conta }: { conta: string }) {
     setMensagens((atuais) => [...atuais, minha]);
     try {
       const resposta = await enviarMensagemAssistente(await conversaAtual(), pergunta);
-      if (resposta.carrinho_alterado) {
-        // A sacola mudou no servidor: o cabeçalho e a página da sacola passam a mostrar a peça.
-        await sincronizarCarrinho().catch(() => undefined);
-      }
-      setMensagens((atuais) => [...atuais, novaMensagem("assistente", resposta.resposta, resposta.carrinho_alterado)]);
+      // Peças oferecidas aparecem como cartões com o botão "Adicionar à sacola".
+      setMensagens((atuais) => [...atuais, novaMensagem("assistente", resposta.resposta, resposta.ofertas)]);
       // Passou para a equipe: daqui em diante o mesmo painel conversa com o atendente.
       if (resposta.status === "com_atendente") setIdAtendimento(resposta.id_atendimento);
     } catch (falha) {
@@ -236,10 +238,14 @@ export function AssistenteCliente({ conta }: { conta: string }) {
             {mensagens.map((m) => (
               <div key={m.id}>
                 <Balao lado={m.autor === "usuario" ? "meu" : "outro"} texto={m.texto} />
-                {m.sacola ? (
-                  <Link to="/sacola" onClick={() => setAberto(false)} className="mt-1.5 inline-block text-[12px] font-medium text-caramelo underline-offset-2 hover:underline">
-                    Ver sacola
-                  </Link>
+                {m.ofertas.length ? (
+                  <ul className="mt-2 space-y-2" aria-label="Peças sugeridas">
+                    {m.ofertas.map((oferta) => (
+                      <li key={oferta.sku}>
+                        <CartaoOferta oferta={oferta} aoAdicionar={() => setAberto(false)} />
+                      </li>
+                    ))}
+                  </ul>
                 ) : null}
               </div>
             ))}
@@ -346,6 +352,88 @@ function Balao({ lado, texto, rotulo }: { lado: "meu" | "outro"; texto: string; 
       <div className={cn("max-w-[85%] px-3.5 py-2.5 text-sm leading-relaxed", meu ? "bg-marinho text-white" : "bg-areia/70")}>
         {rotulo ? <p className="mb-1 text-[11px] font-semibold text-suave">{rotulo}</p> : null}
         <p className="whitespace-pre-wrap">{texto}</p>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Peça sugerida pelo assistente: foto pequena, cor, tamanho, preço e o botão. O clique usa a mesma
+ * ação de sacola do site (a do botão da página da peça) e leva o cliente para a sacola.
+ */
+function CartaoOferta({ oferta, aoAdicionar }: { oferta: OfertaAssistenteApi; aoAdicionar: () => void }) {
+  const navigate = useNavigate();
+  const [adicionando, setAdicionando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  // Opção de um pedido vago: o cliente escolhe cor e tamanho aqui (só o que tem em estoque).
+  const [skuEscolhido, setSkuEscolhido] = useState(oferta.variacoes[0]?.sku ?? oferta.sku);
+  const escolhida = oferta.variacoes.find((v) => v.sku === skuEscolhido) ?? oferta;
+  const nome = nomeDeVitrine(oferta.produto);
+
+  async function adicionar() {
+    setAdicionando(true);
+    setErro(null);
+    try {
+      await adicionarAoCarrinho({
+        idVariacao: escolhida.id_variacao,
+        sku: escolhida.sku,
+        skuBase: escolhida.sku,
+        nome,
+        quantidade: oferta.quantidade,
+        valor: escolhida.preco,
+        cor: escolhida.cor,
+        tamanho: escolhida.tamanho,
+        imagemUrl: oferta.imagem_url,
+        imagemAlt: oferta.imagem_alt ?? nome,
+        tecido: oferta.tecido,
+      });
+      aoAdicionar();
+      navigate("/sacola");
+    } catch (falha) {
+      setErro(mensagemDeErro(falha));
+      setAdicionando(false);
+    }
+  }
+
+  return (
+    <div className="flex gap-3 border border-linha bg-papel p-2.5">
+      <Foto src={oferta.imagem_url ?? fotoEstudio(oferta.sku)} alt={oferta.imagem_alt ?? nome} className="aspect-[4/5] w-16 shrink-0" />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <p className="truncate text-sm font-medium">{nome}</p>
+        {oferta.variacoes.length > 1 ? (
+          <label className="mt-1 block">
+            <span className="sr-only">Cor e tamanho de {nome}</span>
+            <select
+              value={skuEscolhido}
+              onChange={(ev) => setSkuEscolhido(ev.target.value)}
+              className="w-full border border-linha bg-papel px-1.5 py-1 text-[12px]"
+            >
+              {oferta.variacoes.map((v) => (
+                <option key={v.sku} value={v.sku}>
+                  {v.cor} · {v.tamanho}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <p className="text-[12px] text-suave">
+            {escolhida.cor} · {escolhida.tamanho}
+            {oferta.quantidade > 1 ? ` · ${oferta.quantidade} peças` : ""}
+          </p>
+        )}
+        <p className="mt-0.5 text-sm">{moeda(escolhida.preco)}</p>
+        <button
+          onClick={() => void adicionar()}
+          disabled={adicionando}
+          className="mt-1.5 self-start bg-marinho px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.12em] text-white disabled:opacity-50"
+        >
+          {adicionando ? "Adicionando…" : "Adicionar à sacola"}
+        </button>
+        {erro ? (
+          <p role="alert" className="mt-1 text-[12px] text-terracota">
+            {erro}
+          </p>
+        ) : null}
       </div>
     </div>
   );
