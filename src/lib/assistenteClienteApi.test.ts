@@ -1,6 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { validarConversaAssistente, validarRespostaAssistente } from "./assistenteClienteApi";
-import { esquecerConversa, guardarConversa, lerConversaGuardada } from "./assistenteConversa";
+import {
+  CABECALHO_PASSAGEM,
+  atendimentoEncerrado,
+  esquecerConversa,
+  guardarConversa,
+  lerConversaGuardada,
+  mensagensDaEquipeNoPainel,
+  respostasDaEquipe,
+} from "./assistenteConversa";
 
 describe("assistente do cliente: respostas da API", () => {
   it("valida a resposta e mantém os sinais de sacola e de chamado", () => {
@@ -84,5 +92,28 @@ describe("assistente do cliente: conversa guardada na aba", () => {
     expect(() => guardarConversa("c", "x")).not.toThrow();
     expect(lerConversaGuardada("c")).toBeNull();
     expect(() => esquecerConversa("c")).not.toThrow();
+  });
+});
+
+describe("assistente do cliente: chat com a equipe no mesmo painel", () => {
+  const mensagem = (autor: "cliente" | "atendente", texto: string) => ({ autor, texto });
+
+  it("esconde a transcrição que a equipe recebeu (o cliente já vê a conversa acima)", () => {
+    const doChamado = [
+      mensagem("cliente", `${CABECALHO_PASSAGEM}\nMotivo: x\n\nConversa com o assistente:\nCliente: oi`),
+      mensagem("atendente", "Oi! Já vi o resumo."),
+    ];
+    expect(mensagensDaEquipeNoPainel(doChamado)).toEqual([doChamado[1]]);
+  });
+
+  it("chamado comum (sem transcrição) aparece inteiro", () => {
+    const doChamado = [mensagem("cliente", "Meu zíper quebrou."), mensagem("atendente", "Vamos trocar.")];
+    expect(mensagensDaEquipeNoPainel(doChamado)).toEqual(doChamado);
+  });
+
+  it("conta só as respostas da equipe e reconhece atendimento encerrado", () => {
+    expect(respostasDaEquipe([mensagem("cliente", "a"), mensagem("atendente", "b"), mensagem("atendente", "c")])).toBe(2);
+    expect(atendimentoEncerrado("resolvido")).toBe(true);
+    expect(atendimentoEncerrado("em_andamento")).toBe(false);
   });
 });
