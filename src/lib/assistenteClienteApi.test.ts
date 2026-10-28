@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { validarConversaAssistente, validarRespostaAssistente } from "./assistenteClienteApi";
+import { validarConversaAssistente, validarConversaResumo, validarRespostaAssistente } from "./assistenteClienteApi";
 import {
   CABECALHO_PASSAGEM,
   atendimentoEncerrado,
@@ -11,28 +11,86 @@ import {
 } from "./assistenteConversa";
 
 describe("assistente do cliente: respostas da API", () => {
-  it("valida a resposta e mantém os sinais de sacola e de chamado", () => {
+  it("valida a resposta com as peças oferecidas e o chamado", () => {
     const r = validarRespostaAssistente({
       id_conversa: "c1",
       status: "com_atendente",
-      resposta: "Passei para a equipe.",
+      resposta: "Aqui está o blazer.",
       sem_resposta: false,
-      carrinho_alterado: true,
+      carrinho_alterado: false,
       id_atendimento: "a1",
       modelo: "nao deveria passar",
+      ofertas: [
+        {
+          id_variacao: "v1",
+          sku: "CL-BLZ-AZ-M",
+          produto: "blazer alfaiataria",
+          cor: "azul marinho",
+          tamanho: "M",
+          preco: "899.00",
+          imagem_url: "/img/blazer.jpg",
+          imagem_alt: null,
+          tecido: "lã fria",
+          quantidade: 1,
+          estoque: 3,
+        },
+      ],
     });
     expect(r).toEqual({
       id_conversa: "c1",
+      id_mensagem: null,
       status: "com_atendente",
-      resposta: "Passei para a equipe.",
+      resposta: "Aqui está o blazer.",
       sem_resposta: false,
-      carrinho_alterado: true,
       id_atendimento: "a1",
+      ofertas: [
+        {
+          id_variacao: "v1",
+          sku: "CL-BLZ-AZ-M",
+          produto: "blazer alfaiataria",
+          cor: "azul marinho",
+          tamanho: "M",
+          preco: 899,
+          imagem_url: "/img/blazer.jpg",
+          imagem_alt: null,
+          tecido: "lã fria",
+          quantidade: 1,
+          variacoes: [{ id_variacao: "v1", sku: "CL-BLZ-AZ-M", cor: "azul marinho", tamanho: "M", preco: 899 }],
+        },
+      ],
     });
   });
 
+  it("opção de pedido vago traz as variações para escolher no cartão", () => {
+    const [opcao] = validarRespostaAssistente({
+      id_conversa: "c1",
+      status: "ativa",
+      resposta: "Separei algumas opções.",
+      sem_resposta: false,
+      id_atendimento: null,
+      ofertas: [
+        {
+          id_variacao: "v1", sku: "BLZ-AZ-M", produto: "blazer azul", cor: "azul", tamanho: "M", preco: "899.00",
+          imagem_url: null, imagem_alt: null, tecido: null, quantidade: 1,
+          variacoes: [
+            { id_variacao: "v1", sku: "BLZ-AZ-M", cor: "azul", tamanho: "M", preco: "899.00" },
+            { id_variacao: "v2", sku: "BLZ-AZ-G", cor: "azul", tamanho: "G", preco: 899 },
+          ],
+        },
+      ],
+    }).ofertas;
+    expect(opcao.variacoes.map((v) => v.tamanho)).toEqual(["M", "G"]);
+    expect(opcao.variacoes[0].preco).toBe(899);
+  });
+
+  it("backend anterior sem ofertas continua valendo; oferta incompleta é recusada", () => {
+    const base = { id_conversa: "c1", status: "ativa", resposta: "x", sem_resposta: false, id_atendimento: null };
+    expect(validarRespostaAssistente(base).ofertas).toEqual([]);
+    expect(() => validarRespostaAssistente({ ...base, ofertas: [{ sku: "X" }] })).toThrow();
+  });
+
   it("recusa status ou autor fora do combinado", () => {
-    const base = { id_conversa: "c1", resposta: "x", sem_resposta: false, carrinho_alterado: false, id_atendimento: null };
+    const base = { id_conversa: "c1", resposta: "x", sem_resposta: false, id_atendimento: null };
     expect(() => validarRespostaAssistente({ ...base, status: "encerrada" })).toThrow();
     expect(() =>
       validarConversaAssistente({
@@ -115,5 +173,36 @@ describe("assistente do cliente: chat com a equipe no mesmo painel", () => {
     expect(respostasDaEquipe([mensagem("cliente", "a"), mensagem("atendente", "b"), mensagem("atendente", "c")])).toBe(2);
     expect(atendimentoEncerrado("resolvido")).toBe(true);
     expect(atendimentoEncerrado("em_andamento")).toBe(false);
+  });
+});
+
+describe("assistente do cliente: histórico e avaliação (como no chat do vendedor)", () => {
+  it("item do histórico com título e situação", () => {
+    const c = validarConversaResumo({
+      id_conversa: "c1",
+      status: "com_atendente",
+      id_atendimento: "a1",
+      titulo: "qual o prazo de troca?",
+      criada_em: "2026-10-28T10:00:00Z",
+      atualizada_em: "2026-10-28T10:05:00Z",
+      extra: "descartado",
+    });
+    expect(c).toEqual({
+      id_conversa: "c1",
+      status: "com_atendente",
+      id_atendimento: "a1",
+      titulo: "qual o prazo de troca?",
+      criada_em: "2026-10-28T10:00:00Z",
+      atualizada_em: "2026-10-28T10:05:00Z",
+    });
+  });
+
+  it("mensagem traz o id e a avaliação; avaliação fora do combinado é recusada", () => {
+    const base = { id_conversa: "c1", status: "ativa", id_atendimento: null, criada_em: "2026-10-28T10:00:00Z" };
+    const mensagem = { id_mensagem: "m1", autor: "assistente", texto: "Olá!", criada_em: "2026-10-28T10:00:01Z" };
+    const c = validarConversaAssistente({ ...base, mensagens: [{ ...mensagem, avaliacao: "util" }] });
+    expect(c.mensagens[0]).toMatchObject({ id_mensagem: "m1", avaliacao: "util", ofertas: [] });
+    expect(validarConversaAssistente({ ...base, mensagens: [mensagem] }).mensagens[0].avaliacao).toBeNull();
+    expect(() => validarConversaAssistente({ ...base, mensagens: [{ ...mensagem, avaliacao: "otima" }] })).toThrow();
   });
 });
