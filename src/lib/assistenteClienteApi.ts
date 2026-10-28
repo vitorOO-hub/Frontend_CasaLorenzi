@@ -77,7 +77,17 @@ export const iniciarConversaAssistente = async () =>
 export const obterConversaAssistente = async (idConversa: string) =>
   validarConversaAssistente(await api.get<unknown>(`/assistente/cliente/conversas/${encodeURIComponent(idConversa)}`));
 
+/**
+ * O backend espera o modelo de IA (até 30 s por chamada, com consultas no meio): o padrão de 15 s
+ * cortaria a resposta no meio e o cliente veria "o servidor demorou" com a resposta ainda a caminho.
+ */
+export const TEMPO_DA_RESPOSTA_DO_ASSISTENTE_MS = 60_000;
+
 export const enviarMensagemAssistente = async (idConversa: string, mensagem: string) =>
   validarRespostaAssistente(
-    await api.post<unknown>(`/assistente/cliente/conversas/${encodeURIComponent(idConversa)}/mensagens`, { texto: mensagem }),
+    await api.post<unknown>(
+      `/assistente/cliente/conversas/${encodeURIComponent(idConversa)}/mensagens`,
+      { texto: mensagem },
+      { timeoutMs: TEMPO_DA_RESPOSTA_DO_ASSISTENTE_MS },
+    ),
   );
