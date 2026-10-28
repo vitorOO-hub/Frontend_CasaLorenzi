@@ -69,7 +69,8 @@ function mensagemDoStatus(status: number, detalhe: unknown): string {
     return "Esta função ainda não existe no servidor. Atualize o backend e reinicie a API.";
   // O backend responde 403, 404, 409 e 422 com a explicação em português ("X já assumiu este chamado").
   // 503 tambem: o backend diz o que esta fora do ar ("ativacao indisponivel"), sem detalhe interno.
-  if ([403, 404, 409, 422, 503].includes(status) && typeof detalhe === "string" && detalhe) return detalhe;
+  // 429 idem: diz se e o limite por minuto ou o limite diario do assistente.
+  if ([403, 404, 409, 422, 429, 503].includes(status) && typeof detalhe === "string" && detalhe) return detalhe;
   if (status === 403) return "Você não tem permissão para ver estes dados.";
   if (status === 404) return "Não encontramos este registro.";
   if (status === 409) return "Este registro mudou enquanto você olhava. Atualize e tente de novo.";
