@@ -15,6 +15,23 @@ import {
   type ConversaAssistente,
   type MensagemAssistente,
 } from "@/lib/assistenteVendedorApi";
+import {
+  ALCAS,
+  ALTURA_MINIMA,
+  CENTRO_DA_BOLINHA,
+  LARGURA_COM_LATERAL,
+  LARGURA_MINIMA,
+  MARGEM,
+  acompanharPonteiro,
+  dataCurta,
+  entre,
+  guardaDaCaixa,
+  limitar,
+  semAnimacao,
+  telaGrande,
+  type Borda,
+  type Caixa,
+} from "./janelaDoAssistente";
 import { cn } from "./ui";
 
 const SUGESTOES = [
@@ -24,80 +41,8 @@ const SUGESTOES = [
   "Que horas fecha a loja do shopping?",
 ];
 
-/** Distância mínima entre a janela e a borda da tela. */
-const MARGEM = 8;
-const LARGURA_MINIMA = 360;
-const ALTURA_MINIMA = 380;
-/** Abaixo dessa largura o histórico abre por cima da conversa, em vez de ao lado. */
-const LARGURA_COM_LATERAL = 640;
-/** Centro da bolinha, medido a partir do canto inferior direito da tela (bottom-6 right-6, 56px). */
-const CENTRO_DA_BOLINHA = 52;
 const CHAVE_DA_CAIXA = "assistente-vendedor:caixa";
-
-const dataCurta = (iso: string) =>
-  new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
-
-const telaGrande = () => typeof window !== "undefined" && window.matchMedia("(min-width: 640px)").matches;
-const semAnimacao = () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-/** Posição e tamanho da janela depois que o vendedor arrasta ou redimensiona (null = canto padrão). */
-type Caixa = { x: number; y: number; largura: number; altura: number };
-type Borda = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw";
-
-/** Alças invisíveis nas bordas e cantos para aumentar ou diminuir a janela. */
-const ALCAS: [Borda, string][] = [
-  ["n", "inset-x-4 top-0 h-1.5 cursor-ns-resize"],
-  ["s", "inset-x-4 bottom-0 h-1.5 cursor-ns-resize"],
-  ["w", "inset-y-4 left-0 w-1.5 cursor-ew-resize"],
-  ["e", "inset-y-4 right-0 w-1.5 cursor-ew-resize"],
-  ["nw", "left-0 top-0 h-4 w-4 cursor-nwse-resize"],
-  ["se", "bottom-0 right-0 h-4 w-4 cursor-nwse-resize"],
-  ["ne", "right-0 top-0 h-4 w-4 cursor-nesw-resize"],
-  ["sw", "bottom-0 left-0 h-4 w-4 cursor-nesw-resize"],
-];
-
-const entre = (valor: number, minimo: number, maximo: number) => Math.min(Math.max(valor, minimo), Math.max(minimo, maximo));
-
-/** Mantém a janela inteira dentro da tela (encolhe se a tela ficou menor que ela). */
-function limitar({ x, y, largura, altura }: Caixa): Caixa {
-  const l = entre(largura, LARGURA_MINIMA, window.innerWidth - 2 * MARGEM);
-  const a = entre(altura, ALTURA_MINIMA, window.innerHeight - 2 * MARGEM);
-  return {
-    x: entre(x, MARGEM, window.innerWidth - l - MARGEM),
-    y: entre(y, MARGEM, window.innerHeight - a - MARGEM),
-    largura: l,
-    altura: a,
-  };
-}
-
-function caixaSalva(): Caixa | null {
-  try {
-    const c = JSON.parse(localStorage.getItem(CHAVE_DA_CAIXA) ?? "null") as Caixa | null;
-    return c && [c.x, c.y, c.largura, c.altura].every(Number.isFinite) ? limitar(c) : null;
-  } catch {
-    return null;
-  }
-}
-
-function salvarCaixa(caixa: Caixa | null) {
-  try {
-    if (caixa) localStorage.setItem(CHAVE_DA_CAIXA, JSON.stringify(caixa));
-    else localStorage.removeItem(CHAVE_DA_CAIXA);
-  } catch {
-    // Sem armazenamento (aba anônima): a janela só não lembra o tamanho.
-  }
-}
-
-/** Segue o ponteiro até soltar o botão. */
-function acompanharPonteiro(mover: (e: globalThis.PointerEvent) => void, aoSoltar: () => void) {
-  const soltar = () => {
-    window.removeEventListener("pointermove", mover);
-    window.removeEventListener("pointerup", soltar);
-    aoSoltar();
-  };
-  window.addEventListener("pointermove", mover);
-  window.addEventListener("pointerup", soltar);
-}
+const { ler: caixaSalva, salvar: salvarCaixa } = guardaDaCaixa(CHAVE_DA_CAIXA);
 
 /** Resposta do assistente: parágrafos, listas e negrito, sem HTML cru. */
 export function TextoDaResposta({ texto }: { texto: string }) {

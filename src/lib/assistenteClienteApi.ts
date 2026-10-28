@@ -26,7 +26,12 @@ export type OfertaAssistenteApi = {
   variacoes: VariacaoOfertaApi[];
 };
 
+export type AvaliacaoAssistente = "util" | "nao_util";
+
 export type MensagemAssistenteApi = {
+  /** Id gravado (para avaliar a resposta); null na mensagem ainda não confirmada. */
+  id_mensagem: string | null;
+  avaliacao: AvaliacaoAssistente | null;
   autor: "usuario" | "assistente";
   texto: string;
   criada_em: string;
@@ -43,6 +48,8 @@ export type ConversaAssistenteApi = {
 
 export type RespostaAssistenteApi = {
   id_conversa: string;
+  /** Id da resposta gravada, para avaliar na hora. */
+  id_mensagem: string | null;
   status: "ativa" | "com_atendente";
   resposta: string;
   sem_resposta: boolean;
@@ -106,6 +113,8 @@ const ofertas = (valor: unknown) => (valor === undefined || valor === null ? [] 
 function validarMensagem(dados: unknown): MensagemAssistenteApi {
   const o = objeto(dados, "mensagem");
   return {
+    id_mensagem: textoOuNulo(o.id_mensagem, "id_mensagem"),
+    avaliacao: o.avaliacao == null ? null : status(o.avaliacao, ["util", "nao_util"] as const, "avaliacao"),
     autor: status(o.autor, ["usuario", "assistente"] as const, "autor"),
     texto: texto(o.texto, "texto"),
     criada_em: texto(o.criada_em, "criada_em"),
@@ -128,6 +137,7 @@ export function validarRespostaAssistente(dados: unknown): RespostaAssistenteApi
   const o = objeto(dados, "resposta_assistente");
   return {
     id_conversa: texto(o.id_conversa, "id_conversa"),
+    id_mensagem: textoOuNulo(o.id_mensagem, "id_mensagem"),
     status: status(o.status, ["ativa", "com_atendente"] as const, "status"),
     resposta: texto(o.resposta, "resposta"),
     sem_resposta: booleano(o.sem_resposta, "sem_resposta"),
@@ -156,3 +166,39 @@ export const enviarMensagemAssistente = async (idConversa: string, mensagem: str
       { timeoutMs: TEMPO_DA_RESPOSTA_DO_ASSISTENTE_MS },
     ),
   );
+
+/** Item do histórico lateral do chat (como no assistente do vendedor). */
+export type ConversaResumoApi = {
+  id_conversa: string;
+  status: StatusConversaAssistente;
+  id_atendimento: string | null;
+  titulo: string;
+  criada_em: string;
+  atualizada_em: string;
+};
+
+export function validarConversaResumo(dados: unknown): ConversaResumoApi {
+  const o = objeto(dados, "conversa_resumo");
+  return {
+    id_conversa: texto(o.id_conversa, "id_conversa"),
+    status: status(o.status, ["ativa", "com_atendente", "encerrada"] as const, "status"),
+    id_atendimento: textoOuNulo(o.id_atendimento, "id_atendimento"),
+    titulo: texto(o.titulo, "titulo"),
+    criada_em: texto(o.criada_em, "criada_em"),
+    atualizada_em: texto(o.atualizada_em, "atualizada_em"),
+  };
+}
+
+export const listarConversasAssistente = async () =>
+  lista(await api.get<unknown>("/assistente/cliente/conversas"), "conversas").map(validarConversaResumo);
+
+export const arquivarConversaAssistente = async (idConversa: string, arquivada = true) =>
+  validarConversaAssistente(
+    await api.patch<unknown>(`/assistente/cliente/conversas/${encodeURIComponent(idConversa)}`, { arquivada }),
+  );
+
+export const avaliarRespostaAssistente = async (idConversa: string, idMensagem: string, avaliacao: AvaliacaoAssistente | null) =>
+  void (await api.put<unknown>(
+    `/assistente/cliente/conversas/${encodeURIComponent(idConversa)}/mensagens/${encodeURIComponent(idMensagem)}/avaliacao`,
+    { avaliacao },
+  ));

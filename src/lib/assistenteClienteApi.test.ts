@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { validarConversaAssistente, validarRespostaAssistente } from "./assistenteClienteApi";
+import { validarConversaAssistente, validarConversaResumo, validarRespostaAssistente } from "./assistenteClienteApi";
 import {
   CABECALHO_PASSAGEM,
   atendimentoEncerrado,
@@ -38,6 +38,7 @@ describe("assistente do cliente: respostas da API", () => {
     });
     expect(r).toEqual({
       id_conversa: "c1",
+      id_mensagem: null,
       status: "com_atendente",
       resposta: "Aqui está o blazer.",
       sem_resposta: false,
@@ -172,5 +173,36 @@ describe("assistente do cliente: chat com a equipe no mesmo painel", () => {
     expect(respostasDaEquipe([mensagem("cliente", "a"), mensagem("atendente", "b"), mensagem("atendente", "c")])).toBe(2);
     expect(atendimentoEncerrado("resolvido")).toBe(true);
     expect(atendimentoEncerrado("em_andamento")).toBe(false);
+  });
+});
+
+describe("assistente do cliente: histórico e avaliação (como no chat do vendedor)", () => {
+  it("item do histórico com título e situação", () => {
+    const c = validarConversaResumo({
+      id_conversa: "c1",
+      status: "com_atendente",
+      id_atendimento: "a1",
+      titulo: "qual o prazo de troca?",
+      criada_em: "2026-10-28T10:00:00Z",
+      atualizada_em: "2026-10-28T10:05:00Z",
+      extra: "descartado",
+    });
+    expect(c).toEqual({
+      id_conversa: "c1",
+      status: "com_atendente",
+      id_atendimento: "a1",
+      titulo: "qual o prazo de troca?",
+      criada_em: "2026-10-28T10:00:00Z",
+      atualizada_em: "2026-10-28T10:05:00Z",
+    });
+  });
+
+  it("mensagem traz o id e a avaliação; avaliação fora do combinado é recusada", () => {
+    const base = { id_conversa: "c1", status: "ativa", id_atendimento: null, criada_em: "2026-10-28T10:00:00Z" };
+    const mensagem = { id_mensagem: "m1", autor: "assistente", texto: "Olá!", criada_em: "2026-10-28T10:00:01Z" };
+    const c = validarConversaAssistente({ ...base, mensagens: [{ ...mensagem, avaliacao: "util" }] });
+    expect(c.mensagens[0]).toMatchObject({ id_mensagem: "m1", avaliacao: "util", ofertas: [] });
+    expect(validarConversaAssistente({ ...base, mensagens: [mensagem] }).mensagens[0].avaliacao).toBeNull();
+    expect(() => validarConversaAssistente({ ...base, mensagens: [{ ...mensagem, avaliacao: "otima" }] })).toThrow();
   });
 });
