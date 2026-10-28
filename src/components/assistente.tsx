@@ -43,13 +43,16 @@ type Equipe = { mensagens: MensagemChamadoClienteApi[]; encerrado: boolean };
  * Assistente virtual do cliente logado: botão flutuante que abre a conversa. O backend decide o que
  * o assistente pode consultar. Quando a conversa passa para a equipe, o mesmo painel vira o chat com
  * o atendente (as mensagens do chamado, ao vivo): o cliente não precisa ir até a área Atendimento.
+ *
+ * Só para cliente logado. `conta` é o e-mail da sessão: a conversa fica guardada por conta (no modo
+ * API o `clienteId` da sessão é o mesmo para todos os clientes).
  */
-export function AssistenteCliente({ clienteId }: { clienteId: string }) {
+export function AssistenteCliente({ conta }: { conta: string }) {
   const [aberto, setAberto] = useState(false);
-  const [idConversa, setIdConversa] = useState<string | null>(() => lerConversaGuardada(clienteId));
+  const [idConversa, setIdConversa] = useState<string | null>(() => lerConversaGuardada(conta));
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   // Sem conversa guardada não há o que buscar no servidor.
-  const [carregada, setCarregada] = useState(() => !lerConversaGuardada(clienteId));
+  const [carregada, setCarregada] = useState(() => !lerConversaGuardada(conta));
   const [idAtendimento, setIdAtendimento] = useState<string | null>(null);
   const [equipe, setEquipe] = useState<Equipe | null>(null);
   const [vistas, setVistas] = useState(0);
@@ -77,14 +80,14 @@ export function AssistenteCliente({ clienteId }: { clienteId: string }) {
       .catch(() => {
         if (!ativo) return;
         // Conversa sumiu ou não é mais deste login: começa outra no próximo envio.
-        esquecerConversa(clienteId);
+        esquecerConversa(conta);
         setIdConversa(null);
       })
       .finally(() => ativo && setCarregada(true));
     return () => {
       ativo = false;
     };
-  }, [carregada, idConversa, clienteId]);
+  }, [carregada, idConversa, conta]);
 
   // Com a equipe: mensagens do chamado ao vivo (Realtime e, por garantia, conferência periódica).
   useEffect(() => {
@@ -123,13 +126,13 @@ export function AssistenteCliente({ clienteId }: { clienteId: string }) {
   async function conversaAtual(): Promise<string> {
     if (idConversa) return idConversa;
     const nova = await iniciarConversaAssistente();
-    guardarConversa(clienteId, nova.id_conversa);
+    guardarConversa(conta, nova.id_conversa);
     setIdConversa(nova.id_conversa);
     return nova.id_conversa;
   }
 
   function recomecar() {
-    esquecerConversa(clienteId);
+    esquecerConversa(conta);
     setIdConversa(null);
     setMensagens([]);
     setIdAtendimento(null);
@@ -179,7 +182,7 @@ export function AssistenteCliente({ clienteId }: { clienteId: string }) {
     } catch (falha) {
       setTexto(pergunta);
       if (falha instanceof ErroApi && falha.codigo === "nao_encontrado" && !comEquipe) {
-        esquecerConversa(clienteId);
+        esquecerConversa(conta);
         setIdConversa(null);
         setErro("Sua conversa expirou. Envie a mensagem de novo para começar outra.");
       } else if (falha instanceof ErroApi && falha.codigo === "conflito" && idConversa) {
@@ -211,8 +214,13 @@ export function AssistenteCliente({ clienteId }: { clienteId: string }) {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              {mensagens.length && (!comEquipe || encerrado) ? (
-                <button onClick={recomecar} className="text-[11px] uppercase tracking-[0.12em] text-suave hover:text-tinta">
+              {/* Sempre disponível: um atendimento em andamento continua na área Atendimento. */}
+              {mensagens.length || comEquipe ? (
+                <button
+                  onClick={recomecar}
+                  title={comEquipe && !encerrado ? "O atendimento com a equipe continua na área Atendimento" : undefined}
+                  className="text-[11px] uppercase tracking-[0.12em] text-suave hover:text-tinta"
+                >
                   Nova conversa
                 </button>
               ) : null}
