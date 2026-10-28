@@ -1,15 +1,17 @@
-import { Archive, ChevronLeft, History, LoaderCircle, Plus, Send, Sparkles, X } from "lucide-react";
+import { Archive, ChevronLeft, History, LoaderCircle, Plus, Send, Sparkles, ThumbsDown, ThumbsUp, X } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { mensagemDeErro } from "@/api/erros";
 import {
   TAMANHO_MAXIMO_PERGUNTA,
   arquivarConversa,
+  avaliarResposta,
   criarConversa,
   linhasDaResposta,
   listarConversas,
   obterMensagens,
   perguntar,
   rotuloFerramenta,
+  type Avaliacao,
   type ConversaAssistente,
   type MensagemAssistente,
 } from "@/lib/assistenteVendedorApi";
@@ -45,9 +47,21 @@ export function TextoDaResposta({ texto }: { texto: string }) {
   );
 }
 
-function Bolha({ mensagem }: { mensagem: MensagemAssistente }) {
+function Bolha({ mensagem, onAvaliar }: { mensagem: MensagemAssistente; onAvaliar?: (valor: Avaliacao) => void }) {
   const minha = mensagem.autor === "usuario";
   const consultas = mensagem.ferramentas.map(rotuloFerramenta).filter((r): r is string => Boolean(r));
+  const botao = (valor: Avaliacao, Icone: typeof ThumbsUp, rotulo: string) => (
+    <button
+      type="button"
+      onClick={() => onAvaliar?.(valor)}
+      aria-label={rotulo}
+      aria-pressed={mensagem.avaliacao === valor}
+      title={rotulo}
+      className={cn("rounded-sm p-1 hover:text-marinho", mensagem.avaliacao === valor ? "text-marinho" : "text-suave/70")}
+    >
+      <Icone className="h-3.5 w-3.5" fill={mensagem.avaliacao === valor ? "currentColor" : "none"} />
+    </button>
+  );
   return (
     <div className={cn("flex flex-col", minha ? "items-end" : "items-start")}>
       <div
@@ -58,7 +72,15 @@ function Bolha({ mensagem }: { mensagem: MensagemAssistente }) {
       >
         {minha ? mensagem.texto : <TextoDaResposta texto={mensagem.texto} />}
       </div>
-      {consultas.length ? <p className="mt-1 text-[11px] text-suave">Consultou: {consultas.join(", ")}</p> : null}
+      {!minha && onAvaliar ? (
+        <div className="mt-1 flex items-center gap-1 text-[11px] text-suave">
+          {botao("util", ThumbsUp, "Resposta útil")}
+          {botao("nao_util", ThumbsDown, "Resposta não ajudou")}
+          {consultas.length ? <span className="ml-1">Consultou: {consultas.join(", ")}</span> : null}
+        </div>
+      ) : consultas.length ? (
+        <p className="mt-1 text-[11px] text-suave">Consultou: {consultas.join(", ")}</p>
+      ) : null}
     </div>
   );
 }
@@ -129,6 +151,21 @@ export function AssistenteVendedor() {
     }
   }
 
+  async function avaliar(mensagem: MensagemAssistente, valor: Avaliacao) {
+    if (!atual) return;
+    // Clicar de novo no mesmo botão tira a avaliação.
+    const nova = mensagem.avaliacao === valor ? null : valor;
+    const trocar = (avaliacao: Avaliacao | null) =>
+      setMensagens((m) => m.map((x) => (x.id_mensagem === mensagem.id_mensagem ? { ...x, avaliacao } : x)));
+    trocar(nova);
+    try {
+      await avaliarResposta(atual, mensagem.id_mensagem, nova);
+    } catch (e) {
+      trocar(mensagem.avaliacao);
+      setErro(mensagemDeErro(e));
+    }
+  }
+
   async function enviar(pergunta: string) {
     const limpa = pergunta.trim();
     if (!limpa || enviando) return;
@@ -136,7 +173,7 @@ export function AssistenteVendedor() {
     setErro(null);
     setTexto("");
     // Mostra a pergunta na hora; a resposta do servidor troca pelo registro gravado.
-    const provisoria: MensagemAssistente = { id_mensagem: "provisoria", autor: "usuario", texto: limpa, criada_em: "", ferramentas: [] };
+    const provisoria: MensagemAssistente = { id_mensagem: "provisoria", autor: "usuario", texto: limpa, criada_em: "", ferramentas: [], avaliacao: null };
     setMensagens((m) => [...m, provisoria]);
     try {
       const id = atual ?? (await criarConversa()).id_conversa;
@@ -229,7 +266,7 @@ export function AssistenteVendedor() {
                 </div>
               ) : null}
               {mensagens.map((m) => (
-                <Bolha key={m.id_mensagem} mensagem={m} />
+                <Bolha key={m.id_mensagem} mensagem={m} onAvaliar={(valor) => void avaliar(m, valor)} />
               ))}
               {enviando ? (
                 <p className="flex items-center gap-2 text-xs text-suave" role="status">

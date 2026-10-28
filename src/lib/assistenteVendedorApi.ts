@@ -22,7 +22,9 @@ export type MensagemAssistente = {
   texto: string;
   criada_em: string;
   ferramentas: string[];
+  avaliacao: Avaliacao | null;
 };
+export type Avaliacao = "util" | "nao_util";
 
 const STATUS: StatusConversa[] = ["ativa", "com_atendente", "encerrada"];
 
@@ -48,6 +50,7 @@ export function validarMensagem(dados: unknown, campo = "mensagem"): MensagemAss
     texto: texto(o.texto, `${campo}.texto`),
     criada_em: texto(o.criada_em, `${campo}.criada_em`),
     ferramentas: lista(o.ferramentas ?? [], `${campo}.ferramentas`).map((f, i) => texto(f, `${campo}.ferramentas[${i}]`)),
+    avaliacao: o.avaliacao === "util" || o.avaliacao === "nao_util" ? o.avaliacao : null,
   };
 }
 
@@ -81,7 +84,16 @@ export const perguntar = (idConversa: string, pergunta: string, o?: OpcoesApi) =
     { timeoutMs: TEMPO_DA_PERGUNTA_MS, ...o },
   );
 
-export const arquivarConversa = (idConversa: string, arquivada = true, o?: OpcoesApi) =>
+/** 👍/👎 numa resposta do assistente (null tira a avaliação). */
+export const avaliarResposta = (idConversa: string, idMensagem: string, avaliacao: Avaliacao | null, o?: OpcoesApi) =>
+  api.put(
+    `${BASE}/conversas/${encodeURIComponent(idConversa)}/mensagens/${encodeURIComponent(idMensagem)}/avaliacao`,
+    (d) => objeto(d, "avaliacao"),
+    { avaliacao },
+    o,
+  );
+
+export const arquivarConversa =(idConversa: string, arquivada = true, o?: OpcoesApi) =>
   api.patch(`${BASE}/conversas/${encodeURIComponent(idConversa)}`, (d) => validarConversa(d), { arquivada }, o);
 
 /** Nome amigável das ferramentas que o assistente consultou (chips embaixo da resposta). */
@@ -91,6 +103,7 @@ export const ROTULO_FERRAMENTA: Record<string, string> = {
   detalhe_venda: "detalhe do pedido",
   buscar_clientes: "clientes",
   clientes_que_mais_compram: "melhores clientes",
+  consultar_estoque: "contagem do estoque",
   consultar_pecas: "estoque da loja",
   resumo_do_estoque: "resumo do estoque",
   pecas_em_alerta: "peças em alerta",
