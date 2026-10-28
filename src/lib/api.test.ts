@@ -99,6 +99,12 @@ describe("cliente da API", () => {
     expect(erro).toMatchObject({ status: 429, codigo: "limite" });
   });
 
+  it("429 mostra o motivo do servidor (limite diário do assistente)", async () => {
+    const detalhe = "Você atingiu o limite de mensagens do assistente por hoje. Tente de novo amanhã.";
+    const { cliente } = montar([json({ detail: detalhe }, { status: 429 })]);
+    await expect(cliente.get("/x", aceita)).rejects.toMatchObject({ codigo: "limite", message: detalhe });
+  });
+
   it("422 mostra o motivo que o servidor explicou", async () => {
     const { cliente } = montar([json({ detail: "Periodo longo demais" }, { status: 422 })]);
     await expect(cliente.get("/x", aceita)).rejects.toMatchObject({ message: "Periodo longo demais" });
