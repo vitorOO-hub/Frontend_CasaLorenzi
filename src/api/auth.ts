@@ -3,7 +3,8 @@
  * O papel e a loja do usuário interno viajam no JWT, gravados pelo Custom Access Token Hook.
  * Estas claims servem só para montar a tela; quem decide permissão é o backend/RLS.
  */
-import { ErroApi } from "./erros";
+import { config } from "./config";
+import { ErroApi, codigoDoStatus } from "./erros";
 import { supabase } from "./supabase";
 import { PAPEIS, type ClaimsToken, type Id, type Papel, type Uuid } from "./tipos";
 
@@ -53,6 +54,38 @@ export function erroDoLogin(erro: { code?: string; status?: number; message?: st
 
 export async function entrar(email: string, senha: string): Promise<SessaoApi> {
   const { data, error } = await supabase().auth.signInWithPassword({ email: email.trim().toLowerCase(), password: senha });
+  if (error || !data.session) throw erroDoLogin(error);
+  return sessaoDoToken(data.session.access_token);
+}
+
+/**
+ * Login do cliente por CPF: o backend acha a conta pelo CPF e devolve só os tokens do Supabase (o
+ * e-mail nunca vem ao navegador). Daí em diante a sessão é a mesma do login por e-mail.
+ * Usa fetch direto: o 401 aqui é senha errada, não sessão expirada.
+ */
+export async function entrarPorCpf(cpf: string, senha: string): Promise<SessaoApi> {
+  if (!config.apiUrl) throw new ErroApi("configuracao");
+  let resposta: Response;
+  try {
+    resposta = await fetch(`${config.apiUrl}/api/v1/acesso/entrar-cpf`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cpf, senha }),
+    });
+  } catch {
+    throw new ErroApi("rede");
+  }
+  const corpo = (await resposta.json().catch(() => null)) as Record<string, unknown> | null;
+  if (!resposta.ok) {
+    if (resposta.status === 401) throw new ErroApi("nao_autenticado", "CPF ou senha incorretos.", 401);
+    if (resposta.status === 422) throw new ErroApi("validacao", "Informe o CPF com 11 números.", 422);
+    const detalhe = typeof corpo?.detail === "string" ? corpo.detail : undefined;
+    throw new ErroApi(codigoDoStatus(resposta.status), detalhe, resposta.status);
+  }
+  const acesso = corpo?.access_token;
+  const renovacao = corpo?.refresh_token;
+  if (typeof acesso !== "string" || typeof renovacao !== "string") throw new ErroApi("servidor");
+  const { data, error } = await supabase().auth.setSession({ access_token: acesso, refresh_token: renovacao });
   if (error || !data.session) throw erroDoLogin(error);
   return sessaoDoToken(data.session.access_token);
 }
