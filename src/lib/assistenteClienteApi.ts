@@ -71,8 +71,18 @@ export function validarRespostaAssistente(dados: unknown): RespostaAssistenteApi
   };
 }
 
-export const iniciarConversaAssistente = async () =>
-  validarConversaAssistente(await api.post<unknown>("/assistente/cliente/conversas"));
+/** Mensagem que o painel mostrou antes do login; vai junto para o assistente manter o contexto. */
+export type MensagemAnteriorAssistente = { autor: "usuario" | "assistente"; texto: string };
+
+/** Mesmo teto do backend para o histórico enviado. */
+export const LIMITE_HISTORICO_ASSISTENTE = 10;
+
+export const iniciarConversaAssistente = async (historico: MensagemAnteriorAssistente[] = []) =>
+  validarConversaAssistente(
+    await api.post<unknown>("/assistente/cliente/conversas", {
+      historico: historico.slice(-LIMITE_HISTORICO_ASSISTENTE).map((m) => ({ ...m, texto: m.texto.slice(0, 2000) })),
+    }),
+  );
 
 export const obterConversaAssistente = async (idConversa: string) =>
   validarConversaAssistente(await api.get<unknown>(`/assistente/cliente/conversas/${encodeURIComponent(idConversa)}`));
@@ -80,4 +90,33 @@ export const obterConversaAssistente = async (idConversa: string) =>
 export const enviarMensagemAssistente = async (idConversa: string, mensagem: string) =>
   validarRespostaAssistente(
     await api.post<unknown>(`/assistente/cliente/conversas/${encodeURIComponent(idConversa)}/mensagens`, { texto: mensagem }),
+  );
+
+export type RespostaVisitanteApi = {
+  resposta: string;
+  sem_resposta: boolean;
+  /** O pedido depende da conta (pontos, pedidos, sacola, equipe): o painel mostra o login. */
+  precisa_login: boolean;
+};
+
+export function validarRespostaVisitante(dados: unknown): RespostaVisitanteApi {
+  const o = objeto(dados, "resposta_visitante");
+  return {
+    resposta: texto(o.resposta, "resposta"),
+    sem_resposta: booleano(o.sem_resposta, "sem_resposta"),
+    precisa_login: booleano(o.precisa_login, "precisa_login"),
+  };
+}
+
+/** Quem navega sem login: só catálogo público; nada fica gravado no servidor. */
+export const enviarMensagemVisitante = async (mensagem: string, historico: MensagemAnteriorAssistente[]) =>
+  validarRespostaVisitante(
+    await api.post<unknown>(
+      "/assistente/visitante/mensagens",
+      {
+        texto: mensagem,
+        historico: historico.slice(-LIMITE_HISTORICO_ASSISTENTE).map((m) => ({ ...m, texto: m.texto.slice(0, 2000) })),
+      },
+      { semToken: true },
+    ),
   );

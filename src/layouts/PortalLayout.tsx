@@ -1,7 +1,7 @@
 import { Menu, Plus, Search, ShoppingBag, X } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { AssistenteCliente } from "@/components/assistente";
+import { AssistenteLoja } from "@/components/assistente";
 import { SinalMais } from "@/components/marca";
 import { usandoApi } from "@/api/config";
 import { cn } from "@/components/ui";
@@ -275,8 +275,9 @@ export function PortalLayout() {
 
       <CartaMensal />
       <Rodape />
-      {/* Assistente virtual: só para o cliente logado, falando com o backend de verdade. */}
-      {cliente && usandoApi() ? <AssistenteCliente key={cliente.clienteId} clienteId={cliente.clienteId} /> : null}
+      {/* Assistente virtual: visitante e cliente (a equipe usa o painel). Sem `key`: o login feito
+          pelo próprio chat não pode recriar o componente, senão a conversa se perderia. */}
+      {usandoApi() && (cliente || !sessao) ? <AssistenteLoja conta={cliente?.email ?? null} /> : null}
     </div>
   );
 }

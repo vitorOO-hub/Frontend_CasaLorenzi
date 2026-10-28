@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { validarConversaAssistente, validarRespostaAssistente } from "./assistenteClienteApi";
+import { validarConversaAssistente, validarRespostaAssistente, validarRespostaVisitante } from "./assistenteClienteApi";
+import { tipoDoIdentificador } from "./sessao";
 import {
   CABECALHO_PASSAGEM,
   atendimentoEncerrado,
@@ -115,5 +116,24 @@ describe("assistente do cliente: chat com a equipe no mesmo painel", () => {
     expect(respostasDaEquipe([mensagem("cliente", "a"), mensagem("atendente", "b"), mensagem("atendente", "c")])).toBe(2);
     expect(atendimentoEncerrado("resolvido")).toBe(true);
     expect(atendimentoEncerrado("em_andamento")).toBe(false);
+  });
+});
+
+describe("assistente do visitante", () => {
+  it("valida a resposta e o pedido de login", () => {
+    expect(validarRespostaVisitante({ resposta: "Entre na conta", sem_resposta: false, precisa_login: true, extra: 1 })).toEqual({
+      resposta: "Entre na conta",
+      sem_resposta: false,
+      precisa_login: true,
+    });
+    expect(() => validarRespostaVisitante({ resposta: "x", sem_resposta: false })).toThrow();
+  });
+
+  it("o mesmo campo aceita e-mail ou CPF", () => {
+    expect(tipoDoIdentificador("cliente@teste.com")).toBe("email");
+    expect(tipoDoIdentificador("529.982.247-25")).toBe("cpf");
+    expect(tipoDoIdentificador("52998224725")).toBe("cpf");
+    expect(tipoDoIdentificador("5299822")).toBeNull();
+    expect(tipoDoIdentificador("fulano")).toBeNull();
   });
 });

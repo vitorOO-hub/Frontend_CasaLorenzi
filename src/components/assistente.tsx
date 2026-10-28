@@ -1,13 +1,15 @@
 import { MessageCircle, Send, X } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { ErroApi, mensagemDeErro } from "@/api/erros";
 import { sincronizarCarrinho } from "@/lib/acoes";
 import {
   LIMITE_TEXTO_ASSISTENTE,
   enviarMensagemAssistente,
+  enviarMensagemVisitante,
   iniciarConversaAssistente,
   obterConversaAssistente,
+  type MensagemAnteriorAssistente,
   type MensagemAssistenteApi,
 } from "@/lib/assistenteClienteApi";
 import {
@@ -26,7 +28,8 @@ import {
   type MensagemChamadoClienteApi,
 } from "@/lib/chamadosClienteApi";
 import { manterConversaEmDia, ouvirMensagensDoChamado } from "@/lib/conversaClienteAoVivo";
-import { cn } from "./ui";
+import { entrarComEmailOuCpf, tipoDoIdentificador } from "@/lib/sessao";
+import { cn, inputClasses } from "./ui";
 
 type Mensagem = Pick<MensagemAssistenteApi, "autor" | "texto"> & { id: string; sacola?: boolean };
 
@@ -37,25 +40,40 @@ const novaMensagem = (autor: Mensagem["autor"], texto: string, sacola = false): 
   sacola,
 });
 
+const comoHistorico = (mensagens: Mensagem[]): MensagemAnteriorAssistente[] =>
+  mensagens.map((m) => ({ autor: m.autor, texto: m.texto }));
+
 type Equipe = { mensagens: MensagemChamadoClienteApi[]; encerrado: boolean };
 
 /**
- * Assistente virtual do cliente logado: botão flutuante que abre a conversa. O backend decide o que
- * o assistente pode consultar. Quando a conversa passa para a equipe, o mesmo painel vira o chat com
- * o atendente (as mensagens do chamado, ao vivo): o cliente não precisa ir até a área Atendimento.
+ * Assistente da loja: botão flutuante que abre a conversa, para visitante e para cliente logado.
+ *
+ * - Visitante: só catálogo público (peças, estoque, lojas). Quando pede algo da conta (pontos,
+ *   pedidos, sacola, falar com a equipe), o painel mostra o login ali mesmo; depois de entrar, a
+ *   conversa segue pelo assistente do cliente com o que já foi dito e o pedido é retomado.
+ * - Cliente: o backend decide o que o assistente consulta. Quando a conversa passa para a equipe, o
+ *   mesmo painel vira o chat com o atendente (mensagens do chamado, ao vivo).
+ *
+ * `conta` é o e-mail do cliente logado (null = visitante); a conversa fica guardada por conta.
  */
-export function AssistenteCliente({ clienteId }: { clienteId: string }) {
+export function AssistenteLoja({ conta }: { conta: string | null }) {
+  const { pathname, search } = useLocation();
   const [aberto, setAberto] = useState(false);
-  const [idConversa, setIdConversa] = useState<string | null>(() => lerConversaGuardada(clienteId));
+  const [contaVista, setContaVista] = useState(conta);
+  const [idConversa, setIdConversa] = useState<string | null>(() => (conta ? lerConversaGuardada(conta) : null));
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   // Sem conversa guardada não há o que buscar no servidor.
-  const [carregada, setCarregada] = useState(() => !lerConversaGuardada(clienteId));
+  const [carregada, setCarregada] = useState(() => !(conta && lerConversaGuardada(conta)));
   const [idAtendimento, setIdAtendimento] = useState<string | null>(null);
   const [equipe, setEquipe] = useState<Equipe | null>(null);
   const [vistas, setVistas] = useState(0);
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  // Login pedido pelo assistente: o pedido que ficou esperando e se o login é pelo próprio painel.
+  const [pedindoLogin, setPedindoLogin] = useState(false);
+  const [pendente, setPendente] = useState<string | null>(null);
+  const [entrandoPeloPainel, setEntrandoPeloPainel] = useState(false);
   const fim = useRef<HTMLDivElement>(null);
   // A recarga ao vivo precisa saber se o painel está à vista (para não acender o selo à toa).
   const abertoRef = useRef(aberto);
@@ -63,10 +81,28 @@ export function AssistenteCliente({ clienteId }: { clienteId: string }) {
     abertoRef.current = aberto;
   }, [aberto]);
 
-  // Retoma a conversa desta aba (se ainda existir no servidor), mesmo com o painel fechado: se ela
+  // Trocou de conta (entrou por outra tela, saiu, ou outra pessoa entrou): começa do zero com a
+  // conversa guardada da conta nova. O login feito pelo painel continua a conversa (ver entrarNoPainel).
+  if (conta !== contaVista) {
+    setContaVista(conta);
+    if (!entrandoPeloPainel) {
+      const guardada = conta ? lerConversaGuardada(conta) : null;
+      setIdConversa(guardada);
+      setCarregada(!guardada);
+      setMensagens([]);
+      setIdAtendimento(null);
+      setEquipe(null);
+      setVistas(0);
+      setErro(null);
+      setPedindoLogin(false);
+      setPendente(null);
+    }
+  }
+
+  // Retoma a conversa desta conta (se ainda existir no servidor), mesmo com o painel fechado: se ela
   // estiver com a equipe, a resposta do atendente acende o selo no botão.
   useEffect(() => {
-    if (carregada || !idConversa) return;
+    if (carregada || !idConversa || !conta) return;
     let ativo = true;
     obterConversaAssistente(idConversa)
       .then((conversa) => {
@@ -77,14 +113,14 @@ export function AssistenteCliente({ clienteId }: { clienteId: string }) {
       .catch(() => {
         if (!ativo) return;
         // Conversa sumiu ou não é mais deste login: começa outra no próximo envio.
-        esquecerConversa(clienteId);
+        esquecerConversa(conta);
         setIdConversa(null);
       })
       .finally(() => ativo && setCarregada(true));
     return () => {
       ativo = false;
     };
-  }, [carregada, idConversa, clienteId]);
+  }, [carregada, idConversa, conta]);
 
   // Com a equipe: mensagens do chamado ao vivo (Realtime e, por garantia, conferência periódica).
   useEffect(() => {
@@ -108,7 +144,7 @@ export function AssistenteCliente({ clienteId }: { clienteId: string }) {
 
   useEffect(() => {
     fim.current?.scrollIntoView({ block: "end" });
-  }, [mensagens, equipe, enviando, aberto]);
+  }, [mensagens, equipe, enviando, aberto, pedindoLogin]);
 
   const comEquipe = idAtendimento !== null;
   const encerrado = equipe?.encerrado ?? false;
@@ -120,22 +156,24 @@ export function AssistenteCliente({ clienteId }: { clienteId: string }) {
     if (equipe) setVistas(respostasDaEquipe(equipe.mensagens));
   }
 
-  async function conversaAtual(): Promise<string> {
-    if (idConversa) return idConversa;
-    const nova = await iniciarConversaAssistente();
-    guardarConversa(clienteId, nova.id_conversa);
-    setIdConversa(nova.id_conversa);
-    return nova.id_conversa;
-  }
-
   function recomecar() {
-    esquecerConversa(clienteId);
+    if (conta) esquecerConversa(conta);
     setIdConversa(null);
     setMensagens([]);
     setIdAtendimento(null);
     setEquipe(null);
     setVistas(0);
     setErro(null);
+    setPedindoLogin(false);
+    setPendente(null);
+  }
+
+  async function conversaAtual(email: string, historico: MensagemAnteriorAssistente[] = []): Promise<string> {
+    if (idConversa) return idConversa;
+    const nova = await iniciarConversaAssistente(historico);
+    guardarConversa(email, nova.id_conversa);
+    setIdConversa(nova.id_conversa);
+    return nova.id_conversa;
   }
 
   async function falarComEquipe(pergunta: string) {
@@ -148,21 +186,24 @@ export function AssistenteCliente({ clienteId }: { clienteId: string }) {
     );
   }
 
-  async function falarComAssistente(pergunta: string) {
-    const minha = novaMensagem("usuario", pergunta);
-    setMensagens((atuais) => [...atuais, minha]);
-    try {
-      const resposta = await enviarMensagemAssistente(await conversaAtual(), pergunta);
-      if (resposta.carrinho_alterado) {
-        // A sacola mudou no servidor: o cabeçalho e a página da sacola passam a mostrar a peça.
-        await sincronizarCarrinho().catch(() => undefined);
-      }
-      setMensagens((atuais) => [...atuais, novaMensagem("assistente", resposta.resposta, resposta.carrinho_alterado)]);
-      // Passou para a equipe: daqui em diante o mesmo painel conversa com o atendente.
-      if (resposta.status === "com_atendente") setIdAtendimento(resposta.id_atendimento);
-    } catch (falha) {
-      setMensagens((atuais) => atuais.filter((m) => m.id !== minha.id));
-      throw falha;
+  /** Pergunta do cliente logado. `idDaConversa` vem pronto quando o login acabou de criá-la. */
+  async function perguntarAoAssistente(email: string, pergunta: string, idDaConversa?: string) {
+    const resposta = await enviarMensagemAssistente(idDaConversa ?? (await conversaAtual(email)), pergunta);
+    if (resposta.carrinho_alterado) {
+      // A sacola mudou no servidor: o cabeçalho e a página da sacola passam a mostrar a peça.
+      await sincronizarCarrinho().catch(() => undefined);
+    }
+    setMensagens((atuais) => [...atuais, novaMensagem("assistente", resposta.resposta, resposta.carrinho_alterado)]);
+    // Passou para a equipe: daqui em diante o mesmo painel conversa com o atendente.
+    if (resposta.status === "com_atendente") setIdAtendimento(resposta.id_atendimento);
+  }
+
+  async function perguntarComoVisitante(pergunta: string, anteriores: Mensagem[]) {
+    const resposta = await enviarMensagemVisitante(pergunta, comoHistorico(anteriores));
+    setMensagens((atuais) => [...atuais, novaMensagem("assistente", resposta.resposta)]);
+    if (resposta.precisa_login) {
+      setPendente(pergunta);
+      setPedindoLogin(true);
     }
   }
 
@@ -170,16 +211,21 @@ export function AssistenteCliente({ clienteId }: { clienteId: string }) {
     e.preventDefault();
     const pergunta = texto.trim();
     if (!pergunta || enviando || encerrado) return;
+    const minha = novaMensagem("usuario", pergunta);
+    const anteriores = mensagens;
     setTexto("");
     setErro(null);
     setEnviando(true);
+    if (!comEquipe) setMensagens((atuais) => [...atuais, minha]);
     try {
       if (comEquipe) await falarComEquipe(pergunta);
-      else await falarComAssistente(pergunta);
+      else if (conta) await perguntarAoAssistente(conta, pergunta);
+      else await perguntarComoVisitante(pergunta, anteriores);
     } catch (falha) {
+      setMensagens((atuais) => atuais.filter((m) => m.id !== minha.id));
       setTexto(pergunta);
-      if (falha instanceof ErroApi && falha.codigo === "nao_encontrado" && !comEquipe) {
-        esquecerConversa(clienteId);
+      if (falha instanceof ErroApi && falha.codigo === "nao_encontrado" && conta && !comEquipe) {
+        esquecerConversa(conta);
         setIdConversa(null);
         setErro("Sua conversa expirou. Envie a mensagem de novo para começar outra.");
       } else if (falha instanceof ErroApi && falha.codigo === "conflito" && idConversa) {
@@ -192,6 +238,42 @@ export function AssistenteCliente({ clienteId }: { clienteId: string }) {
       }
     } finally {
       setEnviando(false);
+    }
+  }
+
+  /**
+   * Login feito no próprio chat: a conversa de visitante vira a conversa do cliente (com o histórico)
+   * e o pedido que esperava o login é feito de novo, agora com a conta.
+   */
+  async function entrarNoPainel(identificador: string, senha: string): Promise<string | null> {
+    setEntrandoPeloPainel(true);
+    try {
+      const r = await entrarComEmailOuCpf(identificador, senha);
+      if (!r.ok) {
+        if (r.motivo === "credenciais")
+          return tipoDoIdentificador(identificador) === "cpf" ? "CPF ou senha incorretos." : "E-mail ou senha incorretos.";
+        return r.detalhe ?? "Não foi possível entrar agora. Tente de novo em instantes.";
+      }
+      setPedindoLogin(false);
+      // Conta da equipe não usa o assistente da loja: o painel some com a troca de sessão.
+      if (r.sessao.tipo !== "cliente") return null;
+      const email = r.sessao.email;
+      setEnviando(true);
+      try {
+        const nova = await iniciarConversaAssistente(comoHistorico(mensagens));
+        guardarConversa(email, nova.id_conversa);
+        setIdConversa(nova.id_conversa);
+        setCarregada(true);
+        if (pendente) await perguntarAoAssistente(email, pendente, nova.id_conversa);
+        setPendente(null);
+      } catch (falha) {
+        setErro(mensagemDeErro(falha));
+      } finally {
+        setEnviando(false);
+      }
+      return null;
+    } finally {
+      setEntrandoPeloPainel(false);
     }
   }
 
@@ -235,6 +317,17 @@ export function AssistenteCliente({ clienteId }: { clienteId: string }) {
                 ) : null}
               </div>
             ))}
+
+            {pedindoLogin && !conta ? (
+              <LoginNoChat
+                voltar={`${pathname}${search}`}
+                onEntrar={entrarNoPainel}
+                onCancelar={() => {
+                  setPedindoLogin(false);
+                  setPendente(null);
+                }}
+              />
+            ) : null}
 
             {comEquipe ? (
               <>
@@ -328,6 +421,86 @@ export function AssistenteCliente({ clienteId }: { clienteId: string }) {
         </button>
       )}
     </>
+  );
+}
+
+/** Login dentro do chat: e-mail ou CPF e senha. Quem não tem conta vai para o cadastro e volta aqui. */
+function LoginNoChat({
+  voltar,
+  onEntrar,
+  onCancelar,
+}: {
+  voltar: string;
+  onEntrar: (identificador: string, senha: string) => Promise<string | null>;
+  onCancelar: () => void;
+}) {
+  const [identificador, setIdentificador] = useState("");
+  const [senha, setSenha] = useState("");
+  const [entrando, setEntrando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+
+  async function enviar(e: FormEvent) {
+    e.preventDefault();
+    if (!tipoDoIdentificador(identificador)) return setErro("Informe seu e-mail ou CPF.");
+    setEntrando(true);
+    setErro(null);
+    const falha = await onEntrar(identificador, senha).catch(() => "Não foi possível entrar agora. Tente de novo em instantes.");
+    setEntrando(false);
+    if (falha) {
+      setSenha("");
+      setErro(falha);
+    }
+  }
+
+  return (
+    <form onSubmit={enviar} className="space-y-2.5 border border-linha bg-papel p-4" aria-label="Entrar na sua conta">
+      <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-suave">Entrar na sua conta</p>
+      <label className="block text-sm">
+        <span className="sr-only">E-mail ou CPF</span>
+        <input
+          autoFocus
+          value={identificador}
+          onChange={(ev) => setIdentificador(ev.target.value)}
+          autoComplete="username"
+          placeholder="E-mail ou CPF"
+          className={inputClasses}
+        />
+      </label>
+      <label className="block text-sm">
+        <span className="sr-only">Senha</span>
+        <input
+          type="password"
+          value={senha}
+          onChange={(ev) => setSenha(ev.target.value)}
+          autoComplete="current-password"
+          placeholder="Senha"
+          className={inputClasses}
+        />
+      </label>
+      {erro ? (
+        <p role="alert" className="text-[13px] text-terracota">
+          {erro}
+        </p>
+      ) : null}
+      <div className="flex items-center justify-between gap-3 pt-1">
+        <button
+          type="submit"
+          disabled={entrando || !identificador.trim() || !senha}
+          className="bg-marinho px-4 py-2 text-[12px] font-medium uppercase tracking-[0.12em] text-white disabled:opacity-40"
+        >
+          {entrando ? "Entrando…" : "Entrar"}
+        </button>
+        <button type="button" onClick={onCancelar} className="text-[12px] text-suave hover:text-tinta">
+          Agora não
+        </button>
+      </div>
+      <p className="text-[12px] text-suave">
+        Ainda não tem conta ou não lembra a senha?{" "}
+        <Link to={`/entrar?voltar=${encodeURIComponent(voltar)}`} className="text-caramelo hover:underline">
+          Acesse por aqui
+        </Link>
+      </p>
+    </form>
   );
 }
 
