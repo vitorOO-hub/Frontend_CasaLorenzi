@@ -1,7 +1,7 @@
 import { api } from "@/api/http";
 import { booleano, lista, objeto, texto, textoOuNulo } from "./validacao";
 
-/** Assistente virtual do cliente (backend em /assistente). O cliente vem sempre do token. */
+/** Assistente virtual do cliente (backend em /assistente/cliente). O cliente vem sempre do token. */
 
 export type StatusConversaAssistente = "ativa" | "com_atendente" | "encerrada";
 
@@ -72,12 +72,12 @@ export function validarRespostaAssistente(dados: unknown): RespostaAssistenteApi
 }
 
 export const iniciarConversaAssistente = async () =>
-  validarConversaAssistente(await api.post<unknown>("/assistente/conversas"));
+  validarConversaAssistente(await api.post<unknown>("/assistente/cliente/conversas"));
 
 export const obterConversaAssistente = async (idConversa: string) =>
-  validarConversaAssistente(await api.get<unknown>(`/assistente/conversas/${encodeURIComponent(idConversa)}`));
+  validarConversaAssistente(await api.get<unknown>(`/assistente/cliente/conversas/${encodeURIComponent(idConversa)}`));
 
 export const enviarMensagemAssistente = async (idConversa: string, mensagem: string) =>
   validarRespostaAssistente(
-    await api.post<unknown>(`/assistente/conversas/${encodeURIComponent(idConversa)}/mensagens`, { texto: mensagem }),
+    await api.post<unknown>(`/assistente/cliente/conversas/${encodeURIComponent(idConversa)}/mensagens`, { texto: mensagem }),
   );
