@@ -45,7 +45,6 @@ export function Sacola() {
     return (
       <div className="mx-auto max-w-xl px-5 py-24 text-center">
         <h1 className="text-[56px] leading-none">A sacola está vazia.</h1>
-        <p className="mt-4 font-display text-xl text-suave">A Edição 64 tem dezoito peças, e algumas já estão nas últimas unidades.</p>
         <Link to="/loja" className={cn(botaoLoja(), "mt-10")}>
           Ver a Edição 64
         </Link>
