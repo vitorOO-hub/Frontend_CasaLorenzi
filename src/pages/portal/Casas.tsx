@@ -37,7 +37,7 @@ export function Casas() {
   return (
     <div className="mx-auto max-w-[1360px] px-5 pt-12 md:px-12">
       <h1 className="text-[56px] leading-none md:text-[76px]">As três casas</h1>
-      <p className="mt-4 max-w-xl font-display text-[21px]">Em cada uma há um alfaiate, uma mesa de corte e café passado. Os ajustes, em qualquer casa, são por nossa conta.</p>
+      <p className="mt-4 max-w-xl font-display text-[21px]">Em cada uma há um alfaiate, uma mesa de corte e café passado. Você pode agendar ajustes de peças compradas em qualquer casa.</p>
       <div className="mt-14 grid gap-10 md:grid-cols-3">
         {lojas.map((l) => (
           <CasaCartao key={l.id} loja={l} />

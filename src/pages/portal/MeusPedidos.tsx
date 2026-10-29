@@ -48,6 +48,7 @@ function pedidoApiParaTela(pedido: PedidoClienteApi) {
     loja: pedido.loja,
     status: statusPedido(pedido.status_codigo),
     itens: pedido.itens.map((item) => ({
+      idItemPedido: item.id_item_pedido,
       sku: item.sku,
       nome: item.produto,
       quantidade: item.quantidade,
@@ -77,7 +78,7 @@ export function MeusPedidos() {
         valor: p.valor,
         loja: nomeLoja(p.lojaId),
         status: p.status,
-        itens: p.itens,
+        itens: p.itens.map((item) => ({ ...item, idItemPedido: `${p.id}:${item.sku}` })),
       }));
   }, [clienteId, pedidos, pedidosApi]);
 
@@ -139,12 +140,17 @@ export function MeusPedidos() {
                   <span className="block text-xs text-suave">
                     {i.quantidade} × {moeda(i.valor)}
                   </span>
+                  {p.status === "Entregue" ? (
+                    <Link to={`/agendar?item=${encodeURIComponent(i.idItemPedido)}`} className="link-tracejado mt-2 inline-block text-xs">
+                      Agendar ajuste desta peça
+                    </Link>
+                  ) : null}
                 </span>
               </li>
             ))}
           </ul>
           <Link to={`/conta/atendimento/novo?pedido=${p.idPedido}`} className="link-tracejado mt-6 inline-block text-sm">
-            Precisa de ajuste ou troca? Fale com a casa
+            Troca ou outra dúvida? Fale com a casa
           </Link>
         </article>
       ))}

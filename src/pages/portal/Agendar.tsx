@@ -6,11 +6,11 @@ import { cn } from "@/components/ui";
 import { FotoCampanha, botaoLoja } from "@/components/vitrine";
 import { clientes, lojas, nomeLoja } from "@/lib/dados";
 import { casas } from "@/lib/loja";
-import { useSessao } from "@/lib/sessao";
+import { useClienteId, useSessao } from "@/lib/sessao";
 import * as acoes from "@/lib/acoes";
-import { criarAgendamentoCliente, listarOpcoesAgendamentoCliente, type SlotAgendamentoClienteApi } from "@/lib/agendamentosClienteApi";
+import { criarAgendamentoCliente, itensElegiveisParaAjuste, listarOpcoesAgendamentoCliente, type SlotAgendamentoClienteApi } from "@/lib/agendamentosClienteApi";
 import { useProdutosCatalogo } from "@/lib/catalogoApi";
-import { listarLojasCliente, type LojaClienteApi } from "@/lib/comprasClienteApi";
+import { listarLojasCliente, listarPedidosCliente, type LojaClienteApi, type PedidoClienteApi } from "@/lib/comprasClienteApi";
 import { useEstado } from "@/lib/store";
 import { useAcao } from "@/lib/useAcao";
 import { CampoLoja, campoLoja } from "./Checkout";
@@ -65,6 +65,7 @@ export function Agendar() {
   const sessao = useSessao();
   const modoApi = usandoApi();
   const estado = useEstado();
+  const clienteId = useClienteId();
   const { produtos } = useProdutosCatalogo(estado.produtos);
   const peca = produtos.find((p) => p.sku === params.get("peca"));
   const cliente = sessao?.tipo === "cliente" ? clientes.find((c) => c.id === sessao.clienteId) : undefined;
@@ -75,13 +76,17 @@ export function Agendar() {
   const [lojaId, setLojaId] = useState("l1");
   const [dia, setDia] = useState(diasSimulados[0]!.iso);
   const [hora, setHora] = useState("14:00");
-  const [nome, setNome] = useState(cliente?.nome ?? "");
+  const [nome, setNome] = useState(cliente?.nome ?? (sessao?.tipo === "cliente" ? sessao.nome : ""));
   const [telefone, setTelefone] = useState(cliente?.telefone ?? "");
   const [obs, setObs] = useState(peca ? `Quero provar a peça ${peca.nome}.` : "");
+  const [idItemPedido, setIdItemPedido] = useState(params.get("item") ?? "");
   const [feito, setFeito] = useState<{ id?: string; protocolo?: string } | null>(null);
+  const [pedidosApi, setPedidosApi] = useState<PedidoClienteApi[] | null>(null);
   const [lojasApi, setLojasApi] = useState<LojaClienteApi[]>([]);
   const [slotsApi, setSlotsApi] = useState<SlotAgendamentoClienteApi[]>([]);
+  const [slotsCarregados, setSlotsCarregados] = useState(false);
   const [erroApi, setErroApi] = useState<string | null>(null);
+  const [erroPedidos, setErroPedidos] = useState<string | null>(null);
   const { executar, ocupado, erro } = useAcao();
 
   const lojasParaEscolher = lojasApi.length
@@ -89,10 +94,25 @@ export function Agendar() {
     : lojas.map((l) => ({ id: l.id, nome: l.nome, nota: casas[l.id]?.alfaiate ?? l.cidade }));
   const slotsDaLoja = slotsApi.filter((slot) => slot.id_loja === lojaId);
   const diasApi = Array.from(new Set(slotsDaLoja.map((slot) => slot.data))).map((iso) => ({ iso, rotulo: rotuloData(iso) }));
-  const dias = modoApi && diasApi.length ? diasApi : diasSimulados;
+  const dias = modoApi ? diasApi : diasSimulados;
   const horarios = modoApi ? slotsDaLoja.filter((slot) => slot.data === dia).map((slot) => slot.horario) : HORARIOS;
   const rotuloDia = dias.find((d) => d.iso === dia)?.rotulo ?? dia;
   const tipoRotulo = TIPOS.find((t) => t.id === tipo)!.rotulo;
+  const itensParaAjuste = modoApi
+    ? itensElegiveisParaAjuste(pedidosApi ?? [])
+    : estado.pedidos
+        .filter((pedido) => pedido.clienteId === clienteId && pedido.status === "Entregue")
+        .flatMap((pedido) => pedido.itens.map((item) => ({
+          id: `${pedido.id}:${item.sku}`,
+          pedido: pedido.id,
+          sku: item.sku,
+          nome: item.nome,
+          detalhe: "",
+        })));
+  const itemSelecionado = itensParaAjuste.find((item) => item.id === idItemPedido);
+  const ajusteSemItem = tipo === "ajuste" && !itemSelecionado;
+  const voltarAgendamento = `/agendar${params.toString() ? `?${params.toString()}` : ""}`;
+  const entrarParaAgendar = `/entrar?voltar=${encodeURIComponent(voltarAgendamento)}`;
 
   useEffect(() => {
     if (!modoApi || sessao?.tipo !== "cliente") return;
@@ -103,10 +123,18 @@ export function Agendar() {
         setLojasApi(lista);
         if (lista[0]) setLojaId(lista[0].id_loja);
         setSlotsApi(opcoes.slots);
+        setSlotsCarregados(true);
         setErroApi(null);
       })
       .catch((erro) => {
         if (ativo) setErroApi(mensagemDeErro(erro));
+      });
+    listarPedidosCliente()
+      .then((pedidos) => {
+        if (ativo) setPedidosApi(pedidos);
+      })
+      .catch((erro) => {
+        if (ativo) setErroPedidos(mensagemDeErro(erro));
       });
     return () => {
       ativo = false;
@@ -135,7 +163,7 @@ export function Agendar() {
       <div className="mx-auto grid max-w-[1180px] gap-12 px-5 pt-12 md:grid-cols-2 md:px-12">
         {info ? <FotoCampanha id={info.foto} largura={1000} className="aspect-[4/3]" /> : null}
         <div>
-          <p className="text-[15px] text-caramelo">{feito.protocolo ? `Protocolo ${feito.protocolo}` : "Prova marcada"}</p>
+          <p className="text-[15px] text-caramelo">{feito.protocolo ? `Protocolo ${feito.protocolo}` : "Agendamento confirmado"}</p>
           <h1 className="mt-2 text-[48px] leading-tight">
             {rotuloDia}, às {hora}.
           </h1>
@@ -160,36 +188,39 @@ export function Agendar() {
 
   return (
     <div className="mx-auto max-w-[1180px] px-5 pt-10 md:px-12">
-      <h1 className="text-[56px] leading-none md:text-[64px]">Agendar uma prova</h1>
-      <p className="mt-4 max-w-xl font-display text-xl text-suave">Café passado, a peça separada no seu tamanho e um alfaiate com tempo. Sem custo.</p>
+      <h1 className="text-[48px] leading-tight md:text-[64px]">Agendar uma visita</h1>
+      <p className="mt-4 max-w-xl font-display text-xl text-suave">Escolha uma prova ou traga uma peça comprada para ajustar na casa.</p>
 
       <form
         className="mt-10 space-y-10"
         onSubmit={(e) => {
           e.preventDefault();
-          // Cliente logado: a prova entra como conversa e aparece para o time no painel interno.
+          // O agendamento entra como conversa e aparece para o time no painel interno.
           void executar("agendar", async () => {
+            if (ajusteSemItem) throw new Error("Selecione uma peça de um pedido entregue para ajustar.");
+            if (!horarios.includes(hora)) throw new Error("Escolha um horário disponível.");
             if (modoApi) {
-              if (sessao?.tipo !== "cliente") throw new Error("Entre na sua conta para agendar uma prova.");
+              if (sessao?.tipo !== "cliente") throw new Error("Entre na sua conta para agendar.");
               const novo = await criarAgendamentoCliente({
                 tipo,
+                id_item_pedido: tipo === "ajuste" ? itemSelecionado!.id : null,
                 id_loja: lojaId,
                 data: dia,
                 horario: hora,
                 nome,
                 telefone,
                 observacao: obs || null,
-                peca_sku: peca?.sku ?? null,
-                peca_nome: peca?.nome ?? null,
+                peca_sku: tipo === "ajuste" ? itemSelecionado!.sku : peca?.sku ?? null,
+                peca_nome: tipo === "ajuste" ? itemSelecionado!.nome : peca?.nome ?? null,
               });
               setFeito({ id: novo.id_atendimento, protocolo: novo.protocolo });
             } else if (cliente) {
               const novo = await acoes.abrirChamado({
-                assunto: `Prova agendada — ${rotuloDia}, ${hora}`,
+                assunto: `${tipoRotulo} — ${rotuloDia}, ${hora}`,
                 motivo: "Dúvida",
                 lojaId,
-                sku: peca?.sku,
-                descricao: `${tipoRotulo} na casa ${nomeLoja(lojaId)}, ${rotuloDia} às ${hora}.${obs ? ` Observação: ${obs}` : ""}`,
+                sku: tipo === "ajuste" ? itemSelecionado!.sku : peca?.sku,
+                descricao: `${tipoRotulo} na casa ${nomeLoja(lojaId)}, ${rotuloDia} às ${hora}.${itemSelecionado && tipo === "ajuste" ? ` Peça do pedido ${itemSelecionado.pedido}: ${itemSelecionado.nome}.` : ""}${obs ? ` Observação: ${obs}` : ""}`,
               });
               setFeito({ id: novo.id, protocolo: novo.protocolo });
             } else {
@@ -210,6 +241,33 @@ export function Agendar() {
             ))}
           </div>
         </section>
+
+        {tipo === "ajuste" ? (
+          <section className="max-w-3xl">
+            <h2 className="mb-4 text-[28px]">Qual peça vamos ajustar</h2>
+            {modoApi && sessao?.tipo !== "cliente" ? (
+              <p className="text-sm text-suave"><Link to={entrarParaAgendar} className="link-tracejado text-tinta">Entre na sua conta</Link> para escolher uma peça dos seus pedidos.</p>
+            ) : erroPedidos ? (
+              <p role="alert" className="text-sm text-perigo">Não foi possível carregar seus pedidos: {erroPedidos}</p>
+            ) : modoApi && pedidosApi === null ? (
+              <p className="text-sm text-suave">Carregando suas peças...</p>
+            ) : itensParaAjuste.length ? (
+              <CampoLoja rotulo="Peça de um pedido entregue">
+                <select required value={itemSelecionado?.id ?? ""} onChange={(e) => setIdItemPedido(e.target.value)} className={campoLoja}>
+                  <option value="">Selecione uma peça</option>
+                  {itensParaAjuste.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.nome} · {item.detalhe ? `${item.detalhe} · ` : ""}pedido {item.pedido}
+                    </option>
+                  ))}
+                </select>
+              </CampoLoja>
+            ) : (
+              <p className="text-sm text-suave">Nenhuma peça de pedido entregue disponível. <Link to="/conta/pedidos" className="link-tracejado text-tinta">Ver meus pedidos</Link></p>
+            )}
+            <p className="mt-3 text-sm text-suave">Ajuste: R$ 100 por peça. Cortesia Lorenzi+ Black conforme a política da casa.</p>
+          </section>
+        ) : null}
 
         <section>
           <h2 className="mb-4 text-[28px]">Em qual casa</h2>
@@ -239,7 +297,13 @@ export function Agendar() {
               </Escolha>
             ))}
           </div>
-          {modoApi && !horarios.length ? <p className="mt-3 text-sm text-perigo">Não há horários livres nesta casa para os próximos dias.</p> : null}
+          {modoApi && sessao?.tipo !== "cliente" ? (
+            <p className="mt-3 text-sm text-suave"><Link to={entrarParaAgendar} className="link-tracejado text-tinta">Entre na sua conta</Link> para consultar os horários disponíveis.</p>
+          ) : modoApi && !slotsCarregados && !erroApi ? (
+            <p className="mt-3 text-sm text-suave">Carregando horários...</p>
+          ) : modoApi && slotsCarregados && !horarios.length ? (
+            <p className="mt-3 text-sm text-perigo">Não há horários livres nesta casa para os próximos dias.</p>
+          ) : null}
         </section>
 
         <section className="grid max-w-3xl gap-4 sm:grid-cols-2">
@@ -257,7 +321,7 @@ export function Agendar() {
 
         {erroApi ? <p role="alert" className="text-sm text-perigo">{erroApi}</p> : null}
         {erro ? <p role="alert" className="text-sm text-perigo">{erro}</p> : null}
-        <button type="submit" disabled={ocupado !== null} className={botaoLoja()}>
+        <button type="submit" disabled={ocupado !== null || ajusteSemItem || !horarios.includes(hora) || (modoApi && sessao?.tipo !== "cliente")} className={botaoLoja()}>
           {ocupado ? "Marcando…" : `Marcar ${rotuloDia}, ${hora}`}
         </button>
       </form>

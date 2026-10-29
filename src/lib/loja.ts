@@ -172,7 +172,7 @@ export const casas: Record<string, InfoCasa> = {
     alfaiate: "Sr. Geraldo, desde 1999",
     provas: "Seg. a sáb., 10h às 19h",
     agenda: "Até 30/10 — gravuras de Lívia Mendes na loja",
-    bilhete: "Venha ver a exposição e fique para um pão de queijo. Os ajustes, como sempre, são por nossa conta.",
+    bilhete: "Venha ver a exposição e fique para um pão de queijo. Se precisar ajustar uma peça comprada, agende sua visita.",
     autor: "Juliana",
   },
 };
