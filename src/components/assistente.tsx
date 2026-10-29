@@ -34,6 +34,7 @@ import { manterConversaEmDia, ouvirMensagensDoChamado } from "@/lib/conversaClie
 import { moeda } from "@/lib/dados";
 import { fotoEstudio } from "@/lib/loja";
 import { nomeDeVitrine } from "@/lib/nomes";
+import { ehVulto } from "@/lib/vultoMais";
 import { TextoDaResposta } from "./AssistenteVendedor";
 import {
   ALCAS,
@@ -751,6 +752,7 @@ function CartaoOferta({ oferta, aoAdicionar }: { oferta: OfertaAssistenteApi; ao
   const [skuEscolhido, setSkuEscolhido] = useState(oferta.variacoes[0]?.sku ?? oferta.sku);
   const escolhida = oferta.variacoes.find((v) => v.sku === skuEscolhido) ?? oferta;
   const nome = nomeDeVitrine(oferta.produto);
+  const foto = oferta.imagem_url ?? fotoEstudio(oferta.sku);
 
   async function adicionar() {
     setAdicionando(true);
@@ -779,7 +781,24 @@ function CartaoOferta({ oferta, aoAdicionar }: { oferta: OfertaAssistenteApi; ao
 
   return (
     <div className="flex gap-3 rounded-xl border border-linha bg-papel p-2.5">
-      <Foto src={oferta.imagem_url ?? fotoEstudio(oferta.sku)} alt={oferta.imagem_alt ?? nome} className="aspect-[4/5] w-16 shrink-0 overflow-hidden rounded-lg" />
+      {foto ? (
+        <Foto src={foto} alt={oferta.imagem_alt ?? nome} className="aspect-[4/5] w-16 shrink-0 overflow-hidden rounded-lg" />
+      ) : (
+        // Peça sem foto: o mesmo quadro do catálogo ("Vulto · foto em breve"), em tamanho de cartão.
+        <div
+          role="img"
+          aria-label={`${nome}: foto em breve`}
+          className="flex aspect-[4/5] w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-lg bg-areia px-1 text-center text-suave"
+        >
+          {/* Marca desconhecida (cartão gravado antes de a marca vir junto): sem chutar a marca. */}
+          {!oferta.marca ? null : ehVulto({ marca: oferta.marca }) ? (
+            <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-tinta">Vulto</span>
+          ) : (
+            <span className="font-display text-[11px] leading-tight text-tinta">Casa Lorenzi</span>
+          )}
+          <span className="text-[7px] uppercase leading-tight tracking-[0.12em]">foto em breve</span>
+        </div>
+      )}
       <div className="flex min-w-0 flex-1 flex-col">
         <p className="truncate text-sm font-medium">{nome}</p>
         {oferta.variacoes.length > 1 ? (

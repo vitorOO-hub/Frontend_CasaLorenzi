@@ -16,6 +16,8 @@ export type OfertaAssistenteApi = {
   id_variacao: string;
   sku: string;
   produto: string;
+  /** Sem foto, o cartão mostra o quadro da marca (como o catálogo). */
+  marca: string | null;
   cor: string;
   tamanho: string;
   preco: number;
@@ -99,6 +101,7 @@ export function validarOferta(dados: unknown): OfertaAssistenteApi {
   return {
     ...base,
     produto: texto(o.produto, "produto"),
+    marca: textoOuNulo(o.marca, "marca"),
     imagem_url: textoOuNulo(o.imagem_url, "imagem_url"),
     imagem_alt: textoOuNulo(o.imagem_alt, "imagem_alt"),
     tecido: textoOuNulo(o.tecido, "tecido"),
