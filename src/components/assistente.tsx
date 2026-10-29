@@ -790,7 +790,8 @@ function CartaoOferta({ oferta, aoAdicionar }: { oferta: OfertaAssistenteApi; ao
           aria-label={`${nome}: foto em breve`}
           className="flex aspect-[4/5] w-16 shrink-0 flex-col items-center justify-center gap-1 rounded-lg bg-areia px-1 text-center text-suave"
         >
-          {ehVulto({ marca: oferta.marca }) ? (
+          {/* Marca desconhecida (cartão gravado antes de a marca vir junto): sem chutar a marca. */}
+          {!oferta.marca ? null : ehVulto({ marca: oferta.marca }) ? (
             <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-tinta">Vulto</span>
           ) : (
             <span className="font-display text-[11px] leading-tight text-tinta">Casa Lorenzi</span>
