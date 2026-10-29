@@ -2,7 +2,7 @@ import { LoaderCircle, Maximize2, Minimize2, PanelLeft, Send, Sparkles, SquarePe
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type PointerEvent } from "react";
 import { mensagemDeErro } from "@/api/erros";
 import { TAMANHO_MAXIMO_PERGUNTA_GERENTE, criarConversaGerente, listarConversasGerente, obterConversaGerente, perguntarGerente, type ConversaGerente, type MensagemGerente } from "@/lib/assistenteGerenteApi";
-import { linhasDaResposta } from "@/lib/assistenteVendedorApi";
+import { TextoRespostaAssistente } from "./TextoRespostaAssistente";
 import { cn } from "./ui";
 
 const SUGESTOES = [
@@ -73,23 +73,12 @@ function acompanharPonteiro(mover: (e: globalThis.PointerEvent) => void, aoSolta
   window.addEventListener("pointerup", soltar);
 }
 
-function TextoDaResposta({ texto }: { texto: string }) {
-  return (
-    <div className="space-y-1.5">
-      {linhasDaResposta(texto).map((linha, i) => {
-        const conteudo = linha.trechos.map((t, j) => (t.negrito ? <strong key={j}>{t.texto}</strong> : <span key={j}>{t.texto}</span>));
-        return linha.tipo === "item" ? <p key={i} className="flex gap-2"><span aria-hidden className="text-dourado">•</span><span>{conteudo}</span></p> : <p key={i}>{conteudo}</p>;
-      })}
-    </div>
-  );
-}
-
 function Bolha({ mensagem }: { mensagem: MensagemLocal }) {
   const minha = mensagem.autor === "usuario";
   return (
     <div className={cn("flex flex-col", minha ? "items-end" : "items-start")}>
       <div className={cn("text-sm leading-relaxed text-tinta", minha ? "max-w-[80%] whitespace-pre-wrap rounded-2xl bg-areia px-4 py-2.5" : "w-full")}>
-        {minha ? mensagem.texto : <TextoDaResposta texto={mensagem.texto} />}
+        {minha ? mensagem.texto : <TextoRespostaAssistente texto={mensagem.texto} />}
       </div>
     </div>
   );
