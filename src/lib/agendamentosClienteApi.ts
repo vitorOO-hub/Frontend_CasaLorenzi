@@ -1,6 +1,19 @@
 import { api } from "@/api/http";
 import { lista, numero, objeto, opcao, texto, textoOuNulo, type Opcao } from "./validacao";
 import { validarDetalheChamadoCliente, type DetalheChamadoClienteApi } from "./chamadosClienteApi";
+import type { PedidoClienteApi } from "./comprasClienteApi";
+
+export function itensElegiveisParaAjuste(pedidos: PedidoClienteApi[]) {
+  return pedidos
+    .filter((pedido) => pedido.status_codigo === "entregue")
+    .flatMap((pedido) => pedido.itens.map((item) => ({
+      id: item.id_item_pedido,
+      pedido: pedido.numero_pedido,
+      sku: item.sku,
+      nome: item.produto,
+      detalhe: [item.cor, item.tamanho].filter(Boolean).join(" · "),
+    })));
+}
 
 export type SlotAgendamentoClienteApi = {
   id_loja: string;
@@ -17,6 +30,7 @@ export type OpcoesAgendamentoClienteApi = {
 
 export type AgendamentoClienteCriar = {
   tipo: "ajuste" | "prova";
+  id_item_pedido?: string | null;
   id_loja: string;
   data: string;
   horario: string;
@@ -53,6 +67,7 @@ export const criarAgendamentoCliente = async (dados: AgendamentoClienteCriar): P
   validarDetalheChamadoCliente(
     await api.post<unknown>("/cliente/agendamentos", {
       ...dados,
+      id_item_pedido: textoOuNulo(dados.id_item_pedido ?? null, "id_item_pedido"),
       observacao: textoOuNulo(dados.observacao ?? null, "observacao"),
       peca_sku: textoOuNulo(dados.peca_sku ?? null, "peca_sku"),
       peca_nome: textoOuNulo(dados.peca_nome ?? null, "peca_nome"),
