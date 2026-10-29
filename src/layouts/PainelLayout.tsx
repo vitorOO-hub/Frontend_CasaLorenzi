@@ -1,6 +1,7 @@
 import { LogOut, Store } from "lucide-react";
 import { Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Bloqueio } from "@/components/acesso";
+import { AssistenteGerente } from "@/components/AssistenteGerente";
 import { AssistenteVendedor } from "@/components/AssistenteVendedor";
 import { MenuUsuario } from "@/components/MenuUsuario";
 import { SinalMais } from "@/components/marca";
@@ -223,6 +224,7 @@ export function PainelLayout() {
       </div>
       {/* Assistente de vendas com IA: só para o vendedor (o servidor confere o papel de novo). */}
       {papel === "vendedor" ? <AssistenteVendedor /> : null}
+      {papel === "gerente_loja" ? <AssistenteGerente /> : null}
     </div>
   );
 }
