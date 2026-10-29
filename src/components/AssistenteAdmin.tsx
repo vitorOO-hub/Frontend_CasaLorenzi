@@ -2,9 +2,10 @@ import { LoaderCircle, Maximize2, Minimize2, PanelLeft, Send, Sparkles, SquarePe
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type PointerEvent } from "react";
 import { mensagemDeErro } from "@/api/erros";
 import { TAMANHO_MAXIMO_PERGUNTA_ADMIN, criarConversaAdmin, listarConversasAdmin, obterConversaAdmin, perguntarAdmin, type ConversaAdmin, type MensagemAdmin } from "@/lib/assistenteAdminApi";
-import { blocosDaRespostaAdmin } from "@/lib/assistenteAdminFormatacao";
-import { trechosDe } from "@/lib/assistenteVendedorApi";
+import { TextoRespostaAssistente } from "./TextoRespostaAssistente";
 import { cn } from "./ui";
+
+export { TextoRespostaAssistente as TextoDaRespostaAdmin } from "./TextoRespostaAssistente";
 
 const SUGESTOES = [
   "Quais lojas precisam de atenção hoje?",
@@ -74,42 +75,12 @@ function acompanharPonteiro(mover: (e: globalThis.PointerEvent) => void, aoSolta
   window.addEventListener("pointerup", soltar);
 }
 
-export function TextoDaRespostaAdmin({ texto }: { texto: string }) {
-  const blocos = blocosDaRespostaAdmin(texto);
-  return (
-    <div className="space-y-1.5">
-      {blocos.map((bloco, i) => {
-        if (bloco.tipo === "tabela") {
-          return (
-            <div key={i} className="my-3 max-w-full overflow-x-auto rounded-md border border-linha">
-              <table className="w-full min-w-[360px] border-collapse text-left text-xs">
-                <thead className="bg-areia/70 text-[10px] uppercase tracking-wider text-suave">
-                  <tr>{bloco.cabecalho.map((titulo, j) => <th key={j} scope="col" className="whitespace-nowrap px-3 py-2 font-medium">{titulo.toLocaleLowerCase("pt-BR") === "fonte" ? "Consulta" : titulo}</th>)}</tr>
-                </thead>
-                <tbody>
-                  {bloco.linhas.map((linha, j) => <tr key={j} className="border-t border-linha">
-                    {linha.map((celula, k) => <td key={k} className="whitespace-nowrap px-3 py-2 text-tinta">
-                      {trechosDe(celula).map((trecho, n) => trecho.negrito ? <strong key={n}>{trecho.texto}</strong> : <span key={n}>{trecho.texto}</span>)}
-                    </td>)}
-                  </tr>)}
-                </tbody>
-              </table>
-            </div>
-          );
-        }
-        const conteudo = bloco.trechos.map((t, j) => (t.negrito ? <strong key={j}>{t.texto}</strong> : <span key={j}>{t.texto}</span>));
-        return bloco.tipo === "item" ? <p key={i} className="flex gap-2"><span aria-hidden className="text-dourado">•</span><span>{conteudo}</span></p> : <p key={i}>{conteudo}</p>;
-      })}
-    </div>
-  );
-}
-
 function Bolha({ mensagem }: { mensagem: MensagemLocal }) {
   const minha = mensagem.autor === "usuario";
   return (
     <div className={cn("flex flex-col", minha ? "items-end" : "items-start")}>
       <div className={cn("text-sm leading-relaxed text-tinta", minha ? "max-w-[80%] whitespace-pre-wrap rounded-2xl bg-areia px-4 py-2.5" : "w-full")}>
-        {minha ? mensagem.texto : <TextoDaRespostaAdmin texto={mensagem.texto} />}
+        {minha ? mensagem.texto : <TextoRespostaAssistente texto={mensagem.texto} />}
       </div>
     </div>
   );
