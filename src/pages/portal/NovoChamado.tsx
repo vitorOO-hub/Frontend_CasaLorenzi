@@ -5,6 +5,7 @@ import { mensagemDeErro } from "@/api/erros";
 import { cn } from "@/components/ui";
 import { botaoLoja } from "@/components/vitrine";
 import * as acoes from "@/lib/acoes";
+import { sugerirAntesDoChamado } from "@/lib/assistenteClienteApi";
 import { useProdutosCatalogo } from "@/lib/catalogoApi";
 import { abrirChamadoCliente, listarOpcoesChamadoCliente } from "@/lib/chamadosClienteApi";
 import { listarLojasCliente, listarPedidosCliente, type LojaClienteApi, type PedidoClienteApi } from "@/lib/comprasClienteApi";
@@ -65,6 +66,10 @@ export function NovoChamado() {
   const [descricao, setDescricao] = useState("");
   const [anexos, setAnexos] = useState<string[]>([]);
   const [criado, setCriado] = useState<{ id: string; protocolo: string } | null>(null);
+  // Antes de enviar, o assistente tenta responder com as políticas e os pedidos do cliente.
+  // `para` guarda o texto consultado: mudou o texto, consulta de novo; senão, envia direto.
+  const [sugestao, setSugestao] = useState<{ texto: string | null; para: string } | null>(null);
+  const [resolvido, setResolvido] = useState(false);
   const { executar, ocupado, erro } = useAcao();
   const motivoSelecionado = motivosDisponiveis.some((m) => m.valor === motivo) ? motivo : (motivosDisponiveis[0]?.valor ?? motivo);
 
@@ -103,6 +108,20 @@ export function NovoChamado() {
     );
   }
 
+  if (resolvido) {
+    return (
+      <div className="max-w-xl">
+        <h2 className="text-[40px] leading-tight">Que bom que resolveu.</h2>
+        <p className="mt-3 font-display text-xl">Se surgir outra dúvida, é só escrever de novo ou chamar o assistente no canto da tela.</p>
+        <div className="mt-8 flex flex-wrap gap-4">
+          <Link to="/conta/atendimento" className={botaoLoja("contorno")}>
+            Conversas com a casa
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   if (modoApi && (pedidosApi === null || categoriasApi === null || lojasApi === null) && !erroApi) {
     return <p className="font-display text-2xl text-suave">Carregando atendimento...</p>;
   }
@@ -118,6 +137,13 @@ export function NovoChamado() {
         e.preventDefault();
         void executar("chamado", async () => {
           if (modoApi) {
+            const texto = `${assunto}\n${descricao}`;
+            if (sugestao?.para !== texto) {
+              // A sugestão nunca impede o chamado: sem resposta (ou com erro), envia direto.
+              const resposta = await sugerirAntesDoChamado(assunto, descricao).catch(() => null);
+              setSugestao({ texto: resposta, para: texto });
+              if (resposta) return;
+            }
             const novo = await abrirChamadoCliente({
               assunto,
               categoria: categoriaPorMotivo[motivoSelecionado],
@@ -203,9 +229,26 @@ export function NovoChamado() {
         </CampoLoja>
       )}
       {erro ? <p role="alert" className="text-sm text-perigo">{erro}</p> : null}
-      <button type="submit" disabled={ocupado !== null} className={botaoLoja()}>
-        {ocupado ? "Enviando…" : "Enviar"}
-      </button>
+      {sugestao?.texto && sugestao.para === `${assunto}\n${descricao}` ? (
+        <section aria-live="polite" className="border-[1.5px] border-dashed border-tinta bg-pergaminho px-5 py-4">
+          <p className="rotulo">Antes de enviar</p>
+          <p className="mt-2 font-display text-xl">Talvez isso já responda:</p>
+          <p className="mt-2 text-[15px] leading-relaxed">{sugestao.texto}</p>
+          <p className="mt-2 text-[13px] text-suave">Resposta do assistente da casa, com base nas nossas políticas e nos seus pedidos.</p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button type="button" onClick={() => setResolvido(true)} className={botaoLoja()}>
+              Isso resolveu
+            </button>
+            <button type="submit" disabled={ocupado !== null} className={botaoLoja("contorno")}>
+              {ocupado ? "Enviando…" : "Enviar mesmo assim"}
+            </button>
+          </div>
+        </section>
+      ) : (
+        <button type="submit" disabled={ocupado !== null} className={botaoLoja()}>
+          {ocupado ? (modoApi && sugestao?.para !== `${assunto}\n${descricao}` ? "Procurando uma resposta…" : "Enviando…") : "Enviar"}
+        </button>
+      )}
     </form>
   );
 }
