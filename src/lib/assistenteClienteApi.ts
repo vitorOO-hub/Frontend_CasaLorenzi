@@ -205,3 +205,17 @@ export const avaliarRespostaAssistente = async (idConversa: string, idMensagem: 
     `/assistente/cliente/conversas/${encodeURIComponent(idConversa)}/mensagens/${encodeURIComponent(idMensagem)}/avaliacao`,
     { avaliacao },
   ));
+
+/** Resposta rápida antes de abrir um chamado; `null` = nada seguro a sugerir, o chamado segue. */
+export function validarSugestaoChamado(dados: unknown): string | null {
+  return textoOuNulo(objeto(dados, "sugestao_chamado").sugestao, "sugestao");
+}
+
+export const sugerirAntesDoChamado = async (assunto: string, descricao: string) =>
+  validarSugestaoChamado(
+    await api.post<unknown>(
+      "/assistente/cliente/sugestao-chamado",
+      { assunto, descricao },
+      { timeoutMs: TEMPO_DA_RESPOSTA_DO_ASSISTENTE_MS },
+    ),
+  );
