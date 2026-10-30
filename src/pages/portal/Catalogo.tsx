@@ -95,7 +95,7 @@ function CatalogoGeral() {
           </h1>
         </div>
         <p className="font-display text-[19px] leading-normal text-suave md:text-right">
-          {carregando ? CARREGANDO : `${lista.length} ${lista.length === 1 ? "peça" : "peças"}.`} Todas com a barra e as mangas ajustadas na hora, em qualquer uma das três casas.
+          {carregando ? CARREGANDO : `${lista.length} ${lista.length === 1 ? "peça" : "peças"}.`} Todas com a barra e as mangas ajustadas na hora, em qualquer uma das nossas casas.
         </p>
       </div>
 

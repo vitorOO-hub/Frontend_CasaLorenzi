@@ -5,12 +5,12 @@ import { CarrosselCampanha, filme, foto } from "@/components/campanha";
 import { SinalMais } from "@/components/marca";
 import { CabecalhoSecao, CartaoProduto, FotoCampanha, FichaTecnica } from "@/components/vitrine";
 import { useProdutosCatalogo } from "@/lib/catalogoApi";
-import { lojas, type Produto } from "@/lib/dados";
+import { type Produto } from "@/lib/dados";
 import { CAMPANHA, EDICAO, materias } from "@/lib/loja";
 import { useEstado } from "@/lib/store";
 import { ehVulto } from "@/lib/vultoMais";
 import { CartaoMateria } from "./Caderno";
-import { CasaCartao } from "./Casas";
+import { CasasPorMarca } from "./Casas";
 
 
 /** Fileira de peças com rolagem lateral e setas, como uma arara. */
@@ -146,12 +146,8 @@ export function Inicio() {
 
       {/* As casas */}
       <section className="mx-auto max-w-[1360px] px-5 pt-28 md:px-12">
-        <CabecalhoSecao titulo="As três casas" acao="Endereços e horários" para="/casas" />
-        <div className="grid gap-7 md:grid-cols-3">
-          {lojas.slice(0, 3).map((l) => (
-            <CasaCartao key={l.id} loja={l} />
-          ))}
-        </div>
+        <CabecalhoSecao titulo="As nossas casas" acao="Endereços e horários" para="/casas" />
+        <CasasPorMarca />
       </section>
     </div>
   );

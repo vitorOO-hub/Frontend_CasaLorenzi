@@ -250,7 +250,7 @@ function DetalheProduto({ sku }: { sku: string }) {
           <ul className="mt-8 space-y-0 text-[15px]">
             {[
               ["Ajuste", "Barra e mangas feitas na hora, em qualquer casa, sem custo."],
-              ["Entrega", "Grátis acima de R$ 1.000, ou retire numa das três casas."],
+              ["Entrega", "Grátis acima de R$ 1.000, ou retire numa das nossas casas."],
               ["Troca", "A primeira é por nossa conta, em até 30 dias."],
             ].map(([k, v]) => (
               <li key={k} className="alinhavo grid grid-cols-[90px_1fr] py-3">

@@ -220,6 +220,38 @@ export const lojas: Loja[] = [
   },
 ];
 
+/** Casas físicas da Vulto, só para a vitrine. Ficam fora de `lojas` para não entrar nos dados de exemplo do painel. */
+export const casasVulto: Loja[] = [
+  {
+    id: "v1",
+    nome: "Pátio Batel",
+    cidade: "Curitiba, PR",
+    endereco: "Pátio Batel — Batel",
+    responsavel: "Helena Brandão",
+  },
+  {
+    id: "v2",
+    nome: "Shopping Eldorado",
+    cidade: "São Paulo, SP",
+    endereco: "Shopping Eldorado — Pinheiros",
+    responsavel: "Renato Salles",
+  },
+  {
+    id: "v3",
+    nome: "Pinheiros",
+    cidade: "São Paulo, SP",
+    endereco: "Pinheiros",
+    responsavel: "Marcela Duarte",
+  },
+  {
+    id: "v4",
+    nome: "Savassi",
+    cidade: "Belo Horizonte, MG",
+    endereco: "Savassi",
+    responsavel: "Hugo Menezes",
+  },
+];
+
 export const nomeLoja = (id: string) => lojas.find((l) => l.id === id)?.nome ?? "—";
 
 // ===================== Produtos =====================

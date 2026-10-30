@@ -113,7 +113,7 @@ export function PortalLayout() {
       id: "casa",
       rotulo: "A casa",
       to: "/caderno",
-      itens: [["Caderno do Ateliê", "/caderno"], ["As três casas", "/casas"], ["1962: a primeira tesoura", "/caderno/1962"]],
+      itens: [["Caderno do Ateliê", "/caderno"], ["As nossas casas", "/casas"], ["1962: a primeira tesoura", "/caderno/1962"]],
       destaque: { foto: unsplash(CAMPANHA.prova1, 700), legenda: "Caderno do Ateliê", to: "/caderno" },
     },
   ];
@@ -378,7 +378,7 @@ function Rodape() {
       "A casa",
       [
         ["Caderno do Ateliê", "/caderno"],
-        ["As três casas", "/casas"],
+        ["As nossas casas", "/casas"],
         ["1962: a primeira tesoura", "/caderno/1962"],
       ],
     ],

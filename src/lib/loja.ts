@@ -139,7 +139,7 @@ export const EDICAO = {
     "São Paulo tem um mês por ano em que ninguém sabe se leva casaco. Esta edição foi feita para ele: gabardine que segura o chuvisco, lã fria que não pesa, um tricot que vai e volta do escritório no mesmo dia.",
 };
 
-// ===================== As três casas =====================
+// ===================== As nossas casas (Casa Lorenzi e Vulto) =====================
 
 export type InfoCasa = {
   foto: string;
@@ -174,6 +174,38 @@ export const casas: Record<string, InfoCasa> = {
     agenda: "Até 30/10 — gravuras de Lívia Mendes na loja",
     bilhete: "Venha ver a exposição e fique para um pão de queijo. Se precisar ajustar uma peça comprada, agende sua visita.",
     autor: "Juliana",
+  },
+  v1: {
+    foto: "1544246108-14b45872b02d",
+    alfaiate: "Sr. Ricardo, desde 2008",
+    provas: "Seg. a sáb., 10h às 22h",
+    agenda: "Sábado, 08/11 — prova aberta da linha Vulto",
+    bilhete: "A linha de pronta entrega fica no andar de baixo; se algo precisar de ajuste, a barra sai no mesmo dia.",
+    autor: "Helena",
+  },
+  v2: {
+    foto: "1584184924103-e310d9dc82fc",
+    alfaiate: "Dona Neusa, desde 2011",
+    provas: "Seg. a sáb., 10h às 22h",
+    agenda: "Sexta, 07/11 — medidas sob encomenda sem hora marcada",
+    bilhete: "Vem ver o terno sob medida: a gente tira as medidas na hora e o café é por nossa conta.",
+    autor: "Renato",
+  },
+  v3: {
+    foto: "1769192932507-edee0acdd5ca",
+    alfaiate: "Sr. Walter, desde 2015",
+    provas: "Seg. a sex., 10h às 19h · sáb., 10h às 17h",
+    agenda: "Quarta, 05/11 — chegou a nova edição de camisaria",
+    bilhete: "Casa pequena, de rua, com tempo para uma boa prova. Passe aqui na hora do almoço.",
+    autor: "Marcela",
+  },
+  v4: {
+    foto: "1781888699751-15f2b304693c",
+    alfaiate: "Dona Lúcia, desde 2013",
+    provas: "Seg. a sex., 10h às 19h · sáb., 10h às 17h",
+    agenda: "Sábado, 15/11 — manhã de ajustes gratuitos",
+    bilhete: "Traga a peça que você já tem: a gente ajusta e mostra como combinar com a linha nova.",
+    autor: "Hugo",
   },
 };
 

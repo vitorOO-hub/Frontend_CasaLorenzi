@@ -116,7 +116,7 @@ export function Entrar() {
           </Link>
           <div className="max-w-md">
             <p className="font-display text-4xl leading-tight">
-              Seus pedidos, ajustes e conversas com a casa — e a operação das três casas — num só lugar.
+              Seus pedidos, ajustes e conversas com a casa — e a operação das nossas casas — num só lugar.
             </p>
           </div>
           <p className="text-xs text-white/40">São Paulo · Rio de Janeiro · Belo Horizonte</p>

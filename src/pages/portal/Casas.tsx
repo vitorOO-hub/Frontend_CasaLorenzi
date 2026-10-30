@@ -1,5 +1,5 @@
 import { FotoCampanha } from "@/components/vitrine";
-import { lojas, type Loja } from "@/lib/dados";
+import { casasVulto, lojas, type Loja } from "@/lib/dados";
 import { casas } from "@/lib/loja";
 
 /** Cartão de uma casa: foto da cidade, alfaiate, horário, agenda e bilhete do gerente. */
@@ -33,15 +33,36 @@ export function CasaCartao({ loja }: { loja: Loja }) {
   );
 }
 
+const marcas: { nome: string; casas: Loja[] }[] = [
+  { nome: "Casa Lorenzi", casas: lojas },
+  { nome: "Vulto", casas: casasVulto },
+];
+
+/** As casas físicas, uma fileira por marca (e-commerce e centro de distribuição não aparecem). */
+export function CasasPorMarca() {
+  return (
+    <div className="space-y-14">
+      {marcas.map((marca) => (
+        <div key={marca.nome}>
+          <h2 className="text-[40px] leading-none">{marca.nome}</h2>
+          <div className={`mt-8 grid gap-10 ${marca.casas.length === 4 ? "md:grid-cols-2 lg:grid-cols-4" : "md:grid-cols-3"}`}>
+            {marca.casas.map((l) => (
+              <CasaCartao key={l.id} loja={l} />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function Casas() {
   return (
-    <div className="mx-auto max-w-[1360px] px-5 pt-12 md:px-12">
-      <h1 className="text-[56px] leading-none md:text-[76px]">As três casas</h1>
-      <p className="mt-4 max-w-xl font-display text-[21px]">Em cada uma há um alfaiate, uma mesa de corte e café passado. Você pode agendar ajustes de peças compradas em qualquer casa.</p>
-      <div className="mt-14 grid gap-10 md:grid-cols-3">
-        {lojas.map((l) => (
-          <CasaCartao key={l.id} loja={l} />
-        ))}
+    <div className="mx-auto max-w-[1360px] px-5 pb-24 pt-12 md:px-12">
+      <h1 className="text-[56px] leading-none md:text-[76px]">As nossas casas</h1>
+      <p className="mt-4 max-w-xl font-display text-[21px]">Casa Lorenzi e Vulto: em cada casa há um alfaiate, uma mesa de corte e café passado. Você pode agendar ajustes de peças compradas em qualquer uma delas.</p>
+      <div className="mt-14">
+        <CasasPorMarca />
       </div>
     </div>
   );
