@@ -135,6 +135,8 @@ export async function cadastrarCliente(d: DadosDoCadastro): Promise<{ logado: bo
     email: d.email.trim().toLowerCase(),
     password: d.senha,
     options: {
+      // Para onde o link do e-mail de confirmação volta (senão o Supabase usa o Site URL do projeto).
+      emailRedirectTo: `${config.siteUrl || window.location.origin}/entrar`,
       data: {
         cadastro_cliente: true,
         nome: d.nome,

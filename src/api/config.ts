@@ -38,6 +38,9 @@ export const config = {
   supabaseAnonKey: env.VITE_SUPABASE_ANON_KEY ?? "",
   /** Bucket do Storage onde ficam os anexos de chamado. */
   bucketAnexos: env.VITE_SUPABASE_BUCKET_ANEXOS ?? "chamado-anexos",
+  /** Endereço público do site (Vercel), sem barra no fim. O link do e-mail de confirmação volta para ele;
+   * vazio = a origem de onde a pessoa se cadastrou. Precisa estar nas Redirect URLs do Supabase Auth. */
+  siteUrl: (env.VITE_SITE_URL ?? "").replace(/\/+$/, ""),
   /** Tempo máximo de uma chamada ao FastAPI, em milissegundos. */
   timeoutMs: Number(env.VITE_API_TIMEOUT_MS ?? 15000),
 };

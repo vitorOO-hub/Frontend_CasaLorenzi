@@ -8,6 +8,7 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_ANON_KEY?: string;
   readonly VITE_SUPABASE_BUCKET_ANEXOS?: string;
   readonly VITE_API_TIMEOUT_MS?: string;
+  readonly VITE_SITE_URL?: string;
 }
 
 interface ImportMeta {
